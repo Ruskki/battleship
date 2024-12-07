@@ -52,6 +52,9 @@ body{
 
 .board{
   display: grid;
+  margin-left: 20px;
+  margin-top: 20px;
+
   grid-template-rows: repeat(11, 1fr);
   grid-template-columns: repeat(11, 1fr);
   background-color: rgba(3, 41, 235, 0.5);
@@ -91,3 +94,28 @@ body{
 .row-f:hover, .row-g:hover, .row-h:hover, .row-i:hover, .row-j:hover{
   background-color: rgba(149, 195, 255, 0.645);
 } 
+
+.content{
+  display: flex;
+  justify-items: center;
+}
+
+.boats-select{
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+
+  align-items: center;
+  align-self: center;
+  
+  gap: 40px;
+
+  background-color: rgba(0, 0, 255, 0.504);
+  color:white;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.play-button{
+  color:white;
+}
