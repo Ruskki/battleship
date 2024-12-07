@@ -24,7 +24,7 @@ body {
   background-position-x: -40px;
 
   margin: 0px;
-  margin-top: 50px;
+  margin-top: 60px;
   padding-top: 10px
 }
 
@@ -33,7 +33,7 @@ body {
 .back-button{
   position: fixed;
   top: 0px; left: 0px;
-  margin: 2px 0 0 20px;
+  margin: 6px 0 0 20px;
   
   text-decoration: none;
   font-size: 40px;
@@ -44,7 +44,7 @@ body {
 .rules-title {
   position: fixed;
   top: 0;
-  padding: 10px 100% 10px 50px;
+  padding: 20px 100% 20px 50px;
   margin: 0px;
   background-color: var(--rules-nav);
 }
@@ -52,7 +52,7 @@ body {
 .index:nth-child(n){
   position: fixed;
   top: 0; right: 0;
-  margin: 20px 30px;
+  margin: 25px 30px;
   
   font-size: 18px;
   font-weight: 600;
