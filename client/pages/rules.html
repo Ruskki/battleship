@@ -1,392 +1,396 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en-US">
-  <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <meta name="description" content="battleship"/>
-    <meta name="keywords" content="battleship, game, html, css, javascript"/>
-    <meta name="author" content="Cristina Carnevali"/>
-    <meta name="robots" content="noindex,nofollow"/>
+		<meta name="description" content="battleship" />
+		<meta name="keywords" content="battleship, game, html, css, javascript" />
+		<meta name="author" content="Cristina Carnevali" />
+		<meta name="robots" content="noindex,nofollow" />
 
-    <title> Battleship Rules </title>
+		<title>Battleship Rules</title>
 
-    <link rel="stylesheet" href="../style/rules.css">
+		<link rel="stylesheet" href="../styles/rules.css" />
+	</head>
 
-  </head>
-  
-  <body>
-    <nav>
-      <h1 class="rules-title">Rules</h1>
-      <a href="index.html" class="back-button"><</a>
-    </nav>
+	<body>
+		<nav>
+			<h1 class="rules-title">Rules</h1>
+			<a href="index.html" class="back-button"><</a>
+		</nav>
 
+		<section class="rules" id="rules">
+			<section class="index" id="rules-index">
+				<a href="#rules-basic" class="rules-i1">Basic Rules</a>
+				<a href="#rules-power-ups" class="rules-i2">Power-Ups</a>
+				<a href="#rules-extra-players" class="rules-i3">Extra Players</a>
+				<a href="#rules-tournament" class="rules-i4">Tournament Mode</a>
+			</section>
 
-    <section class="rules" id="rules">
+			<section class="rules-basic" id="rules-basic">
+				<div class="flex-center">
+					<h2 class="text-spaced-out">Basic Rules</h2>
+				</div>
 
-      <section class="index" id="rules-index">
-        <a href="#rules-basic" class="rules-i1">Basic Rules</a>
-        <a href="#rules-power-ups" class="rules-i2">Power-Ups</a>
-        <a href="#rules-extra-players" class="rules-i3">Extra Players</a>
-        <a href="#rules-tournament" class="rules-i4">Tournament Mode</a>
-      </section>
+				<!-- Game Objective -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						1. Game Objective
+					</summary>
+					<p class="rules-summary-text">
+						Sink the enemy fleet before they sink yours!
+					</p>
+				</details>
 
-      <section class="rules-basic" id="rules-basic">
-        <div class="flex-center">
-          <h2 class="text-spaced-out">Basic Rules</h2>
-        </div>
+				<!-- Game Components -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						2. Game Components
+					</summary>
+					<p class="rules-summary-text">
+						Each player has a 10x10 gameboard. Player will have two boards, one
+						where they can view their fleet and another which represents the
+						enemy's field, showing missed shots and hits to the enemy's fleet.
+					</p>
 
-        <!-- Game Objective -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">1. Game Objective</summary>
-          <p class="rules-summary-text">
-            Sink the enemy fleet before they sink yours!
-          </p>
-        </details>
+					<p class="rules-summary-text">The fleet:</p>
+					<ul class="fleet-list">
+						<li>
+							<b>1 aircraft carrier</b>
+							(5 squares, either horizontal or vertical)
+						</li>
+						<li>
+							<b>1 battleship </b>
+							(4 squares, either horizontal or vertical)
+						</li>
+						<li>
+							<b>1 cruise ship </b>
+							(3 squares, either horizontal or vertical)
+						</li>
+						<li>
+							<b>1 submarine </b>
+							(3 squares, either horizontal or vertical)
+						</li>
+						<li>
+							<b>1 destroyer </b>
+							(2 squares, either horizontal or vertical)
+						</li>
+					</ul>
+				</details>
 
-        <!-- Game Components -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">2. Game Components</summary>
-          <p class="rules-summary-text">
-            Each player has a 10x10 gameboard. Player will have two boards, 
-            one where they can view their fleet and another which represents the enemy's field, showing missed shots and hits to the enemy's fleet.
-          </p>
+				<!-- Preparation -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						3. Preparation
+					</summary>
+					<p class="rules-summary-text">
+						Each player must place thier boats in their field, making sure the
+						other players don't see your fleet placement.
+					</p>
+					<p class="rules-summary-text">
+						Boats can be placed either horizontally or veritically
+					</p>
+					<p class="rules-summary-text">
+						Boats can't be placed over each other
+					</p>
+				</details>
 
-          <p class="rules-summary-text"> The fleet: </p> 
-            <ul class="fleet-list">
-              <li>
-                <b>1 aircraft carrier</b> 
-                (5 squares, either horizontal or vertical)
-              </li>
-              <li>
-                <b>1 battleship </b>
-                (4 squares, either horizontal or vertical)
-              </li>
-              <li>
-                <b>1 cruise ship </b>
-                (3 squares, either horizontal or vertical)
-              </li>
-              <li>
-                <b>1 submarine </b>
-                (3 squares, either horizontal or vertical)
-              </li>
-              <li>
-                <b>1 destroyer </b>
-                (2 squares, either horizontal or vertical)
-              </li>
-            </ul>
-          </p>
+				<!-- Turns-->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">4. Turns</summary>
+					<p class="rules-summary-text">
+						Players take turns "shooting" at their opponent's squares, trying to
+						guess the position of enemy boats.
+					</p>
+					<p class="rules-summary-text">
+						Each shot is indicated by selecting a square on the opponent's
+						board.
+					</p>
+					<p class="rules-summary-text">
+						The player who will "shoot" for the first time (first turn) will be
+						selected at random.
+					</p>
+				</details>
 
-        </details>
-        
-        <!-- Preparation -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">3. Preparation</summary>
-          <p class="rules-summary-text">
-            Each player must place thier boats in their field, making sure the 
-            other players don't see your fleet placement.
-          </p>
-          <p class="rules-summary-text">
-            Boats can be placed either horizontally or veritically
-          </p>
-          <p class="rules-summary-text">
-            Boats can't be placed over each other
-          </p>
-        </details>
+				<!-- Hits -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">5. Hits</summary>
+					<p class="rules-summary-text">
+						If a player hits a square containing part of an enemy boat, a "hit"
+						is scored.
+					</p>
+					<p class="rules-summary-text">
+						If the shot does not hit any boat, a "miss" is marked
+					</p>
+				</details>
 
-        <!-- Turns-->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">4. Turns</summary>
-          <p class="rules-summary-text">
-            Players take turns "shooting" at their opponent's squares, 
-            trying to guess the position of enemy boats.
-          </p>
-          <p class="rules-summary-text">
-            Each shot is indicated by selecting a square on the opponent's board.
-          </p>
-          <p class="rules-summary-text">
-            The player who will "shoot" for the first time (first turn) will be selected at random.
-          </p>
-        </details>
+				<!-- Sinking -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">6. Sinking</summary>
+					<p class="rules-summary-text">
+						When all of a boat's squares have been hit, the boat is considered
+						"sunk".
+					</p>
+					<p class="rules-summary-text">
+						The opponent will be informed which boat has been sunk.
+					</p>
+				</details>
 
-        <!-- Hits -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">5. Hits</summary>
-          <p class="rules-summary-text">
-            If a player hits a square containing part of an enemy boat, a "hit" is scored.
-          </p>
-          <p class="rules-summary-text">
-            If the shot does not hit any boat, a "miss" is marked
-          </p>
-        </details>
+				<!-- Win Condition -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						7. Win Condition
+					</summary>
+					<p class="rules-summary-text">
+						The first player to sink the entire enemy fleet wins the game.
+					</p>
+				</details>
 
-        <!-- Sinking -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">6. Sinking</summary>
-          <p class="rules-summary-text">
-            When all of a boat's squares have been hit, the boat is considered "sunk".
-          </p>
-          <p class="rules-summary-text">
-            The opponent will be informed which boat has been sunk.
-          </p>
-        </details>        
+				<!-- Turn Duration -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						8. Turn Duration
+					</summary>
+					<p class="rules-summary-text">
+						Each turn will last no more than one minute (60 seconds). This is to
+						ensure a good pacing of the game.
+					</p>
+					<p class="rules-summary-text">
+						If a player does not make his move within the time limit, it is
+						considered a lost turn.
+					</p>
+				</details>
+			</section>
 
-        <!-- Win Condition -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">7. Win Condition</summary>
-          <p class="rules-summary-text">
-            The first player to sink the entire enemy fleet wins the game.
-          </p>
-        </details>   
+			<section class="rules-power-ups" id="rules-power-ups">
+				<div class="flex-center">
+					<h2 class="text-spaced-out">Power-Ups</h2>
+				</div>
 
-        <!-- Turn Duration -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">8. Turn Duration</summary>
-          <p class="rules-summary-text">
-            Each turn will last no more than one minute (60 seconds). 
-            This is to ensure a good pacing of the game.
-          </p>
-          <p class="rules-summary-text">
-            If a player does not make his move within the time limit, 
-            it is considered a lost turn.
-          </p>        
-        </details>  
+				<!-- Sonar -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">1. Sonar</summary>
+					<p class="rules-summary-text">
+						Available as long as the submarine has not been sunk.
+					</p>
+					<p class="rules-summary-text">
+						It will reveal a random tile of an enemy ship.
+					</p>
+					<p class="rules-summary-text">Cost: 5 points per use.</p>
+				</details>
 
-      </section>
+				<!-- Attack Airplanes -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						2. Attack Airplanes
+					</summary>
+					<p class="rules-summary-text">
+						Available as long as the carrier has not been sunk.
+					</p>
+					<p class="rules-summary-text">
+						Shoots up to 5 random missiles at the enemy board.
+					</p>
+					<p class="rules-summary-text">Cost: 10 points per use.</p>
+				</details>
 
-      <section class="rules-power-ups" id="rules-power-ups">
-        <div class="flex-center">
-          <h2 class="text-spaced-out">Power-Ups</h2>
-        </div>
+				<!-- Marine Mine -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						3. Marine Mine
+					</summary>
+					<p class="rules-summary-text">
+						Players can plant a mine on their own board.
+					</p>
+					<p class="rules-summary-text">
+						If the enemy attacks a mine, they receive an additional "hit" in a
+						random adjacent square.
+					</p>
+					<p class="rules-summary-text">Cost: 5 points per use.</p>
+				</details>
 
-        <!-- Sonar -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">1. Sonar</summary>
-          <p class="rules-summary-text">
-            Available as long as the submarine has not been sunk.
-          </p>
-          <p class="rules-summary-text">
-            It will reveal a random tile of an enemy ship.
-          </p>
-          <p class="rules-summary-text">
-            Cost: 5 points per use.
-          </p>
-        </details>
+				<!-- Defensive Shield -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						4. Defensive Shield
+					</summary>
+					<p class="rules-summary-text">
+						Protects a 3x3 region during 3 turns.
+					</p>
+					<p class="rules-summary-text">
+						Attacks on the protected area are nullified and the enemy recieves a
+						message saying their attacks were blocked.
+					</p>
+					<p class="rules-summary-text">Cost: 15 points.</p>
+					<p class="rules-summary-text">Only one use per game.</p>
+				</details>
 
-        <!-- Attack Airplanes -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">2. Attack Airplanes</summary>
-          <p class="rules-summary-text">
-            Available as long as the carrier has not been sunk.
-          </p>
-          <p class="rules-summary-text">
-            Shoots up to 5 random missiles at the enemy board.
-          </p>
-          <p class="rules-summary-text">
-            Cost: 10 points per use.
-          </p>
-        </details>
+				<!-- Cruiser Missile -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						5. Cruiser Missile
+					</summary>
+					<p class="rules-summary-text">
+						An attack directed at a 3x3 square area.
+					</p>
+					<p class="rules-summary-text">Cost: 15 points.</p>
+					<p class="rules-summary-text">Recharge time: 5 turns.</p>
+				</details>
 
-        <!-- Marine Mine -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">3. Marine Mine</summary>
-          <p class="rules-summary-text">
-            Players can plant a mine on their own board.
-          </p>
-          <p class="rules-summary-text">
-            If the enemy attacks a mine, they receive an additional "hit" in a random adjacent square.
-          </p>
-          <p class="rules-summary-text">
-            Cost: 5 points per use.
-          </p>
-        </details>
+				<!-- Quick Fix -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						6. Quick Fix
+					</summary>
+					<p class="rules-summary-text">
+						Restores up to 2 squares of a damaged (not sunken) boat.
+					</p>
+					<p class="rules-summary-text">Cost: 10 points.</p>
+					<p class="rules-summary-text">Only one use per boat.</p>
+				</details>
 
-        <!-- Defensive Shield -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">4. Defensive Shield</summary>
-          <p class="rules-summary-text">
-            Protects a 3x3 region during 3 turns.
-          </p>
-          <p class="rules-summary-text">
-            Attacks on the protected area are nullified 
-            and the enemy recieves a message saying their attacks were blocked.
-          </p>
-          <p class="rules-summary-text">
-            Cost: 15 points.
-          </p>
-          <p class="rules-summary-text">
-            Only one use per game.
-          </p>
-        </details>
+				<!-- EMP Attack -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						7. EMP Attack
+					</summary>
+					<p class="rules-summary-text">
+						Enemies won't be able to use power-ups for 3 turns.
+					</p>
+					<p class="rules-summary-text">Cost: 25 points.</p>
+					<p class="rules-summary-text">Recharge time: 10 turns.</p>
+				</details>
+			</section>
 
-        <!-- Cruiser Missile -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">5. Cruiser Missile</summary>
-          <p class="rules-summary-text">
-            An attack directed at a 3x3 square area.
-          </p>
-          <p class="rules-summary-text">
-            Cost: 15 points.
-          </p>
-          <p class="rules-summary-text">
-            Recharge time: 5 turns.
-          </p>
-        </details>
+			<section class="rules-extra-players" id="rules-extra-players">
+				<div class="flex-center">
+					<h2 class="text-spaced-out">Extra Players</h2>
+				</div>
 
-        <!-- Quick Fix -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">6. Quick Fix</summary>
-          <p class="rules-summary-text">
-            Restores up to 2 squares of a damaged (not sunken) boat.
-          </p>
-          <p class="rules-summary-text">
-            Cost: 10 points.
-          </p>
-          <p class="rules-summary-text">
-            Only one use per boat.
-          </p>
-        </details>
+				<!-- Game Format -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						1. Game Format
+					</summary>
+					<p class="rules-summary-text">
+						Each player will have their own board and fleet of boats.
+					</p>
+					<p class="rules-summary-text">
+						Players will take turns sequentially. The order of turns (who shoots
+						first and who continues one after the other) will be chosen randomly
+						before the game starts.
+					</p>
+				</details>
 
-        <!-- EMP Attack -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">7. EMP Attack</summary>
-          <p class="rules-summary-text">
-            Enemies won't be able to use power-ups for 3 turns.
-          </p>
-          <p class="rules-summary-text">
-            Cost: 25 points.
-          </p>
-          <p class="rules-summary-text">
-            Recharge time: 10 turns.
-          </p>
-        </details>
+				<!-- Turns -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">2. Turns</summary>
+					<p class="rules-summary-text">
+						Turns will be managed in a circular order: player 1, player 2,
+						player 3, player 4, and so on.
+					</p>
+					<p class="rules-summary-text">
+						Each player shoots at a singular square of one the opponents' boards
+						during their turn. This means that, in one turn, a player can only
+						attack a single opponent.
+					</p>
+					<p class="rules-summary-text">
+						A player cannot shoot at their own board.
+					</p>
+				</details>
 
-      </section>
+				<!-- Hits and Sinks -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						3. Hits and Sinks
+					</summary>
+					<p class="rules-summary-text">
+						The rules for hits and sinks remain the same.
+					</p>
+					<p class="rules-summary-text">
+						The game will inform all players when a boat has been sunk and who
+						it belonged to.
+					</p>
+				</details>
 
-      <section class="rules-extra-players" id="rules-extra-players">
-        <div class="flex-center">
-          <h2 class="text-spaced-out">Extra Players</h2>
-        </div>
-        
-        <!-- Game Format -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">1. Game Format</summary>
-          <p class="rules-summary-text">
-            Each player will have their own board and fleet of boats.
-          </p>
-          <p class="rules-summary-text">
-            Players will take turns sequentially. 
-            The order of turns (who shoots first and who continues one after the other) 
-            will be chosen randomly before the game starts.
-          </p>
-        </details>
+				<!-- Victory -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">4. Victory</summary>
+					<p class="rules-summary-text">
+						The game continues until only one player remains with unsunk boats.
+					</p>
+					<p class="rules-summary-text">
+						The last player to have boats on their board is the winner.
+					</p>
+				</details>
+			</section>
 
-        <!-- Turns -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">2. Turns</summary>
-          <p class="rules-summary-text">
-            Turns will be managed in a circular order: player 1, player 2, 
-            player 3, player 4, and so on.
-          </p>
-          <p class="rules-summary-text">
-            Each player shoots at a singular square of one the opponents' boards during 
-            their turn. This means that, in one turn, a player can only attack a 
-            single opponent.
-          </p>
-          <p class="rules-summary-text">
-            A player cannot shoot at their own board.
-          </p>
-        </details>
+			<section class="rules-tournament" id="rules-tournament">
+				<!-- i love css :P -->
+				<div class="flex-center">
+					<h2 class="text-spaced-out">Tournament</h2>
+				</div>
 
-        <!-- Hits and Sinks -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">3. Hits and Sinks</summary>
-          <p class="rules-summary-text">
-            The rules for hits and sinks remain the same.
-          </p>
-          <p class="rules-summary-text">
-            The game will inform all players when a boat has been sunk and who
-            it belonged to.
-          </p>
-        </details>
+				<!-- Registration and Participation -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						1. Registration and Participation
+					</summary>
+					<p class="rules-summary-text">
+						Players must register to participate in the tournament.
+					</p>
+					<p class="rules-summary-text">
+						Each tournament has a limit of 16 participants.
+					</p>
+				</details>
 
-        <!-- Victory -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">4. Victory</summary>
-          <p class="rules-summary-text">
-            The game continues until only one player remains with unsunk boats.
-          </p>
-          <p class="rules-summary-text">
-            The last player to have boats on their board is the winner.
-          </p>
-        </details>
+				<!-- Tournament Format -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						2. Tournament Format
+					</summary>
+					<p class="rules-summary-text">
+						Single elimination: winners advance to the next round.
+					</p>
+					<p class="rules-summary-text">
+						Each match follows the
+						<a href="#rules-basic" class="text-link">basic rules</a>
+						mentioned beforehand, including the use of the previously mentioned
+						power-ups.
+					</p>
+				</details>
 
-      </section>
+				<!-- Leaderboard -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						3. Leaderboard
+					</summary>
+					<p class="rules-summary-text">
+						The leaderboard will automatically update with the results of each
+						match.
+					</p>
+					<p class="rules-summary-text">
+						It will show the progress of each player in the tournament.
+					</p>
+				</details>
 
-      <section class="rules-tournament" id="rules-tournament">
-        <!-- i love css :P -->
-        <div class="flex-center">
-          <h2 class="text-spaced-out">Tournament</h2>
-        </div>
+				<!-- Rewards and Recognition -->
+				<details class="rules-details">
+					<summary class="rules-summary-title unselectable">
+						4. Rewards and Recognition
+					</summary>
+					<p class="rules-summary-text">Winners will receive virtual medals.</p>
+					<p class="rules-summary-text">
+						Champions will be highlighted in a special section of the
+						leaderboard.
+					</p>
+				</details>
+			</section>
+		</section>
+	</body>
 
-        <!-- Registration and Participation -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">1. Registration and Participation</summary>
-          <p class="rules-summary-text">
-            Players must register to participate in the tournament.
-          </p>
-          <p class="rules-summary-text">
-            Each tournament has a limit of 16 participants.
-          </p>
-        </details>
-
-        <!-- Tournament Format -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">2. Tournament Format</summary>
-          <p class="rules-summary-text">
-            Single elimination: winners advance to the next round.
-          </p>
-          <p class="rules-summary-text">
-            Each match follows the 
-            <a href="#rules-basic" class="text-link">basic rules</a> 
-            mentioned beforehand, including the use of the previously mentioned 
-            power-ups.
-          </p>
-        </details>
-
-        <!-- Leaderboard -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">3. Leaderboard</summary>
-          <p class="rules-summary-text">
-            The leaderboard will automatically update with the results of each match.
-          </p>
-          <p class="rules-summary-text">
-            It will show the progress of each player in the tournament.
-          </p>
-        </details>
-
-        <!-- Rewards and Recognition -->
-        <details class="rules-details">
-          <summary class="rules-summary-title unselectable">4. Rewards and Recognition</summary>
-          <p class="rules-summary-text">
-            Winners will receive virtual medals.
-          </p>
-          <p class="rules-summary-text">
-            Champions will be highlighted in a special section of the leaderboard.
-          </p>
-        </details>
-
-      </section>
-
-    </section>
-  </body>
-
-  <footer class="rules-footer">
-    <p>Made by -></p>
-    <img src="../assets/character.png" width="40rem" height="40rem">
-  </footer>
-
+	<footer class="rules-footer">
+		<p>Made by -></p>
+		<img src="../images/character.png" width="40rem" height="40rem" />
+	</footer>
 </html>
-
-
-  
