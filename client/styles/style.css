@@ -1,0 +1,60 @@
+@import url("./nav-bar.css");
+@import url("./board-styles.css");
+@import url("./fleet.css");
+@import url("./game.css");
+@import url("./rules.css");
+@import url("./main-page.css");
+
+* {
+	color: white;
+	text-decoration: none;
+	font-family: "Comic Sans MS", serif, monospace;
+}
+
+:root {
+	--body-background-position: 0% 0%;
+	--body-background-size: auto;
+	--body-background-repeat: repeat;
+	--body-background-image: url("../images/sea.png");
+
+	--body-margin: 0;
+	--body-padding: 0;
+}
+
+body#rules-page {
+	--body-background-size: 40%;
+	--body-background-image: url("../images/rules_background.png");
+	--body-margin: 60px 0 0 0;
+	--body-padding: 10px 0 0 0;
+}
+
+body#main-page {
+	display: flex;
+	justify-content: center;
+	flex-flow: column nowrap;
+
+	--body-background-size: 50%;
+
+	--body-margin: 0;
+}
+
+body#fleet-page {
+	--body-background-size: 50%;
+
+	--body-margin: 60px 0 0 0;
+	--body-padding: 10px 0 0 0;
+}
+
+body#game-page {
+	--body-background-size: 50%;
+}
+
+body {
+	background-position: var(--body-background-position);
+	bakground-size: var(--body-background-size);
+	background-repeat: var(--body-background-repeat);
+	background-image: var(--body-background-image);
+
+	margin: var(--body-margin);
+	padding: var(--body-padding);
+}
