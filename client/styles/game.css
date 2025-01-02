@@ -53,7 +53,7 @@ div[data-boat^="cruise"] {
 }
 
 div[data-boat^="battleship"] {
-	background-image: url("../images/battledata-boat.png");
+	background-image: url("../images/battleboat.png");
 }
 
 div[data-boat^="aircraft"] {
@@ -86,4 +86,12 @@ div[data-boat$="v3"],
 div[data-boat$="v4"],
 div[data-boat$="v5"] {
 	transform: rotateZ(90deg);
+}
+
+div[data-destroyed="true"]::after {
+	display: block;
+	content: "";
+	width: 50px;
+	height: 50px;
+	background: rgba(255, 0, 0, 0.75) !important;
 }

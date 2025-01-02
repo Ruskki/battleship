@@ -11,16 +11,16 @@
 	height: 550px;
 }
 
-.board:has(.row-a:hover) .row-a::after,
-.board:has(.row-b:hover) .row-b::after,
-.board:has(.row-c:hover) .row-c::after,
-.board:has(.row-d:hover) .row-d::after,
-.board:has(.row-e:hover) .row-e::after,
-.board:has(.row-f:hover) .row-f::after,
-.board:has(.row-g:hover) .row-g::after,
-.board:has(.row-h:hover) .row-h::after,
-.board:has(.row-i:hover) .row-i::after,
-.board:has(.row-j:hover) .row-j::after,
+.board:has(.row-A:hover) .row-A::after,
+.board:has(.row-B:hover) .row-B::after,
+.board:has(.row-C:hover) .row-C::after,
+.board:has(.row-D:hover) .row-D::after,
+.board:has(.row-E:hover) .row-E::after,
+.board:has(.row-F:hover) .row-F::after,
+.board:has(.row-G:hover) .row-G::after,
+.board:has(.row-H:hover) .row-H::after,
+.board:has(.row-I:hover) .row-I::after,
+.board:has(.row-J:hover) .row-J::after,
 .board:has(.col-1:hover) .col-1::after,
 .board:has(.col-2:hover) .col-2::after,
 .board:has(.col-3:hover) .col-3::after,
@@ -41,4 +41,14 @@
 
 .board-position:hover {
 	background-color: rgba(149, 195, 255, 0.645);
+}
+
+.board-header-number,
+.board-header-letter {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	font-size: 20px;
+	font-weight: bolder;
 }
