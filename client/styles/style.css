@@ -22,7 +22,7 @@
 }
 
 body#rules-page {
-	--body-background-size: 40%;
+	--body-background-size: 50%;
 	--body-background-image: url("../images/rules_background.png");
 	--body-margin: 60px 0 0 0;
 	--body-padding: 10px 0 0 0;
@@ -33,7 +33,7 @@ body#main-page {
 	justify-content: center;
 	flex-flow: column nowrap;
 
-	--body-background-size: 50%;
+	--body-background-size: 30%;
 
 	--body-margin: 0;
 }
@@ -51,7 +51,7 @@ body#game-page {
 
 body {
 	background-position: var(--body-background-position);
-	bakground-size: var(--body-background-size);
+	background-size: var(--body-background-size);
 	background-repeat: var(--body-background-repeat);
 	background-image: var(--body-background-image);
 
