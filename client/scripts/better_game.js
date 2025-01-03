@@ -21,6 +21,8 @@ const Boats = {
 	},
 };
 
+const pick_random = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
 class Game {
 	static players = {};
 
@@ -35,13 +37,26 @@ class Game {
 	};
 
 	static attack_player = (slot_from, slot_to, row, col) => {
+		const user = this.players[slot_from];
 		const target = this.players[slot_to];
 
 		const pos = target.board.get_position(row, col);
+
+		if (pos.has_mine) {
+			pick_random(user.board.get_adyacents_positions(row, col)).destroy();
+			target.points += 5;
+			return;
+		}
+
+		if (pos.shielded) {
+			console.log("lmao"); // TODO: Change message
+			return;
+		}
+
 		pos.destroy();
 		if (pos.boat === undefined) return console.log("Miss!");
 
-		this.players[slot_from].points += 5;
+		user.points += 5;
 	};
 
 	static sonar = (slot_from, slot_to) => {
@@ -52,7 +67,11 @@ class Game {
 
 		const target = this.players[slot_to];
 
-		target.board.get_random_position().make_visible();
+		pick_random(
+			Object.values(target.boats)
+				.map((x) => x.positions)
+				.flat(),
+		).make_visible();
 
 		user.points -= 5;
 	};
@@ -68,6 +87,86 @@ class Game {
 		for (let _ = 0; _ < 5; _++) target.board.get_random_position().destroy();
 
 		user.points -= 10;
+	};
+
+	static plant_mine = (slot_from, row, col) => {
+		const user = this.players[slot_from];
+		if (user.points < 5) return console.log("User does not have enough points");
+
+		const pos = user.board.get_position(row, col);
+		if (pos.boat !== undefined)
+			return console.log("Cannot plant mine where boat is");
+		pos.plant_mine();
+	};
+
+	static shield_positions = (slot_from, row, col) => {
+		const user = this.players[slot_from];
+		if (user.points < 15)
+			return console.log("User does not have enough points");
+
+		user.board.get_area(row, col).forEach((x) => {
+			x.shield();
+		});
+	};
+
+	static cruise_missile = (slot_from, slot_to, row, col) => {
+		const user = this.players[slot_from];
+		if (user.points < 15)
+			return console.log("User does not have enough points");
+
+		const target = this.players[slot_to];
+		target.board.get_area(row, col).forEach((x) => {
+			Game.attack_player(slot_from, slot_to, x.row, x.col);
+		});
+	};
+
+	static quick_fix = (slot_from, row_one, col_one, row_two, col_two) => {
+		const user = this.players[slot_from];
+		if (user.points < 10)
+			return console.log("User does not have enough points");
+
+		const pos_one = user.board.get_position(row_one, col_one);
+		const pos_two = user.board.get_position(row_two, col_two);
+
+		let one_healed = false;
+		let two_healed = false;
+
+		if (pos_one.boat === undefined) {
+			console.log(`${row_one},${col_one} does not have a boat`);
+		} else if (user.boats[pos_one.boat].was_healed) {
+			console.log(
+				`Unable to heal ${pos_one.boat} because it was already healed`,
+			);
+		} else if (user.boats[pos_one.boat].is_destroyed()) {
+			console.log(
+				`The boat ${pos_one.boat} from ${user.name} is already fully destroyed`,
+			);
+		} else if (!pos_one.destroyed) {
+			console.log(`${row_one},${col_one} is not destroyed`);
+		} else {
+			pos_one.heal();
+			one_healed = true;
+		}
+
+		if (pos_two.boat === undefined) {
+			console.log(`${row_two},${col_two} does not have a boat`);
+		} else if (user.boats[pos_two.boat].was_healed) {
+			console.log(
+				`Unable to heal ${pos_two.boat} because it was already healed`,
+			);
+		} else if (user.boats[pos_two.boat].is_destroyed()) {
+			console.log(
+				`The boat ${pos_two.boat} from ${user.name} is already fully destroyed`,
+			);
+		} else if (!pos_two.destroyed) {
+			console.log(`${row_two},${col_two} is not destroyed`);
+		} else {
+			pos_two.heal();
+			two_healed = true;
+		}
+
+		if (one_healed) user.boats[pos_one.boat].was_healed = true;
+		if (two_healed) user.boats[pos_two.boat].was_healed = true;
 	};
 
 	constructor() {
@@ -88,10 +187,25 @@ class BoardPosition {
 		this.boat_slot = slot;
 	};
 
+	plant_mine = () => {
+		this.has_mine = true;
+		if (this.visible) this.cell.setAttribute("data-mine", "true");
+	};
+
+	shield = (where) => {
+		this.shielded = true;
+		if (this.visible) this.cell.setAttribute("data-shield", "true");
+	};
+
 	destroy = () => {
 		this.cell.setAttribute("data-destroyed", "true");
 		this.destroyed = true;
 		this.make_visible();
+	};
+
+	heal = () => {
+		this.cell.removeAttribute("data-destroyed");
+		this.destroyed = false;
 	};
 
 	make_visible = () => {
@@ -100,6 +214,7 @@ class BoardPosition {
 		this.visible = true;
 		const dir = this.vertical ? "v" : "h";
 		this.cell.setAttribute("data-boat", `${this.boat}-${dir}${this.boat_slot}`);
+		if (this.has_mine) this.cell.setAttribute("data-mine", "true");
 	};
 
 	constructor(cell, row, col, owner) {
@@ -109,6 +224,7 @@ class BoardPosition {
 		this.owner = owner;
 		this.visible = owner.main_player;
 		this.shielded = false;
+		this.has_mine = false;
 
 		this.boat = undefined;
 		this.destroyed = undefined;
@@ -125,6 +241,7 @@ class Boat {
 
 	reveal = () => this.positions.forEach((x) => x.make_visible());
 	destroy = () => this.positions.forEach((x) => x.destroy());
+	was_healed = false;
 }
 
 class Board {
@@ -135,12 +252,41 @@ class Board {
 
 	get_position = (row, col) => this.positions[`${row},${col}`];
 
-	get_random_position = () => {
-		const positions = Object.keys(this.positions);
-		return this.positions[
-			positions[Math.floor(Math.random() * positions.length)]
-		];
+	get_area = (row, col) => {
+		const min_row = Math.max(0, Board.rows.indexOf(row) - 1);
+		const max_row = Math.min(Board.rows.length, Board.rows.indexOf(row) + 2);
+		const min_col = Math.max(0, Board.cols.indexOf(col) - 1);
+		const max_col = Math.min(Board.cols.length, Board.cols.indexOf(col) + 2);
+
+		return Board.rows
+			.slice(min_row, max_row)
+			.split("")
+			.map((r) =>
+				Board.cols.slice(min_col, max_col).map((c) => this.get_position(r, c)),
+			)
+			.flat(); // Transforms from 3 arrays of 3 to 1 array of 9
 	};
+
+	get_adyacents_positions = (row, col) => {
+		const min_row = Math.max(0, Board.rows.indexOf(row) - 1);
+		const max_row = Math.min(Board.cols.length, Board.rows.indexOf(row) + 2);
+		const min_col = Math.max(0, Board.cols.indexOf(col) - 1);
+		const max_col = Math.min(Board.cols.length, Board.cols.indexOf(col) + 2);
+
+		return Board.rows
+			.slice(min_row, max_row)
+			.split("")
+			.map((r) =>
+				Board.cols.slice(min_col, max_col).map((c) => {
+					if (r === row && c === col) return;
+					return this.get_position(r, c);
+				}),
+			)
+			.flat() // Transforms from 3 arrays of 3 to 1 array of 9
+			.filter((x) => x); // This last step filters the undefined out
+	};
+
+	get_random_position = () => pick_random(positions);
 
 	get_slice_horizontal = (row, col, size) =>
 		Board.cols
@@ -247,15 +393,15 @@ class Player {
 
 const random_targets_test = (targets = 25) => {
 	for (let _ = 0; _ < targets; _++) {
-		const row = Board.rows[Math.floor(Math.random() * Board.rows.length)];
-		const col = Board.cols[Math.floor(Math.random() * Board.cols.length)];
+		const row = pick_random(Board.rows);
+		const col = pick_random(Board.cols);
 		Game.attack_player(0, 1, row, col);
 	}
 };
 
 const sonar_test = () => {
 	// Sonar test
-	Game.players[0].points = 5;
+	Game.players[0].points = 10;
 	Game.sonar(0, 1);
 	Game.players[0].boats["submarine"].destroy();
 	Game.sonar(0, 1);
@@ -266,6 +412,44 @@ const airplanes_test = () => {
 	Game.attack_airplanes(0, 1);
 };
 
+const mine_test = () => {
+	Game.players[0].points = 10;
+	Game.plant_mine(0, "J", "10");
+	Game.plant_mine(0, "A", "1");
+
+	Game.attack_player(1, 0, "J", "10");
+};
+
+const shield_test = () => {
+	Game.players[0].points = 15;
+	Game.shield_positions(0, "H", "8");
+
+	Game.players[1].points = 15;
+	Game.shield_positions(1, "H", "8");
+
+	Game.attack_player(0, 1, "G", "7");
+	Game.attack_player(1, 0, "I", "9");
+};
+
+const missile_test = () => {
+	Game.players[0].points = 15;
+	Game.cruise_missile(0, 1, "B", "2");
+};
+
+const test_heal = () => {
+	Game.players[1].points = 15;
+	Game.cruise_missile(1, 0, "B", "2");
+
+	Game.quick_fix(0, "B", "1", "C", "1");
+	Game.quick_fix(0, "A", "1", "A", "2");
+	Game.quick_fix(0, "A", "3", "A", "3");
+};
+
 // random_targets_test();
 // sonar_test();
-airplanes_test();
+// airplanes_test();
+// mine_test();
+// shield_test();
+// missile_test();
+
+test_heal();
