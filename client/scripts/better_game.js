@@ -25,6 +25,7 @@ const pick_random = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 let selected_row = "A";
 let selected_col = "1";
+let selected_player = undefined;
 
 document.getElementById("attack-button").addEventListener("click", () => {
 	Game.attack_player(0, 1, selected_row, selected_col);
@@ -353,8 +354,10 @@ class Board {
 				cell.addEventListener("click", () => {
 					selected_row = row;
 					selected_col = col;
-					document.getElementById("attack-row").innerText = row;
-					document.getElementById("attack-col").innerText = col;
+					selected_player = this.owner;
+					document.getElementById("target-row").innerText = row;
+					document.getElementById("target-col").innerText = col;
+					document.getElementById("target-player").innerText = this.owner.id;
 				});
 
 				this.positions[`${row},${col}`] = new BoardPosition(
