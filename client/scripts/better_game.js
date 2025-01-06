@@ -36,6 +36,14 @@ document.getElementById("attack-button").addEventListener("click", () => {
 	);
 });
 
+document.getElementById("sonar-button").addEventListener("click", () => {
+	Game.sonar(0, Game.slot_from_id(selected_player));
+});
+
+document.getElementById("airplanes-button").addEventListener("click", () => {
+	Game.attack_airplanes(0, Game.slot_from_id(selected_player));
+});
+
 document.getElementById("mine-button").addEventListener("click", () => {
 	Game.plant_mine(0, selected_row, selected_col);
 });
