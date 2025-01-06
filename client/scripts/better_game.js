@@ -23,6 +23,14 @@ const Boats = {
 
 const pick_random = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+document.getElementById("attack-button").addEventListener("click", () => {
+	const [row, col] = [
+		document.getElementById("attack-row").value,
+		document.getElementById("attack-col").value,
+	];
+	Game.attack_player(0, 1, row, col);
+});
+
 class Game {
 	static players = {};
 
@@ -331,6 +339,11 @@ class Board {
 				break;
 			default:
 				cell.className = `board-pos row-${row} col-${col}`;
+				cell.addEventListener("click", () => {
+					document.getElementById("attack-row").value = row;
+					document.getElementById("attack-col").value = col;
+				});
+
 				this.positions[`${row},${col}`] = new BoardPosition(
 					cell,
 					row,
@@ -465,5 +478,4 @@ const test_heal = () => {
 // mine_test();
 // shield_test();
 // missile_test();
-
-test_heal();
+// test_heal();

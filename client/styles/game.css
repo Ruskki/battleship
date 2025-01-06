@@ -2,6 +2,10 @@
 	display: flex;
 }
 
+input {
+	color: black;
+}
+
 .game-boards {
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);
