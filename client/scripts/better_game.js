@@ -28,7 +28,12 @@ let selected_col = "1";
 let selected_player = undefined;
 
 document.getElementById("attack-button").addEventListener("click", () => {
-	Game.attack_player(0, 1, selected_row, selected_col);
+	Game.attack_player(
+		0,
+		Game.slot_from_id(selected_player),
+		selected_row,
+		selected_col,
+	);
 });
 
 document.getElementById("mine-button").addEventListener("click", () => {
@@ -36,15 +41,22 @@ document.getElementById("mine-button").addEventListener("click", () => {
 });
 
 document.getElementById("shield-button").addEventListener("click", () => {
-	Game.shield_positions(0, selected_row, selected_row);
+	Game.shield_positions(0, selected_row, selected_col);
 });
 
 document.getElementById("missile-button").addEventListener("click", () => {
-	Game.cruise_missile(0, 1, selected_row, selected_row);
+	Game.cruise_missile(
+		0,
+		Game.slot_from_id(selected_player),
+		selected_row,
+		selected_col,
+	);
 });
 
 class Game {
-	static players = {};
+	static players = [];
+
+	static slot_from_id = (id) => this.players.findIndex((x) => x.id === id);
 
 	static add_player = (id, name, slot) => {
 		this.players[slot] = new Player(
@@ -354,7 +366,7 @@ class Board {
 				cell.addEventListener("click", () => {
 					selected_row = row;
 					selected_col = col;
-					selected_player = this.owner;
+					selected_player = this.owner.id;
 					document.getElementById("target-row").innerText = row;
 					document.getElementById("target-col").innerText = col;
 					document.getElementById("target-player").innerText = this.owner.id;
