@@ -1,0 +1,28 @@
+.user-form{
+  color: black;
+}
+
+.flex-col{
+	display: flex;
+	flex-direction: column;
+}
+
+.flex-row{
+	display: flex;
+	flex-direction: row;
+}
+
+.online-rooms-container{
+  display: flex;
+  flex-basis: 50%;
+  align-content: center;
+  justify-content: center;
+
+  background-color: black;
+
+}
+
+.online-options-container{
+  height: 75vh;
+}
+
