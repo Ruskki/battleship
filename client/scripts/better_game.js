@@ -119,6 +119,8 @@ class Game {
 		user.board.get_area(row, col).forEach((x) => {
 			x.shield();
 		});
+
+		user.points -= 15;
 	};
 
 	static cruise_missile = (slot_from, slot_to, row, col) => {
