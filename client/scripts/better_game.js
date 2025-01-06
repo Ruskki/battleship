@@ -85,7 +85,15 @@ class Game {
 			return console.log("Cannot use attack airplanes, aircraft is destroyed");
 		const target = this.players[slot_to];
 
-		for (let _ = 0; _ < 5; _++) target.board.get_random_position().destroy();
+		const valid_positions = Object.values(target.board.positions).filter(
+			(x) => !x.destroyed,
+		);
+		for (let _ = 0; _ < 5; _++) {
+			const pos = pick_random(valid_positions);
+			pos.destroy();
+			valid_positions.splice(valid_positions.indexOf(pos), 1);
+			if (valid_positions.length === 0) break;
+		}
 
 		user.points -= 10;
 	};
@@ -286,8 +294,6 @@ class Board {
 			.flat() // Transforms from 3 arrays of 3 to 1 array of 9
 			.filter((x) => x); // This last step filters the undefined out
 	};
-
-	get_random_position = () => pick_random(positions);
 
 	get_slice_horizontal = (row, col, size) =>
 		Board.cols
