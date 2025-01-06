@@ -105,7 +105,10 @@ class Game {
 		const pos = user.board.get_position(row, col);
 		if (pos.boat !== undefined)
 			return console.log("Cannot plant mine where boat is");
+		if (pos.has_mine) return console.log("Position already has mine");
 		pos.plant_mine();
+
+		pos.points -= 5;
 	};
 
 	static shield_positions = (slot_from, row, col) => {
