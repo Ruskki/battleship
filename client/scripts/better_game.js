@@ -70,8 +70,9 @@ class Game {
 		pick_random(
 			Object.values(target.boats)
 				.map((x) => x.positions)
-				.flat(),
-		).make_visible();
+				.flat()
+				.filter((x) => !x.visible),
+		)?.make_visible();
 
 		user.points -= 5;
 	};
@@ -370,7 +371,7 @@ class Player {
 		this.name = name;
 		this.main_player = main_player;
 		this.board = new Board($div_container, this);
-		this.points = 0;
+		this.points = 999999999;
 
 		this.boats = {
 			destroyer: new Boat(),
