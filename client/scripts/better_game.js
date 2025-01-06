@@ -31,6 +31,14 @@ document.getElementById("attack-button").addEventListener("click", () => {
 	Game.attack_player(0, 1, row, col);
 });
 
+document.getElementById("mine-button").addEventListener("click", () => {
+	const [row, col] = [
+		document.getElementById("attack-row").value,
+		document.getElementById("attack-col").value,
+	];
+	Game.plant_mine(0, row, col);
+});
+
 class Game {
 	static players = {};
 
