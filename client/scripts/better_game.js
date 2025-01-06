@@ -23,36 +23,23 @@ const Boats = {
 
 const pick_random = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+let selected_row = "A";
+let selected_col = "1";
+
 document.getElementById("attack-button").addEventListener("click", () => {
-	const [row, col] = [
-		document.getElementById("attack-row").value,
-		document.getElementById("attack-col").value,
-	];
-	Game.attack_player(0, 1, row, col);
+	Game.attack_player(0, 1, selected_row, selected_col);
 });
 
 document.getElementById("mine-button").addEventListener("click", () => {
-	const [row, col] = [
-		document.getElementById("attack-row").value,
-		document.getElementById("attack-col").value,
-	];
-	Game.plant_mine(0, row, col);
+	Game.plant_mine(0, selected_row, selected_col);
 });
 
 document.getElementById("shield-button").addEventListener("click", () => {
-	const [row, col] = [
-		document.getElementById("attack-row").value,
-		document.getElementById("attack-col").value,
-	];
-	Game.shield_positions(0, row, col);
+	Game.shield_positions(0, selected_row, selected_row);
 });
 
 document.getElementById("missile-button").addEventListener("click", () => {
-	const [row, col] = [
-		document.getElementById("attack-row").value,
-		document.getElementById("attack-col").value,
-	];
-	Game.cruise_missile(0, 1, row, col);
+	Game.cruise_missile(0, 1, selected_row, selected_row);
 });
 
 class Game {
@@ -364,8 +351,10 @@ class Board {
 			default:
 				cell.className = `board-pos row-${row} col-${col}`;
 				cell.addEventListener("click", () => {
-					document.getElementById("attack-row").value = row;
-					document.getElementById("attack-col").value = col;
+					selected_row = row;
+					selected_col = col;
+					document.getElementById("attack-row").innerText = row;
+					document.getElementById("attack-col").innerText = col;
 				});
 
 				this.positions[`${row},${col}`] = new BoardPosition(
