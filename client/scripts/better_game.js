@@ -132,6 +132,8 @@ class Game {
 		target.board.get_area(row, col).forEach((x) => {
 			Game.attack_player(slot_from, slot_to, x.row, x.col);
 		});
+
+		user.points -= 15;
 	};
 
 	static quick_fix = (slot_from, row_one, col_one, row_two, col_two) => {
