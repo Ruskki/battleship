@@ -27,6 +27,8 @@ let selected_row = "A";
 let selected_col = "1";
 let selected_player = undefined;
 
+const $points_el = document.getElementById("player-points");
+
 document.getElementById("attack-button").addEventListener("click", () => {
 	Game.attack_player(
 		0,
@@ -84,7 +86,7 @@ class Game {
 
 		if (pos.has_mine) {
 			pick_random(user.board.get_adyacents_positions(row, col)).destroy();
-			target.points += 5;
+			target.set_points(target.points + 5);
 			return;
 		}
 
@@ -96,7 +98,7 @@ class Game {
 		pos.destroy();
 		if (pos.boat === undefined) return console.log("Miss!");
 
-		user.points += 5;
+		user.set_points(user.points + 5);
 	};
 
 	static sonar = (slot_from, slot_to) => {
@@ -114,7 +116,7 @@ class Game {
 				.filter((x) => !x.visible),
 		)?.make_visible();
 
-		user.points -= 5;
+		user.set_points(user.points - 5);
 	};
 
 	static attack_airplanes = (slot_from, slot_to) => {
@@ -135,7 +137,7 @@ class Game {
 			if (valid_positions.length === 0) break;
 		}
 
-		user.points -= 10;
+		user.set_points(user.points - 10);
 	};
 
 	static plant_mine = (slot_from, row, col) => {
@@ -148,7 +150,7 @@ class Game {
 		if (pos.has_mine) return console.log("Position already has mine");
 		pos.plant_mine();
 
-		pos.points -= 5;
+		pos.set_points(user.points - 5);
 	};
 
 	static shield_positions = (slot_from, row, col) => {
@@ -160,7 +162,7 @@ class Game {
 			x.shield();
 		});
 
-		user.points -= 15;
+		user.set_points(user.points - 15);
 	};
 
 	static cruise_missile = (slot_from, slot_to, row, col) => {
@@ -173,7 +175,7 @@ class Game {
 			Game.attack_player(slot_from, slot_to, x.row, x.col);
 		});
 
-		user.points -= 15;
+		user.set_points(user.points - 15);
 	};
 
 	static quick_fix = (slot_from, row_one, col_one, row_two, col_two) => {
@@ -223,6 +225,8 @@ class Game {
 
 		if (one_healed) user.boats[pos_one.boat].was_healed = true;
 		if (two_healed) user.boats[pos_two.boat].was_healed = true;
+
+		user.set_points(user.points - 10);
 	};
 
 	constructor() {
@@ -426,6 +430,12 @@ class Player {
 		if (this.main_player) positions.forEach((pos) => pos.make_visible());
 
 		this.boats[boat_enum.name].positions = positions;
+	};
+
+	set_points = (points) => {
+		if (!this.main_player) return;
+		this.points = points;
+		$points_el.innerHTML = this.points;
 	};
 
 	constructor(id, name, $div_container, main_player = false) {
