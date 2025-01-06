@@ -47,6 +47,14 @@ document.getElementById("shield-button").addEventListener("click", () => {
 	Game.shield_positions(0, row, col);
 });
 
+document.getElementById("missile-button").addEventListener("click", () => {
+	const [row, col] = [
+		document.getElementById("attack-row").value,
+		document.getElementById("attack-col").value,
+	];
+	Game.cruise_missile(0, 1, row, col);
+});
+
 class Game {
 	static players = {};
 
