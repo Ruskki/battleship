@@ -29,7 +29,7 @@ let selectedPlayer = undefined;
 
 const $pointsEl = document.getElementById("player-points");
 
-Document.getElementById("attack-button").addEventListener("click", () => {
+document.getElementById("attack-button").addEventListener("click", () => {
 	Game.attackPlayer(
 		0,
 		Game.slotFromId(selectedPlayer),
@@ -38,23 +38,23 @@ Document.getElementById("attack-button").addEventListener("click", () => {
 	);
 });
 
-Document.getElementById("sonar-button").addEventListener("click", () => {
+document.getElementById("sonar-button").addEventListener("click", () => {
 	Game.sonar(0, Game.slotFromId(selectedPlayer));
 });
 
-Document.getElementById("airplanes-button").addEventListener("click", () => {
+document.getElementById("airplanes-button").addEventListener("click", () => {
 	Game.attackAirplanes(0, Game.slotFromId(selectedPlayer));
 });
 
-Document.getElementById("mine-button").addEventListener("click", () => {
+document.getElementById("mine-button").addEventListener("click", () => {
 	Game.plantMine(0, selectedRow, selectedCol);
 });
 
-Document.getElementById("shield-button").addEventListener("click", () => {
+document.getElementById("shield-button").addEventListener("click", () => {
 	Game.shieldPositions(0, selectedRow, selectedCol);
 });
 
-Document.getElementById("missile-button").addEventListener("click", () => {
+document.getElementById("missile-button").addEventListener("click", () => {
 	Game.cruiseMissile(
 		0,
 		Game.slotFromId(selectedPlayer),
