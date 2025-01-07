@@ -94,10 +94,10 @@ class Game {
 	};
 
 	deleteGame = () => {
-		[1, 2, 3, 4].forEach((i) => {
-			Game.websocketsInGames.delete(this.players[i].websocket);
-			Game.playerIdsInGames.delete(this.players[i].id);
-			delete this.players[i];
+		this.players.forEach((i, idx) => {
+			Game.websocketsInGames.delete(this.players[idx].websocket);
+			Game.playerIdsInGames.delete(this.players[idx].id);
+			delete this.players[idx];
 		});
 
 		delete gameList[this.id];
@@ -589,6 +589,7 @@ const handleJoinGame = (ws, gameId, playerId) => {
 
 	// Send a notification to every player about this player joining
 	game.getPlayers().forEach((player) => {
+		if (player === newPlayer) return;
 		sendPlayerJoin(player.websocket, newPlayer.id);
 	});
 
