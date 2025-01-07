@@ -100,3 +100,25 @@ function drop(e) {
 	});
 	Boats[shipId].placed = true;
 }
+
+const url_string = window.location.href;
+const url = new URL(url_string);
+const websocket = new WebSocket("ws://192.168.4.237:8000");
+
+const joinGame = () => {
+	const playerId = url.searchParams.get("playerId");
+	const gameId = url.searchParams.get("gameId");
+
+	websocket.send(
+		JSON.stringify({
+			type: "lobbyInstruction",
+			instruction: "joinGame",
+			gameId: gameId,
+			playerId: playerId,
+		}),
+	);
+};
+
+websocket.addEventListener("open", () => {
+	joinGame();
+});

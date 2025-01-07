@@ -26,7 +26,7 @@ websocket.addEventListener("message", (event) => {
 
 	if (ev.type === "error") console.error(ev.text);
 	if (ev.type === "instruction" && ev.instruction === "joinGame")
-		window.location.href = `./fleet.html?playerId=${ev.playerId}`;
+		window.location.href = `./fleet.html?playerId=${ev.playerId}&gameId=${ev.gameId}`;
 });
 
 const createGame = () => {
@@ -34,7 +34,7 @@ const createGame = () => {
 	console.log(`Creating game for player $${playerId}`);
 	websocket.send(
 		JSON.stringify({
-			type: "message",
+			type: "lobbyInstruction",
 			instruction: "createGame",
 			playerId: playerId,
 		}),
@@ -46,7 +46,7 @@ const joinGame = () => {
 	const gameId = $gameIdInput.value;
 	websocket.send(
 		JSON.stringify({
-			type: "message",
+			type: "lobbyInstruction",
 			instruction: "joinGame",
 			gameId: gameId,
 			playerId: playerId,
