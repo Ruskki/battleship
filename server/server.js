@@ -540,7 +540,7 @@ const generateGameId = () => {
 };
 
 const handleCreateGame = (ws, playerId, gameId = undefined) => {
-	console.log(`The player ${playerId} is creating a game... ${gameId}`);
+	console.log(`INFO: The player ${playerId} is creating a game... ${gameId}`);
 
 	console.assert(ws, "Websocket somehow not here");
 
@@ -563,7 +563,7 @@ const handleCreateGame = (ws, playerId, gameId = undefined) => {
 };
 
 const handleJoinGame = (ws, gameId, playerId) => {
-	console.log(`The player ${playerId} is joining ${gameId}`);
+	console.log(`INFO: The player ${playerId} is joining ${gameId}`);
 
 	console.assert(ws, "Websocket somehow not here");
 
@@ -609,9 +609,8 @@ const handleJoinGame = (ws, gameId, playerId) => {
 };
 
 const handleLeaveGame = (ws, gameId, playerId) => {
-	console.log(`The player ${playerId} is leaving ${gameId}`);
-
-	console.assert(ws, "Websocket somehow not here");
+	console.log(`INFO: The player ${playerId} is leaving ${gameId}`);
+	console.assert(ws, "ERROR: websocket somehow not here");
 
 	if (playerId === undefined) return sendError(ws, "playerId is undefined");
 	if (playerId === "") return sendError(ws, "playerId is empty");
@@ -637,7 +636,7 @@ const handleLeaveGame = (ws, gameId, playerId) => {
 };
 
 const handleDeleteGame = (ws, gameId, playerId) => {
-	console.log(`The player ${playerId} is deleting ${gameId}`);
+	console.log(`INFO: The player ${playerId} is deleting ${gameId}`);
 
 	console.assert(ws, "Websocket somehow not here");
 
@@ -659,7 +658,7 @@ const handleDeleteGame = (ws, gameId, playerId) => {
 };
 
 const handleStartGame = (ws, gameId, playerId) => {
-	console.log(`The player ${playerId} is starting ${gameId}`);
+	console.log(`INFO: The player ${playerId} is starting ${gameId}`);
 
 	console.assert(ws, "Websocket somehow not here");
 
@@ -682,17 +681,18 @@ const handleStartGame = (ws, gameId, playerId) => {
 };
 
 const handleWebsocketDisconnect = (ws) => {
-	console.log("A client is disconnecting...");
+	console.log("INFO: A client is disconnecting...");
 
 	if (!Game.websocketsInGames.has(ws))
-		return console.log(`Websocket ${ws} disconnected without being in a game`);
+		return console.log(
+			"INFO: a websocket disconnected without being in a game",
+		);
 
 	for (let game of Object.values(gameList)) {
 		for (let player of game.players) {
-			if (player === undefined) continue;
 			if (player.websocket === ws) {
 				handleLeaveGame(ws, game.id, player.id);
-				console.log(`${player.id} disconnected from ${game.id}`);
+				console.log(`INFO: ${player.id} disconnected from ${game.id}`);
 			}
 		}
 	}
@@ -705,7 +705,7 @@ Deno.serve({ hostname: safeMode ? "localhost" : "0.0.0.0" }, (req) => {
 
 	const { socket: ws, response } = Deno.upgradeWebSocket(req);
 	ws.addEventListener("open", () => {
-		console.log("A new client connected!");
+		console.log("CONNECTION: A new client connected!");
 	});
 
 	ws.addEventListener("message", (event) => {
