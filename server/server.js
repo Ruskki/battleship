@@ -716,19 +716,17 @@ Deno.serve({ hostname: safeMode ? "localhost" : "0.0.0.0" }, (req) => {
 			console.log("data not valid json\ndata:" + event.data);
 		}
 
-		if (ev.type === "gameInstruction")
-			switch (ev.instruction) {
-				case "placeBoat":
-					return handlePlaceBoat(
-						ws,
-						ev.playerId,
-						ev.boatName,
-						ev.row,
-						ev.col,
-						ev.vertical,
-					);
-				case "revealPosition":
-			}
+		if (ev.type === "gameInstruction") {
+			if (ev.instruction === "placeBoat")
+				return handlePlaceBoat(
+					ws,
+					ev.playerId,
+					ev.boatName,
+					ev.row,
+					ev.col,
+					ev.vertical,
+				);
+		}
 
 		if (ev.type === "lobbyInstruction") {
 			if (ev.instruction === "createGame")
