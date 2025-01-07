@@ -1,7 +1,15 @@
 const $playerIdInput = document.getElementById("player-id");
-const $gameIdInput = document.getElementById("room-code");
+const $gameIdInput = document.getElementById("game-id");
 
 const websocket = new WebSocket("ws://192.168.4.237:8000");
+
+document.getElementById("create-game-button").addEventListener("click", () => {
+	createGame();
+});
+
+document.getElementById("join-button").addEventListener("click", () => {
+	joinGame();
+});
 
 websocket.addEventListener("open", () => {
 	console.log("Connected to the game servers :)");
@@ -17,7 +25,7 @@ websocket.addEventListener("message", (event) => {
 	}
 
 	if (ev.type === "error") console.error(ev.text);
-	if (ev.type === "instruction")
+	if (ev.type === "instruction" && ev.instruction === "joinGame")
 		window.location.href = `./fleet.html?playerId=${ev.playerId}`;
 });
 
