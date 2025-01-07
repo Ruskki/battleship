@@ -11,7 +11,7 @@
 .main-menu {
 	margin: 50px;
 	padding: 30px;
-	background-color: #0b5cc094;
+	background-color: rgba(31, 31, 209, 0.5);
 	border-radius: 5px;
 	gap: 50px;
 	font-size: 24px;
