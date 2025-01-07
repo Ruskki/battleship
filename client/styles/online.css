@@ -23,7 +23,37 @@
 
 }
 
+.flex-justify{
+  display: flex;
+  justify-content: center;
+}
+
+.flex-align{
+  display: flex;
+  align-items: center;
+}
+
 .online-options-container{
   height: 75vh;
 }
 
+.online-button{
+  margin-top: auto;
+  margin-bottom: 20px;
+  
+  border: none;
+  background-color: rgb(31, 31, 209);
+  padding: 10px 20px;
+  border-radius: 10px;
+  
+  font-size: 18px;
+}
+
+.online-button:hover{
+  background-color: rgb(35, 35, 255);
+  transition: 0.1s;
+}
+
+.online-button:active{
+  background-color: rgb(22, 22, 141);
+}
