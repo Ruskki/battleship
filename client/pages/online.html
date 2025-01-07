@@ -28,7 +28,7 @@
         <p>What should other players call you?</p>
       </div>
       <div>
-        <input placeholder="BattleshipMaster" class="user-form"/>
+        <input id="player-id" placeholder="BattleshipMaster" class="user-form"/>
       </div>
     </div>
 
@@ -36,16 +36,19 @@
     <div class="flex-row online-options-container">
 
       <div class="online-rooms-container">
-        <div class="flex-col">
-          Create
-          <button onclick="createGame()">create</button>
+        <div class="flex-col flex-align">
+          <h2>Create a room</h2>
+          <img src="../images/join_game.png" />
+          <button onclick="createGame()" class="online-button">Create</button>
         </div>
       </div>
 
       <div class="online-rooms-container">
-        <div>
-          Join
+        <div class="flex-col flex-align">
+          <h2>Join a room</h2>
           <img src="../images/join_game.png" />
+          <input placeholder="Room Code"/>
+          <button class="online-button">Join</button>
         </div>
       </div>
       
