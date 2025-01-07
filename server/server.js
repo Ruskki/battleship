@@ -52,6 +52,8 @@ class Game {
 
 	started = false;
 
+	self_destroy_timer = undefined;
+
 	getFreeSlot = () => this.players.length;
 
 	getPlayerFromId = (id) =>
@@ -62,6 +64,12 @@ class Game {
 	addNewPlayer = (ws, id) => {
 		const idx = this.getFreeSlot();
 		if (idx >= 4) return;
+
+		if (this.self_destroy_timer !== undefined) {
+			console.log(`${id} rejoined game ${this.id}, stopping self destruction`);
+			clearTimeout(this.self_destroy_timer);
+			this.self_destroy_timer = undefined;
+		}
 
 		this.players[idx] = new Player(id, idx, ws);
 		Game.websocketsInGames.add(ws);
@@ -81,7 +89,7 @@ class Game {
 
 		if (!this.started && this.getPlayerCount() === 0) {
 			console.log("This game is empty, time to self destroy");
-			delete gameList[this.id];
+			this.self_destroy_timer = setTimeout(this.deleteGame(), 30000);
 		}
 	};
 
