@@ -89,7 +89,10 @@ class Game {
 
 		if (!this.started && this.getPlayerCount() === 0) {
 			console.log("This game is empty, time to self destroy");
-			this.self_destroy_timer = setTimeout(this.deleteGame(), 30000);
+			this.self_destroy_timer = setTimeout(() => {
+				console.log(`Time's up! deleting ${this.id}`);
+				this.deleteGame();
+			}, 5000);
 		}
 	};
 
@@ -493,6 +496,7 @@ const sendPlayerJoin = (ws, playerId) => {
 		JSON.stringify({
 			type: "instruction",
 			instruction: "joinGame",
+			gameId: Game.getGameFromPlayerId(playerId).id,
 			playerId: playerId,
 		}),
 	);
@@ -509,7 +513,7 @@ const sendPlayerDisconnect = (ws, playerId) => {
 };
 
 const sendSuccess = (ws, text) => {
-	console.log(`Sending SUCCESS message:\n${text}`);
+	console.log(`SUCCESS: ${text}`);
 	ws.send(
 		JSON.stringify({
 			type: "success",
@@ -519,7 +523,7 @@ const sendSuccess = (ws, text) => {
 };
 
 const sendError = (ws, text) => {
-	console.log(`Sending ERROR message:\n${text}`);
+	console.log(`ERROR: ${text}`);
 	ws.send(
 		JSON.stringify({
 			type: "error",
@@ -726,19 +730,18 @@ Deno.serve({ hostname: safeMode ? "localhost" : "0.0.0.0" }, (req) => {
 				case "revealPosition":
 			}
 
-		switch (ev.instruction) {
-			case "createGame":
+		if (ev.type === "lobbyInstruction") {
+			if (ev.instruction === "createGame")
 				return handleCreateGame(ws, ev.playerId, ev?.gameId);
-			case "joinGame":
+			if (ev.instruction === "joinGame")
 				return handleJoinGame(ws, ev.gameId, ev.playerId);
-			case "leaveGame":
+			if (ev.instruction === "leaveGame")
 				return handleLeaveGame(ws, ev.gameId, ev.playerId);
-			case "deleteGame":
+			if (ev.instruction === "deleteGame")
 				return handleDeleteGame(ws, ev.gameId, ev.playerId);
-			case "startGame":
+			if (ev.instruction === "startGame")
 				return startGame(ws, ev.gameId, ev.playerId);
-			default:
-				return sendError(ws, "malformed instruction");
+			return sendError(ws, "malformed instruction");
 		}
 	});
 
