@@ -89,7 +89,10 @@ class Game {
 
 		if (!this.started && this.getPlayerCount() === 0) {
 			console.log("This game is empty, time to self destroy");
-			this.self_destroy_timer = setTimeout(this.deleteGame(), 30000);
+			this.self_destroy_timer = setTimeout(() => {
+				console.log(`Time's up! deleting ${this.id}`);
+				this.deleteGame();
+			}, 5000);
 		}
 	};
 
@@ -509,7 +512,7 @@ const sendPlayerDisconnect = (ws, playerId) => {
 };
 
 const sendSuccess = (ws, text) => {
-	console.log(`Sending SUCCESS message:\n${text}`);
+	console.log(`SUCCESS: ${text}`);
 	ws.send(
 		JSON.stringify({
 			type: "success",
@@ -519,7 +522,7 @@ const sendSuccess = (ws, text) => {
 };
 
 const sendError = (ws, text) => {
-	console.log(`Sending ERROR message:\n${text}`);
+	console.log(`ERROR: ${text}`);
 	ws.send(
 		JSON.stringify({
 			type: "error",
