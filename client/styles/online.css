@@ -34,7 +34,7 @@
 }
 
 .online-options-container{
-  height: 75vh;
+  height: 70vh;
 }
 
 .online-button{
@@ -43,7 +43,7 @@
   
   border: none;
   background-color: rgb(31, 31, 209);
-  padding: 10px 20px;
+  padding: 10px 40px;
   border-radius: 10px;
   
   font-size: 18px;
@@ -56,4 +56,8 @@
 
 .online-button:active{
   background-color: rgb(22, 22, 141);
+}
+
+.name-container{
+  padding: 20px;
 }
