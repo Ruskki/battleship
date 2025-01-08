@@ -132,7 +132,7 @@ class Game {
 		);
 		for (let _ = 0; _ < 5; _++) {
 			const pos = pickRandom(validPositions);
-			pos.destroy();
+			this.attackPlayer(slotFrom, slotTo, pos.row, pos.col);
 			validPositions.splice(validPositions.indexOf(pos), 1);
 			if (validPositions.length === 0) break;
 		}
