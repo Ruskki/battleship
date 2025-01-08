@@ -585,20 +585,17 @@ const handleJoinGame = (ws, gameId, playerId) => {
 	if (game.getPlayerCount() == 4)
 		return sendError(ws, `Cannot join game ${gameId} because it's full`);
 
-	// const newPlayer = game.addNewPlayer(ws, playerId);
 	sendSuccess(ws, `player ${playerId} joined game ${gameId}`);
 
-	// TODO: for testing
 	const newPlayer = game.addNewPlayer(ws, playerId);
 
+	// Send notification to the player that's joining, that he joined
 	// Send a notification to every player about this player joining
+	// Send a notification to the new player about every other player that's in the game
+	sendPlayerJoin(newPlayer.websocket, newPlayer.id);
 	game.getPlayers().forEach((player) => {
 		if (player === newPlayer) return;
 		sendPlayerJoin(player.websocket, newPlayer.id);
-	});
-
-	// Send a notification to this player about every other player that's in the game
-	game.getPlayers().forEach((player) => {
 		sendPlayerJoin(newPlayer.websocket, player.id);
 	});
 
