@@ -48,14 +48,10 @@ ships.forEach((ship) =>
 	ship.addEventListener("dragstart", (e) => (savedShipId = e.target.id)),
 );
 
-const drop = (e) => {
+const drop = (e, pos) => {
 	e.preventDefault();
 
-	const [row, col] = Object.values(
-		document.getElementById("board").getElementsByClassName("board-position"),
-	)
-		.find((x) => x.className.includes("hovered"))
-		.id.split(",");
+	const [row, col] = pos.id.split(",");
 	const shipId = savedShipId;
 
 	if (Boats[shipId].placed) return console.error(`Already placed ${shipId}`);
@@ -83,13 +79,7 @@ const drop = (e) => {
 
 gridPositions.forEach((position) => {
 	position.addEventListener("dragover", (e) => e.preventDefault());
-	position.addEventListener("drop", drop);
-	position.addEventListener("mouseover", () => {
-		position.classList.add("hovered");
-	});
-	position.addEventListener("mouseout", () => {
-		position.classList.remove("hovered");
-	});
+	position.addEventListener("drop", (e) => drop(e, position));
 });
 
 const getCosecutivePositions = (row, col, size, vertical) => {
