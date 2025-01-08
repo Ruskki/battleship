@@ -59,6 +59,12 @@ class Game {
 
 	isPlayerHost = (id) => this.players.indexOf(this.getPlayerFromId(id)) === 0;
 
+	canPlayerJoin = (id) => {
+		const player = this.getPlayerFromId(id);
+		if (player === undefined) return this.players.length < 4;
+		return player.websocket === undefined;
+	};
+
 	addNewPlayer = (ws, id) => {
 		const player = this.getPlayerFromId(id);
 		if (player !== undefined) return this.reconnectPlayer(ws, player);
@@ -618,8 +624,10 @@ const handleCreateGame = (ws, playerId, gameId = undefined) => {
 
 	if (playerId === undefined) return sendError(ws, "playerId is undefined");
 	if (playerId === "") return sendError(ws, "playerId is empty");
-	if (Game.playerIdsInGames.has(playerId))
-		return sendError(ws, `player ${playerId} already in a game`);
+	if (Game.playerIdsInGames.has(playerId)) {
+		const game = Game.getGameFromPlayerId(playerId);
+		handleLeaveGame(ws, game.id, playerId);
+	}
 
 	if ((gameId !== undefined || gameId === "") && gameList[gameId] !== undefined)
 		return sendError(ws, `game with id ${gameId} already exists`);
@@ -652,7 +660,10 @@ const handleJoinGame = (ws, gameId, playerId) => {
 			ws,
 			`Cannot join game ${gameId} because it already started`,
 		);
-	if (game.getPlayerCount() == 4)
+	if (
+		game.getPlayerFromId(playerId) === undefined &&
+		game.getPlayerCount() === 4
+	)
 		return sendError(ws, `Cannot join game ${gameId} because it's full`);
 
 	sendSuccess(ws, `player ${playerId} joined game ${gameId}`);
