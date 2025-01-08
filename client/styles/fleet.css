@@ -73,6 +73,7 @@
 
 .source,
 .draggable-boat {
+	user-select: none;
 	cursor: grab;
 }
 

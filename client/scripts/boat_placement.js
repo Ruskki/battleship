@@ -58,6 +58,42 @@ const Boats = {
 	},
 };
 
+let draggedElement = undefined;
+
+document.onmousemove = (e) => {
+	if (draggedElement) moveDraggableElement(e);
+};
+
+document.body.addEventListener("dragover", (e) => e.preventDefault());
+document.body.addEventListener("drop", (e) => {
+	if (draggedElement) destroyDraggedElement();
+});
+document.body.addEventListener("mouseup", () => {
+	if (draggedElement) destroyDraggedElement();
+});
+
+const createDraggedElement = (from) => {
+	if (draggedElement) return;
+
+	const clone = from.cloneNode(true);
+	clone.style.position = "absolute";
+	clone.style.pointerEvents = "none";
+	document.body.appendChild(clone);
+
+	draggedElement = clone;
+};
+
+const moveDraggableElement = (e) => {
+	draggedElement.style.left = e.clientX + "px";
+	draggedElement.style.top = e.clientY + "px";
+};
+
+const destroyDraggedElement = () => {
+	draggedElement.remove();
+	draggedElement = undefined;
+	document.body.style.cursor = "default";
+};
+
 const ships = document.querySelectorAll(".source");
 let isRotated = false;
 let savedShipId = undefined;
@@ -68,12 +104,20 @@ const rotateShips = () => {
 	isRotated = !isRotated;
 };
 
+const handleDragStartShip = (shipId, $ship) => {
+	savedShipId = shipId;
+	createDraggedElement($ship);
+};
+
 const addDragListenerToShips = () => {
 	for (const ship of ships) {
-		ship.addEventListener("dragstart", (e) => (savedShipId = e.target.id));
+		ship.addEventListener("dragstart", (e) =>
+			handleDragStartShip(e.target.id, ship),
+		);
 		Boats[ship.id].$element = ship;
 	}
 };
+addDragListenerToShips();
 
 document
 	.getElementById("rotate-button")
@@ -96,7 +140,9 @@ const handleDrop = (e, pos) => {
 	const ship = Boats[shipId];
 
 	if (ship.placed) {
-		ship.$positions.forEach((x) => x.removeAttribute("data-boat"));
+		ship.$positions.forEach((x) => {
+			x.removeAttribute("data-boat");
+		});
 		ship.$positions = [];
 		ship.positions = [];
 		ship.placed = false;
@@ -118,10 +164,9 @@ const handleDrop = (e, pos) => {
 	});
 
 	positions.forEach((x) => {
-		x.addEventListener("mousedown", (e) => {
-			savedShipId = shipId;
-			document.body.style.cursor = "grabbing";
-		});
+		x.addEventListener("mousedown", (e) =>
+			handleDragStartShip(shipId, ship.$element),
+		);
 	});
 
 	ship.placed = true;
