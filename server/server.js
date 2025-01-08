@@ -316,15 +316,16 @@ class Player {
 
 		if (positions.length !== boatEnum.size)
 			return sendError(this.websocket, "boat too big");
-		if (
-			positions.some(
-				(pos) => pos.boat !== undefined && pos.boat !== boatEnum.name,
-			)
-		)
+		if (positions.some((pos) => pos.boat !== undefined))
 			return sendError(this.websocket, "boat in the way");
 
 		const boat = this.boats[boatEnum.name];
-		if (boat.placed) boat.positions.forEach((pos) => pos.removeBoat());
+		if (boat.placed)
+			return sendError(
+				this.websocket,
+				`${boatEnum.name} already placed for ${this.id}`,
+			);
+
 		boat.positions = positions;
 		boat.positions.forEach((pos, idx) =>
 			pos.placeBoat(boatEnum.name, idx + 1, vertical),
@@ -793,6 +794,11 @@ const handlePlayerUnready = (ws, playerId) => {
 
 	const game = Game.getGameFromPlayerId(playerId);
 	const player = game.getPlayerFromId(playerId);
+
+	Object.values(player.boats).forEach((boat) => {
+		boat.positions.forEach((pos) => pos.removeBoat());
+		boat.placed = false;
+	});
 
 	player.ready = false;
 
