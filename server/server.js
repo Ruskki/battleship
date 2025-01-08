@@ -316,13 +316,15 @@ class Player {
 
 		if (positions.length !== boatEnum.size)
 			return sendError(this.websocket, "boat too big");
-		if (positions.some((pos) => pos.boat !== undefined))
+		if (
+			positions.some(
+				(pos) => pos.boat !== undefined && pos.boat !== boatEnum.name,
+			)
+		)
 			return sendError(this.websocket, "boat in the way");
-		if (this.boats[boatEnum.name].positions.length > 0)
-			return sendError(this.websocket, "boat already placed");
 
 		const boat = this.boats[boatEnum.name];
-		if (boat.placed) boat.positions.forEach((pos) => x.removeBoat);
+		if (boat.placed) boat.positions.forEach((pos) => pos.removeBoat());
 		boat.positions = positions;
 		boat.positions.forEach((pos, idx) =>
 			pos.placeBoat(boatEnum.name, idx + 1, vertical),
@@ -357,6 +359,7 @@ class Player {
 		this.websocket = websocket;
 		this.playerSlot = playerSlot;
 		this.points = 0;
+		this.ready = false;
 
 		this.boats = {
 			destroyer: new Boat(),
@@ -551,6 +554,26 @@ const sendPlayerDisconnect = (ws, playerId) => {
 	);
 };
 
+const sendPlayerReady = (ws, playerId) => {
+	ws.send(
+		JSON.stringify({
+			type: "instruction",
+			instruction: "playerReady",
+			playerId: playerId,
+		}),
+	);
+};
+
+const sendPlayerUnready = (ws, playerId) => {
+	ws.send(
+		JSON.stringify({
+			type: "instruction",
+			instruction: "playerUnready",
+			playerId: playerId,
+		}),
+	);
+};
+
 const sendSuccess = (ws, text) => {
 	console.log(`SUCCESS: ${text}`);
 	ws.send(
@@ -736,6 +759,48 @@ const handleStartGame = (ws, gameId, playerId) => {
 	sendSuccess(ws, `${playerId} has started ${gameId}`);
 };
 
+const handlePlayerReady = (ws, playerId) => {
+	console.log(`INFO: The player ${playerId} is readying up`);
+
+	console.assert(ws, "Websocket somehow not here");
+
+	if (playerId === undefined) return sendError(ws, "playerId is undefined");
+	if (playerId === "") return sendError(ws, "playerId is empty");
+	if (!Game.playerIdsInGames.has(playerId))
+		return sendError(ws, `player ${playerId} not in a game`);
+
+	const game = Game.getGameFromPlayerId(playerId);
+	const player = game.getPlayerFromId(playerId);
+
+	if (Object.values(player.boats).some((boat) => !boat.placed))
+		return sendError(ws, `player ${playerId} has not placed all their boats`);
+	player.ready = true;
+
+	for (const p of game.players) sendPlayerReady(p.websocket, playerId);
+
+	sendSuccess(ws, `${playerId} has readied up`);
+};
+
+const handlePlayerUnready = (ws, playerId) => {
+	console.log(`INFO: The player ${playerId} unreadying`);
+
+	console.assert(ws, "Websocket somehow not here");
+
+	if (playerId === undefined) return sendError(ws, "playerId is undefined");
+	if (playerId === "") return sendError(ws, "playerId is empty");
+	if (!Game.playerIdsInGames.has(playerId))
+		return sendError(ws, `player ${playerId} not in a game`);
+
+	const game = Game.getGameFromPlayerId(playerId);
+	const player = game.getPlayerFromId(playerId);
+
+	player.ready = false;
+
+	for (const p of game.players) sendPlayerUnready(p.websocket, playerId);
+
+	sendSuccess(ws, `${playerId} has unreadied`);
+};
+
 const handleWebsocketDisconnect = (ws) => {
 	console.log("INFO: A client is disconnecting...");
 
@@ -794,7 +859,11 @@ Deno.serve({ hostname: safeMode ? "localhost" : "0.0.0.0" }, (req) => {
 			if (ev.instruction === "deleteGame")
 				return handleDeleteGame(ws, ev.gameId, ev.playerId);
 			if (ev.instruction === "startGame")
-				return startGame(ws, ev.gameId, ev.playerId);
+				return handleStartGame(ws, ev.gameId, ev.playerId);
+			if (ev.instruction === "playerReady")
+				return handlePlayerReady(ws, ev.playerId);
+			if (ev.instruction === "playerUnready")
+				return handlePlayerUnready(ws, ev.playerId);
 			return sendError(ws, "malformed instruction");
 		}
 	});

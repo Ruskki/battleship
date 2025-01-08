@@ -58,6 +58,8 @@ const Boats = {
 	},
 };
 
+let isPlayerReady = false;
+
 let draggedElement = undefined;
 
 document.onmousemove = (e) => {
@@ -105,6 +107,7 @@ const rotateShips = () => {
 };
 
 const handleDragStartShip = (shipId, $ship) => {
+	if (isPlayerReady) return;
 	savedShipId = shipId;
 	createDraggedElement($ship);
 };
@@ -264,6 +267,20 @@ const handleLeaveGame = (disconnectingPlayerId) => {
 	showError(`Player ${disconnectingPlayerId} has left the game`);
 };
 
+const readyButton = document.getElementById("play-button");
+
+const handlePlayerReady = (readyPlayerId) => {
+	if (readyPlayerId === playerId) isPlayerReady = true;
+
+	readyButton.innerText = "Unready";
+};
+
+const handlePlayerUnready = (readyPlayerId) => {
+	if (readyPlayerId === playerId) isPlayerReady = false;
+
+	readyButton.innerText = "Ready";
+};
+
 websocket.addEventListener("message", (event) => {
 	let ev;
 	try {
@@ -276,12 +293,24 @@ websocket.addEventListener("message", (event) => {
 	if (ev.type === "instruction") {
 		if (ev.instruction === "joinGame") handleJoinGame(ev.playerId);
 		if (ev.instruction === "playerDisconnect") handleLeaveGame(ev.playerId);
+		if (ev.instruction === "playerReady") handlePlayerReady(ev.playerId);
+		if (ev.instruction === "playerUnready") handlePlayerUnready(ev.playerId);
 	}
 });
 
 document.getElementById("play-button").addEventListener("click", () => {
+	if (isPlayerReady) {
+		const msg = JSON.stringify({
+			type: "lobbyInstruction",
+			instruction: "playerUnready",
+			playerId: playerId,
+		});
+		websocket.send(msg);
+		return;
+	}
+
 	if (Object.values(Boats).some((x) => !x.placed))
-		return console.error("A boat is yet to be placed");
+		return showError("All the boats need to be placed!");
 
 	for (const shipId of Object.keys(Boats)) {
 		const [row, col] = Boats[shipId].positions[0].split(",");
@@ -296,4 +325,11 @@ document.getElementById("play-button").addEventListener("click", () => {
 		});
 		websocket.send(msg);
 	}
+
+	const msg = JSON.stringify({
+		type: "lobbyInstruction",
+		instruction: "playerReady",
+		playerId: playerId,
+	});
+	websocket.send(msg);
 });
