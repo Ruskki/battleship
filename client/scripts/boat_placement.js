@@ -43,10 +43,9 @@ document.getElementById("clickme").addEventListener("click", () => {
 	isRotated = !isRotated;
 });
 
+let savedShipId = undefined;
 ships.forEach((ship) =>
-	ship.addEventListener("dragstart", (e) =>
-		e.dataTransfer.setData("text/plain", e.target.id),
-	),
+	ship.addEventListener("dragstart", (e) => (savedShipId = e.target.id)),
 );
 
 const drop = (e) => {
@@ -57,7 +56,7 @@ const drop = (e) => {
 	)
 		.find((x) => x.matches(":hover"))
 		.id.split(",");
-	const shipId = e.dataTransfer.getData("text/plain");
+	const shipId = savedShipId;
 
 	if (Boats[shipId].placed) return console.error(`Already placed ${shipId}`);
 
@@ -179,7 +178,7 @@ websocket.addEventListener("message", (event) => {
 
 document.getElementById("play-button").addEventListener("click", () => {
 	if (Object.values(Boats).some((x) => !x.placed))
-		console.error("A boat is yet to be placed");
+		return console.error("A boat is yet to be placed");
 
 	for (const shipId of Object.keys(Boats)) {
 		const [row, col] = Boats[shipId].positions[0].split(",");
