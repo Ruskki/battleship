@@ -157,7 +157,7 @@
 
 				<div class="boats-select">
 					<div class="boat-grid">
-						<input type="button" value="rotate" class="play-button boat-grid-item" id="clickme" />
+						<input type="button" value="rotate" class="rotate-button boat-grid-item" id="clickme" />
 						<div class="boat-grid-item">
 							<img
 								src="../images/destroyer.png"
@@ -180,6 +180,10 @@
 								class="boat-grid-item"
 							/>
 						</div>
+						<button id="play-button" class="play-button" href="game.html">
+							Ready
+						</button>
+
 						<div class="boat-grid-item">
 							<img
 								src="../images/cruise.png"
@@ -212,15 +216,17 @@
 								draggable="true"
 							/>
 						</div>
+						<button id="leave-button" class="leave-button" href="../index.html">
+							Leave
+						</button>
 					</div>
-				<div>
-					<button id="play-button" class="play-button" href="game.html">
-						Play!
-					</button>
-				</div>
 				</div>
 			</div>
 			
+			<div class="room-info">
+				penits
+
+			</div>
 			<div id="current-players"></div>
 		</content>
 		<script src="../scripts/boat_placement.js"></script>
