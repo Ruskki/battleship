@@ -1,24 +1,40 @@
 .content {
 	display: flex;
 	justify-items: center;
+	height:90vh;
 }
 
 .boats-select {
+	width: 550px;
+
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	flex-grow: 1;
 
 	align-items: center;
 	align-self: center;
 
-	gap: 40px;
-
 	background-color: rgba(31, 31, 209, 0.5);
 	color: white;
-	margin-left: 10px;
-	margin-right: 10px;
+
+	margin-left: auto;
+
 }
 
 .play-button {
 	color: white;
+}
+
+.boat-grid{
+	display: inline-grid;
+	grid-template-columns: repeat(3, 1fr);
+	grid-template-rows: repeat(2, 1fr);
+	width: 100%;
+	height: 100%;
+}
+
+.boat-grid-item{
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
