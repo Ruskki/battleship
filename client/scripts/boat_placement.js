@@ -36,14 +36,10 @@ rotateButton.addEventListener("click", rotateShips);
 
 function rotateShips() {
 	ships.forEach((ship) => {
-		if (isRotated == true) {
-			ship.style.transform = "rotate(0deg)";
-		} else {
-			ship.style.transform = "rotate(-90deg)";
-		}
+		if (isRotated) ship.style.transform = "rotate(0deg)";
+		else ship.style.transform = "rotate(-90deg)";
 	});
 	isRotated = !isRotated;
-	return isRotated;
 }
 
 ships.forEach((ship) => {
@@ -86,7 +82,7 @@ function dragOver(e) {
 	e.preventDefault();
 }
 
-function drop(e, isRotated) {
+function drop(e) {
 	e.preventDefault();
 
 	const [row, col] = Object.values(
@@ -98,17 +94,11 @@ function drop(e, isRotated) {
 
 	if (Boats[shipId].placed) return console.error(`Already placed ${shipId}`);
 
-	if (isRotated == true) {
-		vertical = true;
-	} else {
-		vertical = false;
-	}
-
 	const positions = getCosecutivePositions(
 		row,
 		col,
 		Boats[shipId].size,
-		vertical,
+		isRotated,
 	);
 
 	if (positions.some((x) => x.getAttribute("data-boat") !== null))
@@ -117,7 +107,7 @@ function drop(e, isRotated) {
 		return console.error(`Boat ${shipId} doesn't fit here`);
 
 	positions.forEach((x, idx) => {
-		x.setAttribute("data-boat", `${shipId}-${vertical ? "v" : "h"}${idx + 1}`);
+		x.setAttribute("data-boat", `${shipId}-${isRotated ? "v" : "h"}${idx + 1}`);
 	});
 	Boats[shipId].placed = true;
 }
