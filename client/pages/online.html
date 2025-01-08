@@ -1,61 +1,66 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en-US">
-  <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <meta name="description" content="battleship"/>
-    <meta name="keywords" content="battleship, game, html, css, javascript"/>
-    <meta name="author" content="Cristina Carnevali"/>
-    <meta name="robots" content="noindex,nofollow"/>
+		<meta name="description" content="battleship" />
+		<meta name="keywords" content="battleship, game, html, css, javascript" />
+		<meta name="author" content="Cristina Carnevali" />
+		<meta name="robots" content="noindex,nofollow" />
 
-    <link rel="icon" href="../images/favicon.png" type="image/png">
+		<link rel="icon" href="../images/favicon.png" type="image/png" />
 
-    <title> Battleship Online </title>
+		<title>Battleship Online</title>
 
-    <link rel="stylesheet" href="../styles/style.css">
-  </head>
+		<link rel="stylesheet" href="../styles/style.css" />
+	</head>
 
-  <body id="online-page">
-    <nav class="nav-bar">
+	<body id="online-page">
+		<nav class="nav-bar">
 			<a href="../pages/fleet.html" class="back-button"><</a>
 			<h1>Online</h1>
-      <a href="../pages/index.html" class="nav-button">Main Menu</a>
+			<span id="online-indicator">•</span>
+			<span id="feedback-messages"></span>
+			<a href="../index.html" class="nav-button">Main Menu</a>
 		</nav>
-    
-    <div class="flex-col flex-align name-container">
-      <div>
-        <h2>What should other players call you?</h2>
-      </div>
-      <div>
-        <input id="player-id" placeholder="BattleshipMaster" class="user-form"/>
-      </div>
-    </div>
 
+		<div class="flex-col flex-align name-container">
+			<div>
+				<h2>What should other players call you?</h2>
+			</div>
+			<div>
+				<input
+					id="player-id"
+					placeholder="BattleshipMaster"
+					class="user-form"
+				/>
+			</div>
+		</div>
 
-    <div class="flex-row online-options-container">
+		<div class="flex-row online-options-container">
+			<div class="online-rooms-container">
+				<div class="flex-col flex-align">
+					<h2>Create a room</h2>
+					<img src="../images/create_game.png" />
+					<p>
+						Create a room and challenge your friends or players from around the
+						world!
+					</p>
+					<button id="create-game-button" class="online-button">Create</button>
+				</div>
+			</div>
 
-      <div class="online-rooms-container">
-        <div class="flex-col flex-align">
-          <h2>Create a room</h2>
-          <img src="../images/create_game.png" />
-          <p>Create a room and challenge your friends or players from around the world!</p>
-          <button id="create-game-button" class="online-button">Create</button>
-        </div>
-      </div>
-
-      <div class="online-rooms-container">
-        <div class="flex-col flex-align">
-          <h2>Join a room</h2>
-          <img src="../images/join_game.png" />
-          <p>Join a room and dive into the action!</p>
-          <input id="game-id" placeholder="Room Code"/>
-          <button id="join-button" class="online-button">Join</button>
-        </div>
-      </div>
-      
-    </div>
-
-  </body>
-  <script src="../scripts/join_script.js"></script>
+			<div class="online-rooms-container">
+				<div class="flex-col flex-align">
+					<h2>Join a room</h2>
+					<img src="../images/join_game.png" />
+					<p>Join a room and dive into the action!</p>
+					<input id="game-id" placeholder="Room Code" />
+					<button id="join-button" class="online-button">Join</button>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script src="../scripts/join_script.js"></script>
 </html>

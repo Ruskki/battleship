@@ -1,63 +1,76 @@
-.user-form{
-  color: black;
+.user-form {
+	color: black;
 }
 
-.flex-col{
+.flex-col {
 	display: flex;
 	flex-direction: column;
 }
 
-.flex-row{
+.flex-row {
 	display: flex;
 	flex-direction: row;
 }
 
-.online-rooms-container{
-  display: flex;
-  flex-basis: 50%;
-  align-content: center;
-  justify-content: center;
+.online-rooms-container {
+	display: flex;
+	flex-basis: 50%;
+	align-content: center;
+	justify-content: center;
 
-  background-color: rgba(31, 31, 209, 0.5);
-  margin: 10px;
-
+	background-color: rgba(31, 31, 209, 0.5);
+	margin: 10px;
 }
 
-.flex-justify{
-  display: flex;
-  justify-content: center;
+.flex-justify {
+	display: flex;
+	justify-content: center;
 }
 
-.flex-align{
-  display: flex;
-  align-items: center;
+.flex-align {
+	display: flex;
+	align-items: center;
 }
 
-.online-options-container{
-  height: 70vh;
+.online-options-container {
+	height: 70vh;
 }
 
-.online-button{
-  margin-top: auto;
-  margin-bottom: 20px;
-  
-  border: none;
-  background-color: rgb(31, 31, 209);
-  padding: 10px 40px;
-  border-radius: 10px;
-  
-  font-size: 18px;
+.online-button {
+	margin-top: auto;
+	margin-bottom: 20px;
+
+	border: none;
+	background-color: rgb(31, 31, 209);
+	padding: 10px 40px;
+	border-radius: 10px;
+
+	font-size: 18px;
 }
 
-.online-button:hover{
-  background-color: rgb(35, 35, 255);
-  transition: 0.1s;
+.online-button:hover {
+	background-color: rgb(35, 35, 255);
+	transition: 0.1s;
 }
 
-.online-button:active{
-  background-color: rgb(22, 22, 141);
+.online-button:active {
+	background-color: rgb(22, 22, 141);
 }
 
-.name-container{
-  padding: 20px;
+.name-container {
+	padding: 20px;
+}
+
+#online-indicator {
+	padding: 0px 25px;
+	font-size: 32px;
+	font-weight: 900;
+}
+
+.indicator-online {
+	color: lime;
+}
+
+.indicator-offline {
+	color: red;
 }
