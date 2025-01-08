@@ -5,26 +5,31 @@ const Boats = {
 		size: 5,
 		positions: [], // ["A,1", "A,2"] ...
 		placed: false,
+		vertical: undefined,
 	},
 	battleship: {
 		size: 4,
 		positions: [],
 		placed: false,
+		vertical: undefined,
 	},
 	submarine: {
 		size: 3,
 		positions: [],
 		placed: false,
+		vertical: undefined,
 	},
 	cruise: {
 		size: 3,
 		positions: [],
 		placed: false,
+		vertical: undefined,
 	},
 	destroyer: {
 		size: 2,
 		positions: [],
 		placed: false,
+		vertical: undefined,
 	},
 };
 
@@ -72,7 +77,9 @@ const drop = (e) => {
 		x.setAttribute("data-boat", `${shipId}-${isRotated ? "v" : "h"}${idx + 1}`);
 		Boats[shipId].positions.push(x.id);
 	});
+
 	Boats[shipId].placed = true;
+	Boats[shipId].vertical = isRotated;
 };
 
 gridPositions.forEach((position) => {
@@ -106,6 +113,8 @@ const url = new URL(url_string);
 const gameId = url.searchParams.get("gameId");
 const playerId = url.searchParams.get("playerId");
 
+document.getElementById(gameId).innerText = gameId;
+
 const websocket = new WebSocket("ws://192.168.4.237:8000");
 
 websocket.addEventListener("open", () => {
@@ -121,24 +130,31 @@ websocket.addEventListener("open", () => {
 	);
 });
 
-class Player {
-	constructor(id) {
-		this.id = id;
-	}
-}
-
 const players = [];
 
+const $currentPlayers = document.getElementById("current-players");
 const handleJoinGame = (joiningPlayerId) => {
-	if (joiningPlayerId === playerId) {
-		// Here goes code for main player joining
-	}
+	const $player = document.createElement("div");
+	$player.innerText = joiningPlayerId;
 
-	players.push(new Player(joiningPlayerId));
+	const player = {
+		id: joiningPlayerId,
+		element: $player,
+	};
+
+	if (joiningPlayerId === playerId) players.unshift(player);
+	else players.push(player);
+
+	$currentPlayers.appendChild($player);
 };
 
 const handleLeaveGame = (disconnectingPlayerId) => {
 	if (disconnectingPlayerId === playerId) return;
+
+	Object.values(players)
+		.find((x) => x.id === disconnectingPlayerId)
+		?.element.remove();
+
 	players.splice(
 		players.findIndex((x) => x.id === disconnectingPlayerId),
 		1,
@@ -154,12 +170,29 @@ websocket.addEventListener("message", (event) => {
 		return;
 	}
 
+	console.log(event.data);
+
 	if (ev.type === "instruction")
 		if (ev.instruction === "joinGame") handleJoinGame(ev.playerId);
-	if (ev.instruction === "playerDisconnect") handleLeaveGame();
+	if (ev.instruction === "playerDisconnect") handleLeaveGame(ev.playerId);
 });
 
 document.getElementById("play-button").addEventListener("click", () => {
 	if (Object.values(Boats).some((x) => !x.placed))
 		console.error("A boat is yet to be placed");
+
+	for (const shipId of Object.keys(Boats)) {
+		const [row, col] = Boats[shipId].positions[0].split(",");
+		websocket.send(
+			JSON.stringify({
+				type: "gameInstruction",
+				instruction: "placeBoat",
+				playerId: playerId,
+				boatName: shipId,
+				row: row,
+				col: col,
+				vertical: Boats[shipId].vertical,
+			}),
+		);
+	}
 });
