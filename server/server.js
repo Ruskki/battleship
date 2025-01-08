@@ -21,8 +21,6 @@ const Boats = {
 	},
 };
 
-const safeMode = false;
-
 const gameList = {};
 
 class Game {
@@ -157,8 +155,8 @@ class Game {
 		}
 
 		if (pos.hasShield) {
-			// TODO: Send user a Blocked message
-			// TODO: Send target a Blocked message
+			sendSuccess(user.websocket, "Your attack was blocked");
+			sendSuccess(target.websocket, "You blocked an attack");
 			return;
 		}
 
@@ -671,6 +669,21 @@ const handleJoinGame = (ws, gameId, playerId) => {
 		sendPlayerJoin(newPlayer.websocket, player.id);
 	});
 
+	Object.keys(newPlayer.boats)
+		.filter((boat) => newPlayer.boats[boat].placed)
+		.forEach((boat) => {
+			const boatPos = newPlayer.boats[boat].positions[0];
+			const [row, col, vertical] = [boatPos.row, boatPos.col, boatPos.vertical];
+			sendPlaceBoat(
+				newPlayer.websocket,
+				newPlayer.id,
+				boat,
+				row,
+				col,
+				vertical,
+			);
+		});
+
 	// Now if the player is ready and game hasnt started, send a IM READY message
 	if (!game.started) {
 		if (newPlayer.ready) sendPlayerReady(newPlayer.websocket, newPlayer.id);
@@ -854,7 +867,7 @@ const handleWebsocketDisconnect = (ws) => {
 	}
 };
 
-Deno.serve({ hostname: safeMode ? "localhost" : "0.0.0.0" }, (req) => {
+Deno.serve({ port: "8000", hostname: "0.0.0.0" }, (req) => {
 	if (req.headers.get("upgrade") != "websocket") {
 		return new Response(null, { status: 501 });
 	}

@@ -134,8 +134,7 @@ gridPositions.forEach((position) => {
 	position.addEventListener("mouseup", (e) => handleDrop(e, position));
 });
 
-const handleDrop = (e, pos) => {
-	e.preventDefault();
+const handleDrop = (_, pos) => {
 	if (!savedShipId) return;
 
 	const [row, col] = pos.id.split(",");
@@ -313,6 +312,12 @@ const handleGameStart = () => {
 	window.location.href = "./game.html";
 };
 
+const handlePlaceBoat = (boatName, row, col, vertical) => {
+	savedShipId = boatName;
+	isRotated = vertical;
+	handleDrop(undefined, document.getElementById(`${row},${col}`));
+};
+
 websocket.addEventListener("message", (event) => {
 	let ev;
 	try {
@@ -329,6 +334,8 @@ websocket.addEventListener("message", (event) => {
 		if (ev.instruction === "playerReady") handlePlayerReady(ev.playerId);
 		if (ev.instruction === "playerUnready") handlePlayerUnready(ev.playerId);
 		if (ev.instruction === "startGame") handleGameStart(ev.playerId);
+		if (ev.instruction === "placeBoat")
+			handlePlaceBoat(ev.boatName, ev.row, ev.col, ev.vertical);
 	}
 });
 

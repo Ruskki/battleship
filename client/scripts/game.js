@@ -91,7 +91,7 @@ class Game {
 		}
 
 		if (pos.shielded) {
-			console.log("lmao"); // TODO: Change message
+			console.log("Bloqueado");
 			return;
 		}
 
