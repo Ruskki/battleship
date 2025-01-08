@@ -1,10 +1,15 @@
 # Batalla Naval
 
+## Informacion
+
+Proyecto de Programacion Orientada a la Web
+Universidad Catolica Andres Bello
+
 ## Integrantes
 
-- Humberto Aleman 30142718
-- Cristina Carnevali 30395024
-- Jose Flores // TODO
+- Humberto Aleman 		30142718
+- Cristina Carnevali 	30395024
+- Jose Flores 				31317138
 
 ## Dependencias:
 
