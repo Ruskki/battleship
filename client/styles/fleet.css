@@ -26,6 +26,16 @@
 	border: none;
 	background-color: rgb(235, 235, 113);
 	margin: 10px;
+
+	transition: all 150ms cubic-bezier(0, 0.5, 0.5, 0.97);
+}
+
+.play-button:hover {
+	background-color: rgb(245, 245, 150);
+}
+
+.play-button:active {
+	background-color: rgb(245, 245, 250);
 }
 
 .leave-button {
@@ -33,6 +43,16 @@
 	border: none;
 	background-color: rgb(166, 24, 45);
 	margin: 10px;
+
+	transition: all 150ms cubic-bezier(0, 0.5, 0.5, 1);
+}
+
+.leave-button:hover {
+	background-color: rgb(186, 44, 65);
+}
+
+.leave-button:active {
+	background-color: rgb(206, 64, 85);
 }
 
 .rotate-button {
@@ -41,7 +61,7 @@
 	background-color: rgb(31, 31, 209);
 	margin: 10px;
 
-	transition: 300ms cubic-bezier(0, 0.5, 0.5, 0.97);
+	transition: 150ms cubic-bezier(0, 0.5, 0.5, 0.97);
 }
 
 .rotate-button:hover {
