@@ -14,20 +14,38 @@
 	align-items: center;
 	align-self: center;
 
-	background-color: rgba(31, 31, 209, 0.5);
+	background-color: rgba(3, 41, 235, 0.5);
 	color: white;
 
 	margin-left: auto;
+	margin-top: 20px;
 
 }
 
 .play-button {
+	color: black;
+	border: none;
+  background-color: rgb(235, 235, 113);	
+	margin: 10px
+}
+
+.leave-button {
 	color: white;
+	border: none;
+  background-color: rgb(166, 24, 45);	
+	margin: 10px
+}
+
+.rotate-button{
+	color: white;
+	border: none;
+  background-color: rgb(31, 31, 209);	
+	margin: 10px
 }
 
 .boat-grid{
 	display: inline-grid;
-	grid-template-columns: repeat(3, 1fr);
+	grid-template-columns: repeat(4, 1fr);
 	grid-template-rows: repeat(2, 1fr);
 	width: 100%;
 	height: 100%;
@@ -37,4 +55,21 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
+}
+
+.boat-buttons{
+
+	height: 100%;
+	width: 150px;
+	
+}
+
+
+.room-info{
+	width: 100%;
+	margin-top: 20px;
+	margin-left: 20px;
+	margin-right: 20px;
+
+	background-color:  rgb(31, 31, 209, 0.5);
 }
