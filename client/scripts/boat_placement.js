@@ -51,9 +51,7 @@ ships.forEach((ship) =>
 const drop = (e) => {
 	e.preventDefault();
 
-	const [row, col] = Object.values(
-		document.getElementById("board").getElementsByClassName("board-position"),
-	)
+	const [row, col] = Object.values(gridPositions)
 		.find((x) => x.className.includes("hovered"))
 		.id.split(",");
 	const shipId = savedShipId;
