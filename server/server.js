@@ -406,10 +406,12 @@ const handlePlaceBoat = (ws, playerId, boatName, row, col, vertical) => {
 	if (!game.started) {
 		player.placeBoat(Boats[boatName], row, col, vertical);
 		return sendSuccess(
+			ws,
 			`placed ${boatName} at ${row},${col} in player's ${playerId} board`,
 		);
 	}
 	sendError(
+		ws,
 		`game ${game.id} started, unable to place boat for player ${playerId}`,
 	);
 };
