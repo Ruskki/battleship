@@ -1,35 +1,58 @@
 const head_rows = "ABCDEFGHIJ".split("");
 const head_cols = "123456789".split("").concat("10");
+
+const logMessages = document.getElementById("log-messages");
+
+const showSuccess = (text) => {
+	logMessages.className = "success-message";
+	logMessages.innerText = text;
+};
+
+const showError = (text) => {
+	logMessages.className = "error-message";
+	logMessages.innerText = text;
+};
+
 const Boats = {
 	aircraft: {
 		size: 5,
 		positions: [], // ["A,1", "A,2"] ...
+		$positions: [], // The actual HTML elements
 		placed: false,
 		vertical: undefined,
+		$element: undefined,
 	},
 	battleship: {
 		size: 4,
 		positions: [],
+		$positions: [],
 		placed: false,
 		vertical: undefined,
+		$element: undefined,
 	},
 	submarine: {
 		size: 3,
 		positions: [],
+		$positions: [],
 		placed: false,
 		vertical: undefined,
+		$element: undefined,
 	},
 	cruise: {
 		size: 3,
 		positions: [],
+		$positions: [],
 		placed: false,
 		vertical: undefined,
+		$element: undefined,
 	},
 	destroyer: {
 		size: 2,
 		positions: [],
+		$positions: [],
 		placed: false,
 		vertical: undefined,
+		$element: undefined,
 	},
 };
 
@@ -39,22 +62,30 @@ const gridPositions = document.querySelectorAll(".board-position");
 let isRotated = false;
 document.getElementById("clickme").addEventListener("click", () => {
 	for (const ship of ships)
-		ship.style.transform = isRotated ? "rotate(0deg)" : "rotate(-90deg)";
+		ship.style.transform = isRotated ? "rotate(0deg)" : "rotate(90deg)";
 	isRotated = !isRotated;
 });
 
 let savedShipId = undefined;
-ships.forEach((ship) =>
-	ship.addEventListener("dragstart", (e) => (savedShipId = e.target.id)),
-);
+for (const ship of ships) {
+	ship.addEventListener("dragstart", (e) => (savedShipId = e.target.id));
+	Boats[ship.id].$element = ship;
+}
 
 const drop = (e, pos) => {
 	e.preventDefault();
+	if (!savedShipId) return;
 
 	const [row, col] = pos.id.split(",");
 	const shipId = savedShipId;
 
-	if (Boats[shipId].placed) return console.error(`Already placed ${shipId}`);
+	if (Boats[shipId].placed) {
+		Boats[shipId].$positions.forEach((x) => x.removeAttribute("data-boat"));
+		Boats[shipId].$positions = [];
+		Boats[shipId].positions = [];
+		Boats[shipId].placed = false;
+		Boats[shipId].$element.classList.remove("boat-placed");
+	}
 
 	const positions = getCosecutivePositions(
 		row,
@@ -64,22 +95,38 @@ const drop = (e, pos) => {
 	);
 
 	if (positions.some((x) => x.getAttribute("data-boat") !== null))
-		return console.error(`Boat ${shipId} clashes with another boat`);
+		return showError(`Boat ${shipId} clashes with another boat`);
 	if (positions.length !== Boats[shipId].size)
-		return console.error(`Boat ${shipId} doesn't fit here`);
+		return showError(`Boat ${shipId} doesn't fit here`);
 
 	positions.forEach((x, idx) => {
 		x.setAttribute("data-boat", `${shipId}-${isRotated ? "v" : "h"}${idx + 1}`);
+		x.className += " draggable-boat";
 		Boats[shipId].positions.push(x.id);
+		Boats[shipId].$positions.push(x);
+	});
+
+	positions.forEach((x) => {
+		x.addEventListener("mousedown", (e) => {
+			savedShipId = shipId;
+			document.body.style.cursor = "grabbing";
+		});
 	});
 
 	Boats[shipId].placed = true;
+	Boats[shipId].$element.className += " boat-placed";
 	Boats[shipId].vertical = isRotated;
+
+	savedShipId = undefined;
+	document.body.style.cursor = "default";
+
+	showSuccess(`Placed ${shipId} in position ${positions[0].id}`);
 };
 
 gridPositions.forEach((position) => {
 	position.addEventListener("dragover", (e) => e.preventDefault());
 	position.addEventListener("drop", (e) => drop(e, position));
+	position.addEventListener("mouseup", (e) => drop(e, position));
 });
 
 const getCosecutivePositions = (row, col, size, vertical) => {
@@ -113,8 +160,6 @@ document.getElementById("room-id").innerText = gameId;
 const websocket = new WebSocket("ws://192.168.4.237:8000");
 
 websocket.addEventListener("open", () => {
-	console.log("Connected to the server!");
-
 	websocket.send(
 		JSON.stringify({
 			type: "lobbyInstruction",
@@ -141,6 +186,8 @@ const handleJoinGame = (joiningPlayerId) => {
 	else players.push(player);
 
 	$currentPlayers.appendChild($player);
+
+	showSuccess(`Player ${joiningPlayerId} has joined the game!`);
 };
 
 const handleLeaveGame = (disconnectingPlayerId) => {

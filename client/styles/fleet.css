@@ -1,7 +1,7 @@
 .content {
 	display: flex;
 	justify-items: center;
-	height:90vh;
+	height: 90vh;
 }
 
 .boats-select {
@@ -19,31 +19,41 @@
 
 	margin-left: auto;
 	margin-top: 20px;
-
 }
 
 .play-button {
 	color: black;
 	border: none;
-  background-color: rgb(235, 235, 113);	
-	margin: 10px
+	background-color: rgb(235, 235, 113);
+	margin: 10px;
 }
 
 .leave-button {
 	color: white;
 	border: none;
-  background-color: rgb(166, 24, 45);	
-	margin: 10px
+	background-color: rgb(166, 24, 45);
+	margin: 10px;
 }
 
-.rotate-button{
+.rotate-button {
 	color: white;
 	border: none;
-  background-color: rgb(31, 31, 209);	
-	margin: 10px
+	background-color: rgb(31, 31, 209);
+	margin: 10px;
+
+	transition: 300ms cubic-bezier(0, 0.5, 0.5, 0.97);
 }
 
-.boat-grid{
+.rotate-button:hover {
+	background-color: rgb(40, 40, 220);
+	cursor: pointer;
+}
+
+.rotate-button:active {
+	background-color: rgb(220, 220, 220);
+}
+
+.boat-grid {
 	display: inline-grid;
 	grid-template-columns: repeat(4, 1fr);
 	grid-template-rows: repeat(2, 1fr);
@@ -51,29 +61,55 @@
 	height: 100%;
 }
 
-.boat-grid-item{
+.boat-grid-item {
 	display: flex;
 	justify-content: center;
 	align-items: center;
 }
 
-.boat-buttons{
-
-	height: 100%;
-	width: 150px;
-	
+.source {
+	transition: 300ms cubic-bezier(0, 0.5, 0.5, 0.97);
 }
 
+.source,
+.draggable-boat {
+	cursor: grab;
+}
 
-.room-info{
+.boat-buttons {
+	height: 100%;
+	width: 150px;
+}
+
+.room-info {
 	width: 100%;
 	margin-top: 20px;
 	margin-left: 20px;
 	margin-right: 20px;
 
-	background-color:  rgb(31, 31, 209, 0.5);
+	background-color: rgb(31, 31, 209, 0.5);
 }
 
-.room-id-container{
+.room-id-container {
 	font-size: 26px;
+}
+
+.boat-placed {
+	filter: grayscale(100%);
+}
+
+.error-message {
+	color: red;
+	font-weight: 900;
+	font-size: 18px;
+
+	padding: 10px 0px 0 20px;
+}
+
+.success-message {
+	color: lime;
+	font-weight: 900;
+	font-size: 18px;
+
+	padding: 10px 0px 0 20px;
 }

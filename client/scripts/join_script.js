@@ -31,6 +31,7 @@ websocket.addEventListener("message", (event) => {
 
 const createGame = () => {
 	const playerId = $playerIdInput.value;
+	if (!websocket.OPEN) return;
 	console.log(`Creating game for player $${playerId}`);
 	websocket.send(
 		JSON.stringify({
