@@ -236,18 +236,26 @@ const players = [];
 const $currentPlayers = document.getElementById("current-players");
 
 const handleJoinGame = (joiningPlayerId) => {
-	const $player = document.createElement("div");
-	$player.innerText = joiningPlayerId;
+	const $playerParentElement = document.createElement("div");
+	const $readyElement = document.createElement("span");
+	$readyElement.innerText = "❌";
+	const $player = document.createElement("span");
+	$player.innerText =
+		joiningPlayerId + (joiningPlayerId === playerId ? " <- YOU" : "");
 
 	const player = {
 		id: joiningPlayerId,
-		element: $player,
+		$element: $player,
+		$readyElement: $readyElement,
+		$playerParentElement: $playerParentElement,
 	};
 
 	if (joiningPlayerId === playerId) players.unshift(player);
 	else players.push(player);
 
-	$currentPlayers.appendChild($player);
+	$playerParentElement.appendChild($readyElement);
+	$playerParentElement.appendChild($player);
+	$currentPlayers.appendChild($playerParentElement);
 
 	showSuccess(`Player ${joiningPlayerId} has joined the game!`);
 };
@@ -255,9 +263,9 @@ const handleJoinGame = (joiningPlayerId) => {
 const handleLeaveGame = (disconnectingPlayerId) => {
 	if (disconnectingPlayerId === playerId) return;
 
-	Object.values(players)
+	players
 		.find((x) => x.id === disconnectingPlayerId)
-		?.element.remove();
+		?.$playerParentElement.remove();
 
 	players.splice(
 		players.findIndex((x) => x.id === disconnectingPlayerId),
@@ -273,12 +281,16 @@ const handlePlayerReady = (readyPlayerId) => {
 	if (readyPlayerId === playerId) isPlayerReady = true;
 
 	readyButton.innerText = "Unready";
+	const player = players.find((x) => x.id === readyPlayerId);
+	player.$readyElement.innerText = "✅";
 };
 
 const handlePlayerUnready = (readyPlayerId) => {
 	if (readyPlayerId === playerId) isPlayerReady = false;
 
 	readyButton.innerText = "Ready";
+	const player = players.find((x) => x.id === readyPlayerId);
+	player.$readyElement.innerText = "❌";
 };
 
 websocket.addEventListener("message", (event) => {
