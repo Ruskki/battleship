@@ -20,7 +20,8 @@
 			<h1 class="fleet-title">Place your fleet</h1>
 		</nav>
 		<content class="content">
-			<div id="board" class="board">
+			<div class="flex-col">
+				<div id="board" class="board">
 				<div class="board-null"></div>
 				<div class="board-header-vertical board-header-number">1</div>
 				<div class="board-header-vertical board-header-number">2</div>
@@ -152,54 +153,72 @@
 				<div class="board-position row-J col-8" id="J,8" boat="null"></div>
 				<div class="board-position row-J col-9" id="J,9" boat="null"></div>
 				<div class="board-position row-J col-10" id="J,10" boat="null"></div>
-			</div>
+				</div>
 
-			<div class="boats-select">
-				<input type="button" value="rotate" class="play-button" id="clickme" />
-				<img
-					src="../images/destroyer.png"
-					alt="Battleship Title"
-					width="50px"
-					class="source"
-					id="destroyer"
-					draggable="true"
-				/>
-				<img
-					src="../images/submarine.png"
-					alt="Battleship Title"
-					width="100px"
-					class="source"
-					id="submarine"
-					draggable="true"
-				/>
-				<img
-					src="../images/cruise.png"
-					alt="Battleship Title"
-					width="100px"
-					class="source"
-					id="cruise"
-					draggable="true"
-				/>
-				<img
-					src="../images/battleboat.png"
-					alt="Battleship Title"
-					width="100px"
-					class="source"
-					id="battleship"
-					draggable="true"
-				/>
-				<img
-					src="../images/aircraft.png"
-					alt="Battleship Title"
-					width="100px"
-					class="source"
-					id="aircraft"
-					draggable="true"
-				/>
+				<div class="boats-select">
+					<div class="boat-grid">
+						<input type="button" value="rotate" class="play-button boat-grid-item" id="clickme" />
+						<div class="boat-grid-item">
+							<img
+								src="../images/destroyer.png"
+								alt="Battleship Title"
+								width="50px"
+								class="source"
+								id="destroyer"
+								draggable="true"
+								class="boat-grid-item"
+							/>
+						</div>
+						<div class="boat-grid-item">
+							<img
+								src="../images/submarine.png"
+								alt="Battleship Title"
+								width="100px"
+								class="source boat-grid-item"
+								id="submarine"
+								draggable="true"
+								class="boat-grid-item"
+							/>
+						</div>
+						<div class="boat-grid-item">
+							<img
+								src="../images/cruise.png"
+								alt="Battleship Title"
+								width="100px"
+								class="source"
+								id="cruise"
+								draggable="true"
+								class="boat-grid-item"
+							/>
+						</div>
+						<div class="boat-grid-item">
+							<img
+								src="../images/battleboat.png"
+								alt="Battleship Title"
+								width="100px"
+								class="source boat-grid-item"
+								id="battleship"
+								draggable="true"
+								class="boat-grid-item"
+							/>
+						</div>
+						<div class="boat-grid-item">
+							<img
+								src="../images/aircraft.png"
+								alt="Battleship Title"
+								width="100px"
+								class="source boat-grid-item"
+								id="aircraft"
+								draggable="true"
+							/>
+						</div>
+					</div>
 				<div>
 					<a class="play-button" href="game.html">Play!</a>
 				</div>
+				</div>
 			</div>
+			
 			<div id="current-players"></div>
 		</content>
 		<script src="../scripts/boat_placement.js"></script>
