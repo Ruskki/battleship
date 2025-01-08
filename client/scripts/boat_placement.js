@@ -113,7 +113,7 @@ const url = new URL(url_string);
 const gameId = url.searchParams.get("gameId");
 const playerId = url.searchParams.get("playerId");
 
-document.getElementById(gameId).innerText = gameId;
+document.getElementById("room-id").innerText = gameId;
 
 const websocket = new WebSocket("ws://192.168.4.237:8000");
 
