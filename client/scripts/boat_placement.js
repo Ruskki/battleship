@@ -1,5 +1,8 @@
+const rotateButton = document.getElementById("clickme");
 const ships = document.querySelectorAll(".source");
 const gridPositions = document.querySelectorAll(".board-position");
+
+let isRotated = false;
 
 const Boats = {
 	aircraft: {
@@ -28,6 +31,20 @@ const Boats = {
 		placed: false,
 	},
 };
+
+rotateButton.addEventListener("click", rotateShips);
+
+function rotateShips() {
+	ships.forEach((ship) => {
+		if (isRotated == true) {
+			ship.style.transform = "rotate(0deg)";
+		} else {
+			ship.style.transform = "rotate(-90deg)";
+		}
+	});
+	isRotated = !isRotated;
+	return isRotated;
+}
 
 ships.forEach((ship) => {
 	ship.addEventListener("dragstart", dragStart);
@@ -69,7 +86,7 @@ function dragOver(e) {
 	e.preventDefault();
 }
 
-function drop(e) {
+function drop(e, isRotated) {
 	e.preventDefault();
 
 	const [row, col] = Object.values(
@@ -81,8 +98,12 @@ function drop(e) {
 
 	if (Boats[shipId].placed) return console.error(`Already placed ${shipId}`);
 
-	// TODO: Get vertical variable from html
-	const vertical = false;
+	if (isRotated == true) {
+		vertical = true;
+	} else {
+		vertical = false;
+	}
+
 	const positions = getCosecutivePositions(
 		row,
 		col,
@@ -100,25 +121,3 @@ function drop(e) {
 	});
 	Boats[shipId].placed = true;
 }
-
-const url_string = window.location.href;
-const url = new URL(url_string);
-const websocket = new WebSocket("ws://192.168.4.237:8000");
-
-const joinGame = () => {
-	const playerId = url.searchParams.get("playerId");
-	const gameId = url.searchParams.get("gameId");
-
-	websocket.send(
-		JSON.stringify({
-			type: "lobbyInstruction",
-			instruction: "joinGame",
-			gameId: gameId,
-			playerId: playerId,
-		}),
-	);
-};
-
-websocket.addEventListener("open", () => {
-	joinGame();
-});
