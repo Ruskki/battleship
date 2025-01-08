@@ -535,12 +535,14 @@ const sendPlaceMine = (ws, row, col) => {
 };
 
 const sendPlayerJoin = (ws, playerId) => {
+	const game = Game.getGameFromPlayerId(playerId);
 	ws.send(
 		JSON.stringify({
 			type: "instruction",
 			instruction: "joinGame",
-			gameId: Game.getGameFromPlayerId(playerId).id,
+			gameId: game.id,
 			playerId: playerId,
+			gameHostId: game.players[0].id,
 		}),
 	);
 };
@@ -571,6 +573,15 @@ const sendPlayerUnready = (ws, playerId) => {
 			type: "instruction",
 			instruction: "playerUnready",
 			playerId: playerId,
+		}),
+	);
+};
+
+const sendStartGame = (ws) => {
+	ws.send(
+		JSON.stringify({
+			type: "instruction",
+			instruction: "startGame",
 		}),
 	);
 };
@@ -659,6 +670,16 @@ const handleJoinGame = (ws, gameId, playerId) => {
 		sendPlayerJoin(player.websocket, newPlayer.id);
 		sendPlayerJoin(newPlayer.websocket, player.id);
 	});
+
+	// Now if the player is ready and game hasnt started, send a IM READY message
+	if (!game.started) {
+		if (newPlayer.ready) sendPlayerReady(newPlayer.websocket, newPlayer.id);
+		game.getPlayers().forEach((player) => {
+			if (player === newPlayer) return;
+			if (newPlayer.ready) sendPlayerReady(player.websocket, newPlayer.id);
+			if (player.ready) sendPlayerReady(newPlayer.websocket, player.id);
+		});
+	}
 };
 
 const handleLeaveGame = (ws, gameId, playerId) => {
@@ -707,7 +728,9 @@ const handleDisconnectGame = (ws, gameId, playerId) => {
 	// Tell the players the player is being disconnected
 	game
 		.getPlayers()
-		.filter((x) => x.id !== playerId)
+		.filter(
+			(player) => player.id !== playerId && player.websocket !== undefined,
+		)
 		.forEach((player) => sendPlayerDisconnect(player.websocket, playerId));
 
 	// Then disconnect the player
@@ -756,7 +779,13 @@ const handleStartGame = (ws, gameId, playerId) => {
 	if (!game.isPlayerHost(playerId))
 		return sendError(ws, `${playerId} is not host of ${gameId}`);
 
+	if (game.players.some((player) => !player.ready))
+		return sendError(ws, `cannot start ${gameId} not everyone is ready`);
+
 	game.startGame();
+
+	game.players.forEach((player) => sendStartGame(player.websocket));
+
 	sendSuccess(ws, `${playerId} has started ${gameId}`);
 };
 
@@ -840,7 +869,7 @@ Deno.serve({ hostname: safeMode ? "localhost" : "0.0.0.0" }, (req) => {
 		try {
 			ev = JSON.parse(event.data);
 		} catch {
-			console.log("data not valid json\ndata:" + event.data);
+			return console.log("data not valid json\ndata:" + event.data);
 		}
 
 		if (ev.type === "gameInstruction") {

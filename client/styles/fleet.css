@@ -21,7 +21,7 @@
 	margin-top: 20px;
 }
 
-.play-button {
+.ready-button {
 	color: black;
 	border: none;
 	background-color: rgb(235, 235, 113);
@@ -30,12 +30,29 @@
 	transition: all 150ms cubic-bezier(0, 0.5, 0.5, 0.97);
 }
 
-.play-button:hover {
+.ready-button:hover {
 	background-color: rgb(245, 245, 150);
 }
 
-.play-button:active {
+.ready-button:active {
 	background-color: rgb(245, 245, 250);
+}
+
+.play-button {
+	color: black;
+	border: none;
+	background-color: rgb(113, 235, 113);
+	margin: 10px;
+
+	transition: all 150ms cubic-bezier(0, 0.5, 0.5, 0.97);
+}
+
+.play-button:hover {
+	background-color: rgb(150, 245, 150);
+}
+
+.play-button:active {
+	background-color: rgb(245, 250, 245);
 }
 
 .leave-button {

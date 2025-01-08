@@ -210,6 +210,7 @@ const url_string = window.location.href;
 const url = new URL(url_string);
 
 const gameId = url.searchParams.get("gameId");
+let hostId = undefined;
 const playerId = url.searchParams.get("playerId");
 
 document.getElementById("room-id").innerText = gameId;
@@ -235,16 +236,19 @@ websocket.addEventListener("close", () => {
 const players = [];
 const $currentPlayers = document.getElementById("current-players");
 
-const handleJoinGame = (joiningPlayerId) => {
+const handleJoinGame = (joiningPlayerId, _hostId) => {
+	if (!hostId && _hostId) hostId = _hostId; // Asign hostId if it's unasigned and _hostId is valid
+
 	const $playerParentElement = document.createElement("div");
 	const $readyElement = document.createElement("span");
 	$readyElement.innerText = "❌";
 	const $player = document.createElement("span");
 	$player.innerText =
-		joiningPlayerId + (joiningPlayerId === playerId ? " <- YOU" : "");
+		(hostId === joiningPlayerId ? "👑" : "") + joiningPlayerId;
 
 	const player = {
 		id: joiningPlayerId,
+		ready: false,
 		$element: $player,
 		$readyElement: $readyElement,
 		$playerParentElement: $playerParentElement,
@@ -263,6 +267,8 @@ const handleJoinGame = (joiningPlayerId) => {
 const handleLeaveGame = (disconnectingPlayerId) => {
 	if (disconnectingPlayerId === playerId) return;
 
+	handlePlayerUnready(disconnectingPlayerId);
+
 	players
 		.find((x) => x.id === disconnectingPlayerId)
 		?.$playerParentElement.remove();
@@ -275,22 +281,36 @@ const handleLeaveGame = (disconnectingPlayerId) => {
 	showError(`Player ${disconnectingPlayerId} has left the game`);
 };
 
-const readyButton = document.getElementById("play-button");
+const readyButton = document.getElementById("ready-button");
 
 const handlePlayerReady = (readyPlayerId) => {
-	if (readyPlayerId === playerId) isPlayerReady = true;
-
-	readyButton.innerText = "Unready";
+	if (readyPlayerId === playerId) {
+		isPlayerReady = true;
+		readyButton.innerText = "Unready";
+	}
 	const player = players.find((x) => x.id === readyPlayerId);
+	player.ready = true;
 	player.$readyElement.innerText = "✅";
+
+	if (playerId !== hostId || players.some((player) => !player.ready)) return;
+	readyButtonToPlayButton();
 };
 
 const handlePlayerUnready = (readyPlayerId) => {
-	if (readyPlayerId === playerId) isPlayerReady = false;
-
-	readyButton.innerText = "Ready";
+	if (readyPlayerId === playerId) {
+		isPlayerReady = false;
+		readyButton.innerText = "Ready";
+	}
 	const player = players.find((x) => x.id === readyPlayerId);
+	player.ready = false;
 	player.$readyElement.innerText = "❌";
+
+	console.log(players);
+	if (readyButton.innerText === "Start Game") readyButtonOriginalState();
+};
+
+const handleGameStart = () => {
+	window.location.href = "./game.html";
 };
 
 websocket.addEventListener("message", (event) => {
@@ -303,14 +323,26 @@ websocket.addEventListener("message", (event) => {
 	}
 
 	if (ev.type === "instruction") {
-		if (ev.instruction === "joinGame") handleJoinGame(ev.playerId);
+		if (ev.instruction === "joinGame")
+			handleJoinGame(ev.playerId, ev.gameHostId);
 		if (ev.instruction === "playerDisconnect") handleLeaveGame(ev.playerId);
 		if (ev.instruction === "playerReady") handlePlayerReady(ev.playerId);
 		if (ev.instruction === "playerUnready") handlePlayerUnready(ev.playerId);
+		if (ev.instruction === "startGame") handleGameStart(ev.playerId);
 	}
 });
 
-document.getElementById("play-button").addEventListener("click", () => {
+const startGameListener = () => {
+	const startMsg = JSON.stringify({
+		type: "lobbyInstruction",
+		instruction: "startGame",
+		playerId: playerId,
+		gameId: gameId,
+	});
+	websocket.send(startMsg);
+};
+
+const readyUpListener = () => {
 	if (isPlayerReady) {
 		const msg = JSON.stringify({
 			type: "lobbyInstruction",
@@ -338,10 +370,28 @@ document.getElementById("play-button").addEventListener("click", () => {
 		websocket.send(msg);
 	}
 
-	const msg = JSON.stringify({
+	const readyMsg = JSON.stringify({
 		type: "lobbyInstruction",
 		instruction: "playerReady",
 		playerId: playerId,
 	});
-	websocket.send(msg);
-});
+	websocket.send(readyMsg);
+};
+
+const readyButtonOriginalState = () => {
+	readyButton.className = "ready-button";
+	readyButton.innerText = "Unready";
+
+	readyButton.addEventListener("click", readyUpListener);
+	readyButton.removeEventListener("click", startGameListener);
+};
+
+const readyButtonToPlayButton = () => {
+	readyButton.className = "play-button";
+	readyButton.innerText = "Start Game";
+
+	readyButton.removeEventListener("click", readyUpListener);
+	readyButton.addEventListener("click", startGameListener);
+};
+
+readyButton.addEventListener("click", readyUpListener);
