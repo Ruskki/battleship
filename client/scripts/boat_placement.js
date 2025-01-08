@@ -1,16 +1,18 @@
-const head_rows = "ABCDEFGHIJ".split("");
-const head_cols = "123456789".split("").concat("10");
+const headRows = "ABCDEFGHIJ".split("");
+const headCols = "123456789".split("").concat("10");
 
-const logMessages = document.getElementById("log-messages");
+// Log messages
+
+const $logMessagesEl = document.getElementById("log-messages");
 
 const showSuccess = (text) => {
-	logMessages.className = "success-message";
-	logMessages.innerText = text;
+	$logMessagesEl.className = "success-message";
+	$logMessagesEl.innerText = text;
 };
 
 const showError = (text) => {
-	logMessages.className = "error-message";
-	logMessages.innerText = text;
+	$logMessagesEl.className = "error-message";
+	$logMessagesEl.innerText = text;
 };
 
 const Boats = {
@@ -57,53 +59,62 @@ const Boats = {
 };
 
 const ships = document.querySelectorAll(".source");
-const gridPositions = document.querySelectorAll(".board-position");
-
 let isRotated = false;
-document.getElementById("clickme").addEventListener("click", () => {
+let savedShipId = undefined;
+
+const rotateShips = () => {
 	for (const ship of ships)
 		ship.style.transform = isRotated ? "rotate(0deg)" : "rotate(90deg)";
 	isRotated = !isRotated;
+};
+
+const addDragListenerToShips = () => {
+	for (const ship of ships) {
+		ship.addEventListener("dragstart", (e) => (savedShipId = e.target.id));
+		Boats[ship.id].$element = ship;
+	}
+};
+
+document
+	.getElementById("rotate-button")
+	.addEventListener("click", () => rotateShips());
+
+const gridPositions = document.querySelectorAll(".board-position");
+
+gridPositions.forEach((position) => {
+	position.addEventListener("dragover", (e) => e.preventDefault());
+	position.addEventListener("drop", (e) => handleDrop(e, position));
+	position.addEventListener("mouseup", (e) => handleDrop(e, position));
 });
 
-let savedShipId = undefined;
-for (const ship of ships) {
-	ship.addEventListener("dragstart", (e) => (savedShipId = e.target.id));
-	Boats[ship.id].$element = ship;
-}
-
-const drop = (e, pos) => {
+const handleDrop = (e, pos) => {
 	e.preventDefault();
 	if (!savedShipId) return;
 
 	const [row, col] = pos.id.split(",");
 	const shipId = savedShipId;
+	const ship = Boats[shipId];
 
-	if (Boats[shipId].placed) {
-		Boats[shipId].$positions.forEach((x) => x.removeAttribute("data-boat"));
-		Boats[shipId].$positions = [];
-		Boats[shipId].positions = [];
-		Boats[shipId].placed = false;
-		Boats[shipId].$element.classList.remove("boat-placed");
+	if (ship.placed) {
+		ship.$positions.forEach((x) => x.removeAttribute("data-boat"));
+		ship.$positions = [];
+		ship.positions = [];
+		ship.placed = false;
+		ship.$element.classList.remove("boat-placed");
 	}
 
-	const positions = getCosecutivePositions(
-		row,
-		col,
-		Boats[shipId].size,
-		isRotated,
-	);
+	const positions = getCosecutivePositions(row, col, ship.size, isRotated);
 
 	if (positions.some((x) => x.getAttribute("data-boat") !== null))
 		return showError(`Boat ${shipId} clashes with another boat`);
-	if (positions.length !== Boats[shipId].size)
+	if (positions.length !== ship.size)
 		return showError(`Boat ${shipId} doesn't fit here`);
 
 	positions.forEach((x, idx) => {
 		x.setAttribute("data-boat", `${shipId}-${isRotated ? "v" : "h"}${idx + 1}`);
 		x.className += " draggable-boat";
-		Boats[shipId].positions.push(x.id);
-		Boats[shipId].$positions.push(x);
+		ship.positions.push(x.id);
+		ship.$positions.push(x);
 	});
 
 	positions.forEach((x) => {
@@ -113,9 +124,9 @@ const drop = (e, pos) => {
 		});
 	});
 
-	Boats[shipId].placed = true;
-	Boats[shipId].$element.className += " boat-placed";
-	Boats[shipId].vertical = isRotated;
+	ship.placed = true;
+	ship.$element.className += " boat-placed";
+	ship.vertical = isRotated;
 
 	savedShipId = undefined;
 	document.body.style.cursor = "default";
@@ -123,20 +134,14 @@ const drop = (e, pos) => {
 	showSuccess(`Placed ${shipId} in position ${positions[0].id}`);
 };
 
-gridPositions.forEach((position) => {
-	position.addEventListener("dragover", (e) => e.preventDefault());
-	position.addEventListener("drop", (e) => drop(e, position));
-	position.addEventListener("mouseup", (e) => drop(e, position));
-});
-
 const getCosecutivePositions = (row, col, size, vertical) => {
-	const rows = head_rows.slice(
-		head_rows.indexOf(row),
-		head_rows.indexOf(row) + size,
+	const rows = headRows.slice(
+		headRows.indexOf(row),
+		headRows.indexOf(row) + size,
 	);
-	const cols = head_cols.slice(
-		head_cols.indexOf(col),
-		head_cols.indexOf(col) + size,
+	const cols = headCols.slice(
+		headCols.indexOf(col),
+		headCols.indexOf(col) + size,
 	);
 
 	const res = [];
@@ -149,6 +154,10 @@ const getCosecutivePositions = (row, col, size, vertical) => {
 	return res.filter((x) => x);
 };
 
+///////////////////////////////////////////////////////
+////////////////////// Websocket //////////////////////
+///////////////////////////////////////////////////////
+
 const url_string = window.location.href;
 const url = new URL(url_string);
 
@@ -160,19 +169,24 @@ document.getElementById("room-id").innerText = gameId;
 const websocket = new WebSocket("ws://192.168.4.237:8000");
 
 websocket.addEventListener("open", () => {
-	websocket.send(
-		JSON.stringify({
-			type: "lobbyInstruction",
-			instruction: "joinGame",
-			gameId: gameId,
-			playerId: playerId,
-		}),
+	const msg = JSON.stringify({
+		type: "lobbyInstruction",
+		instruction: "joinGame",
+		gameId: gameId,
+		playerId: playerId,
+	});
+	websocket.send(msg);
+});
+
+websocket.addEventListener("close", () => {
+	showError(
+		"You've been disconnected from the match! Check your internet connection",
 	);
 });
 
 const players = [];
-
 const $currentPlayers = document.getElementById("current-players");
+
 const handleJoinGame = (joiningPlayerId) => {
 	const $player = document.createElement("div");
 	$player.innerText = joiningPlayerId;
@@ -201,6 +215,8 @@ const handleLeaveGame = (disconnectingPlayerId) => {
 		players.findIndex((x) => x.id === disconnectingPlayerId),
 		1,
 	);
+
+	showError(`Player ${disconnectingPlayerId} has left the game`);
 };
 
 websocket.addEventListener("message", (event) => {
@@ -212,11 +228,10 @@ websocket.addEventListener("message", (event) => {
 		return;
 	}
 
-	console.log(event.data);
-
-	if (ev.type === "instruction")
+	if (ev.type === "instruction") {
 		if (ev.instruction === "joinGame") handleJoinGame(ev.playerId);
-	if (ev.instruction === "playerDisconnect") handleLeaveGame(ev.playerId);
+		if (ev.instruction === "playerDisconnect") handleLeaveGame(ev.playerId);
+	}
 });
 
 document.getElementById("play-button").addEventListener("click", () => {
@@ -225,16 +240,15 @@ document.getElementById("play-button").addEventListener("click", () => {
 
 	for (const shipId of Object.keys(Boats)) {
 		const [row, col] = Boats[shipId].positions[0].split(",");
-		websocket.send(
-			JSON.stringify({
-				type: "gameInstruction",
-				instruction: "placeBoat",
-				playerId: playerId,
-				boatName: shipId,
-				row: row,
-				col: col,
-				vertical: Boats[shipId].vertical,
-			}),
-		);
+		const msg = JSON.stringify({
+			type: "gameInstruction",
+			instruction: "placeBoat",
+			playerId: playerId,
+			boatName: shipId,
+			row: row,
+			col: col,
+			vertical: Boats[shipId].vertical,
+		});
+		websocket.send(msg);
 	}
 });
