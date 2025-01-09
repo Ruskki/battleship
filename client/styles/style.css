@@ -3,6 +3,7 @@
 @import url("./fleet.css");
 @import url("./game.css");
 @import url("./rules.css");
+@import url("./winner.css");
 @import url("./main-page.css");
 @import url("./online.css");
 @import url("./helper-classes.css");
@@ -55,6 +56,12 @@ body#online-page {
 	--body-padding: 10px 0 0 0;
 }
 
+body#winner-page {
+	--body-background-size: 50%;
+
+	--body-margin: 60px 0 0 0;
+	--body-padding: 10px 0 0 0;
+}
 
 body#game-page {
 	--body-background-size: 50%;
