@@ -151,7 +151,6 @@ class Game {
 
 	removeInactive = () => {
 		const idx = this.players.findIndex((x) => x.websocket === undefined);
-		console.log("THE INDEX IS: " + idx);
 		if (idx === -1) return false;
 
 		console.log("THIS PLAYER IS INACTIVE " + idx + " REMOVING THEM");
@@ -565,7 +564,6 @@ const sendPlaceMine = (ws, row, col) => {
 
 const sendPlayerJoin = (ws, playerId) => {
 	const game = Game.getGameFromPlayerId(playerId);
-	console.log("THE PLAYER IS JOINING: ", game.id);
 	ws.send(
 		JSON.stringify({
 			type: "instruction",
@@ -694,10 +692,14 @@ const handleJoinGame = (ws, gameId, playerId) => {
 		return sendError(ws, `Cannot join game ${gameId} because it's full`);
 
 	const otherGame = Game.getGameFromPlayerId(playerId);
-	console.log("THE THING: ", otherGame?.id);
-	console.log("THE THING: ", game.id);
 	if (otherGame && otherGame.id !== game.id)
 		otherGame.removePlayer(playerId, true);
+
+	const player = game.getPlayerFromId(playerId);
+	if (player?.websocket)
+		return sendError(
+			`player ${playerId} already connected from somewhere else`,
+		);
 
 	const newPlayer = game.addNewPlayer(ws, playerId);
 
