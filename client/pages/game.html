@@ -15,7 +15,7 @@
 	</head>
 	<body id="game-page">
 		<h2>Game</h2>
-		<a href="fleet.html"> TEMPORARY EXIT LINK </a>
+		<div class="log-container" id="log-messages"></div>
 		<section id="game">
 			<div class="game-boards">
 				<div>
@@ -33,7 +33,8 @@
 			</div>
 
 			<div class="game-power-ups" id="game-power-ups">
-				<p>Power Points: <span id="player-points"></span></p>
+				<div>Power Points: <span id="player-points">0</span></div>
+				<div>Turn of: <span id="turn-of-player">undefined</span></div>
 				<div class="targetted-information">
 					<span class="targetted-row">ROW <span id="target-row"></span></span>
 					<span class="targetted-col">COL <span id="target-col"></span></span>

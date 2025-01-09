@@ -45,6 +45,11 @@ const handleDestroyPosition = (playerId, row, col) => {
 	player.board.getPosition(row, col).destroy();
 };
 
+const handleTurnOfPlayer = (turnOfId) => {
+	$turnOfPlayer.innerText = turnOfId;
+	showInformation(`It's the turn of ${turnOfId}`);
+};
+
 const handleRevealPosition = (
 	playerId,
 	boatName,
@@ -54,6 +59,7 @@ const handleRevealPosition = (
 	vertical,
 	hasMine,
 	hasShield,
+	isDestroyed,
 ) => {
 	const player = Game.players[playerId];
 	if (!player) return;
@@ -61,20 +67,34 @@ const handleRevealPosition = (
 	if (!pos) return;
 
 	if (boatName !== "") pos.placeBoat(boatName, slot, vertical);
+	if (isDestroyed) pos.destroy();
 	if (hasMine) pos.plantMine();
 	if (hasShield) pos.shield();
 	pos.makeVisible();
 };
 
+const handleUpdatePoints = (newPoints) => {
+	$pointsEl.innerText = newPoints;
+};
+
 const handleJoinGame = (playerId) => {
 	const player = Game.players[playerId];
-	if (player) return (player.connected = true);
+	if (player) {
+		player.connected = true;
+		player.$playerName.innerText = playerId;
+	}
+
+	showSuccess(`${playerId} has connected!`);
 	Game.addPlayer(playerId);
 };
 
 const handleDisconnectGame = (playerId) => {
 	const player = Game.players[playerId];
-	if (player) return (player.connected = false);
+	if (!player) return;
+
+	player.connected = false;
+	player.$playerName.innerText = playerId + " DISCONNECTED";
+	showError(`${playerId} has disconnected!`);
 };
 
 const handlePlaceBoat = (playerId, boatName, row, col, vertical) => {
@@ -93,11 +113,14 @@ websocket.addEventListener("message", (event) => {
 		return;
 	}
 
-	if (ev.type === "error") console.log(ev.text);
+	if (ev.type === "success") return showSuccess(ev.text);
+
+	if (ev.type === "error") return showError(ev.text);
 
 	if (ev.type === "gameInstruction") {
 		if (ev.instruction === "destroyPosition")
 			handleDestroyPosition(ev.playerId, ev.row, ev.col);
+		if (ev.instruction === "turnOfPlayer") handleTurnOfPlayer(ev.playerId);
 		if (ev.instruction === "revealPosition")
 			handleRevealPosition(
 				ev.playerId,
@@ -108,7 +131,10 @@ websocket.addEventListener("message", (event) => {
 				ev.vertical,
 				ev.hasMine,
 				ev.hasShield,
+				ev.isDestroyed,
 			);
+
+		if (ev.instruction === "pointsUpdate") handleUpdatePoints(ev.points);
 	}
 
 	if (ev.type === "lobbyInstruction") {
@@ -126,7 +152,25 @@ let selectedRow = "A";
 let selectedCol = "1";
 let selectedPlayer = undefined;
 
+const $turnOfPlayer = document.getElementById("turn-of-player");
 const $pointsEl = document.getElementById("player-points");
+
+const $logMessagesEl = document.getElementById("log-messages");
+
+const showSuccess = (text) => {
+	$logMessagesEl.className = "success-message";
+	$logMessagesEl.innerText = text;
+};
+
+const showInformation = (text) => {
+	$logMessagesEl.className = "information-message";
+	$logMessagesEl.innerText = text;
+};
+
+const showError = (text) => {
+	$logMessagesEl.className = "error-message";
+	$logMessagesEl.innerText = text;
+};
 
 document.getElementById("attack-button").addEventListener("click", () => {
 	Game.webAttackPlayer(playerId, selectedPlayer, selectedRow, selectedCol);
@@ -548,6 +592,11 @@ class Player {
 
 	constructor(id, $divContainer, mainPlayer = false) {
 		this.id = id;
+
+		this.$playerName = document.createElement("h2");
+		this.$playerName.innerText = id;
+		$divContainer.appendChild(this.$playerName);
+
 		this.board = new Board($divContainer, this);
 		this.points = 999999999;
 		this.connected = true;

@@ -315,6 +315,8 @@ websocket.addEventListener("message", (event) => {
 
 	if (ev.type === "error") showError(ev.text);
 
+	if (ev.type === "gameInstruction") handleGameStart();
+
 	if (ev.type === "lobbyInstruction") {
 		if (ev.instruction === "joinGame") handleJoinGame(ev.playerId);
 		if (ev.instruction === "playerDisconnect") handleLeaveGame(ev.playerId);
