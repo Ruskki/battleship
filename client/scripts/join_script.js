@@ -1,7 +1,7 @@
 const $playerIdInput = document.getElementById("player-id");
 const $gameIdInput = document.getElementById("game-id");
 
-const websocket = new WebSocket("ws://192.168.4.237:8000");
+const websocket = new WebSocket("ws://127.0.0.1:8000");
 
 const onlineIndicator = document.getElementById("online-indicator");
 

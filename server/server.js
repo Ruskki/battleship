@@ -46,9 +46,9 @@ class Game {
 
 	players = [];
 
-	getPlayer = (id) => this.players.find((x) => x?.id === id);
+	getPlayer = (id) => this.players.find((p) => p.id === id);
 
-	getPlayers = () => this.players.filter((x) => x);
+	getPlayers = () => this.players.filter((p) => p);
 
 	getOnlinePlayers = () => this.players.filter((x) => x?.websocket);
 
@@ -178,9 +178,37 @@ class Game {
 		this.started = true;
 	};
 
-	attackPlayer = (slotFrom, slotTo, row, col) => {
-		const user = this.players[slotFrom];
-		const target = this.players[slotTo];
+	destroyPosition = (id, row, col) => {
+		const target = this.getPlayer(id);
+		const pos = target.getPosition(row, col);
+
+		pos.destroy();
+		for (const player of this.getOnlinePlayers())
+			sendDestroyPosition(player.websocket, target.id, pos.row, pos.col);
+		pos.revealPositionToAll(target.id, pos.row, pos.col);
+	};
+
+	revealPositionToAll = (id, row, col) => {
+		const player = this.getPlayer(id);
+		const pos = player.getPosition(row, col);
+
+		for (const p of this.getOnlinePlayers())
+			sendRevealBoatPosition(
+				p.websocket,
+				target.id,
+				pos.boat,
+				pos.slot,
+				pos.row,
+				pos.col,
+				pos.vertical,
+				pos.hasMine,
+				pos.hasShield,
+			);
+	};
+
+	attackPlayer = (idFrom, idTo, row, col) => {
+		const user = this.getPlayer(idFrom);
+		const target = this.getPlayer(idTo);
 
 		const pos = target.board.getPosition(row, col);
 
@@ -196,8 +224,15 @@ class Game {
 			return;
 		}
 
-		pos.destroy();
+		if (pos.destroyed) {
+			sendError(target.websocket, "This position is already destroyed!");
+			return;
+		}
+
+		this.destroyPosition(target.id, pos.row, pos.col);
+
 		if (pos.boat === undefined) return console.log("Miss!");
+		console.log("HIT");
 
 		user.points += 5;
 	};
@@ -218,12 +253,6 @@ class BoardPosition {
 
 	destroy = () => {
 		this.destroyed = true;
-		sendDestroyPosition(
-			this.owner.websocket,
-			this.owner.playerSlot,
-			this.row,
-			this.col,
-		);
 	};
 
 	heal = () => {
@@ -464,44 +493,57 @@ const handlePlaceBoat = (ws, playerId, boatName, row, col, vertical) => {
 	);
 };
 
-// Placing Shield - Sent to every player
-// instruction: 'destroyPosition'
-// playerSlot: number 0 - 3
-// row: string A - J
-// col: string 1 - 10
-const sendDestroyPosition = (ws, playerSlot, row, col) => {
-	const game = Game.getGameFromWebsocket(ws);
-	assert(game !== undefined);
-	game.players.forEach((player) => {
-		player.websocket.send(
-			JSON.stringify({
-				type: "instruction",
-				instruction: "destroyPosition",
-				playerSlot: playerSlot,
-				row: row,
-				col: col,
-			}),
-		);
+const sendDestroyPosition = (ws, playerId, row, col) => {
+	const msg = JSON.stringify({
+		type: "gameInstruction",
+		instruction: "destroyPosition",
+		playerId: playerId,
+		row: row,
+		col: col,
 	});
+	ws.send(msg);
 };
 
-// Handles destruction of a boat
-// attackerId: string Player who's beating ass
-// victimId: string Player who got their ass beat
-// boatName: Boats[string]
-// row: string A - J
-// col: string 0 - 10
-const handleDestroyPosition = (attackerId, victimId, row, col) => {
-	const game = Game.getGameFromPlayer(attackerId);
-	const attacker = game.getPlayer(attackerId);
-	const victim = game.getGameFromPlayerId(victimId);
+const sendRevealBoatPosition = (
+	ws,
+	playerId,
+	boatName,
+	slot,
+	row,
+	col,
+	vertical,
+	hasMine,
+	hasShield,
+) => {
+	const msg = JSON.stringify({
+		type: "gameInstruction",
+		instruction: "revealPosition",
+		playerId: playerId,
+		boatName: boatName,
+		slot: slot,
+		row: row,
+		col: col,
+		vertical: vertical,
+		hasMine: hasMine,
+		hasShield: hasShield,
+	});
+	ws.send(msg);
+};
 
-	game.attackPlayer(
-		game.players.indexOf(attacker),
-		game.players.indexOf(victim),
-		row,
-		col,
-	);
+const handleAttackPosition = (ws, userId, targetId, row, col) => {
+	if (!isValidString(userId)) sendError(ws, "ERROR: userId is empty");
+	if (!Game.isPlayerInGame(userId))
+		sendError(ws, `ERROR: ${userId} is not in a game`);
+
+	if (!isValidString(targetId)) console.log("ERROR: targetId is empty");
+	if (!Game.isPlayerInGame(targetId))
+		sendError(ws, `ERROR: ${targetId} is not in a game`);
+
+	const game = Game.getGameFromPlayer(userId);
+	if (!game.getPlayer(targetId))
+		sendError(ws, `ERROR: ${targetId} is not in the same game as ${userId}`);
+
+	game.attackPlayer(userId, targetId, row, col);
 };
 
 // Placing Shield - Sent to every player
@@ -518,27 +560,6 @@ const sendHealPosition = (ws, slot, row, col) => {
 				type: "instruction",
 				instruction: "destroyPosition",
 				playerSlot: playerSlot,
-				row: row,
-				col: col,
-			}),
-		);
-	});
-};
-
-// Placing Shield - Sent to every player
-// instruction: 'revealPosition'
-// playerId: number 0 - 3
-// row: string A - J
-// col: string 1 - 10
-const sendRevealPosition = (ws, playerId, row, col) => {
-	const game = Game.getGameFromWebsocket(ws);
-	console.assert(game !== undefined);
-	game.players.forEach((player) => {
-		player.websocket.send(
-			JSON.stringify({
-				type: "instruction",
-				instruction: "revealPosition",
-				playerId: playerId,
 				row: row,
 				col: col,
 			}),
@@ -711,15 +732,14 @@ const handleJoinGame = (ws, gameId, playerId) => {
 
 	const game = gameList[gameId];
 	if (!game) return sendError(ws, `no game ${gameId} found`);
-	if (game.started)
-		// TODO: Code for reconecting started games
+	if (game.started && !game.getPlayer(playerId))
 		return sendError(
 			ws,
 			`Cannot join game ${gameId} because it already started`,
 		);
 
 	if (
-		game.getPlayer(playerId) === undefined && // The player is NOT here
+		!game.getPlayer(playerId) && // The player is NOT here
 		game.getPlayerCount() === 4 && // We reached the max
 		!game.removeInactive() // We cannot remove someone
 	)
@@ -767,10 +787,10 @@ const handleJoinGame = (ws, gameId, playerId) => {
 		// If other's are ready, notify new guy
 		for (const player of game.getOnlinePlayers().filter((p) => p.ready))
 			sendPlayerReady(newPlayer.websocket, player.id);
-	}
 
-	if (game.canStart()) sendGameReady(game.getHost().websocket);
-	else sendGameUnready(game.getHost().websocket);
+		if (game.canStart()) sendGameReady(game.getHost().websocket);
+		else sendGameUnready(game.getHost().websocket);
+	}
 
 	sendNewHost(newPlayer.websocket, game.getHost().id);
 
@@ -968,6 +988,8 @@ Deno.serve({ port: "8000", hostname: "0.0.0.0" }, (req) => {
 		}
 
 		if (ev.type === "gameInstruction") {
+			if (ev.instruction === "attackPosition")
+				handleAttackPosition(ws, ev.userId, ev.targetId, ev.row, ev.col);
 		}
 
 		if (ev.type === "lobbyInstruction") {
