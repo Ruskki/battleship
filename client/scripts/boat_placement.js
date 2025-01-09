@@ -233,87 +233,76 @@ websocket.addEventListener("close", () => {
 });
 
 const players = [];
+
+const isPlayerHere = (id) => players.some((p) => p.id === id);
+
 const $currentPlayers = document.getElementById("current-players");
 
-const handleJoinGame = (joiningPlayerId, _hostId) => {
-	hostId = _hostId;
-	players.forEach((player) => {
-		if (player.id !== hostId) player.$element.innerText = player.id;
-		else player.$element.innerText = "👑 " + player.id;
-	});
-
-	if (players.some((player) => player.id === joiningPlayerId)) return;
-
-	if (players.some((player) => !player.ready)) readyButtonOriginalState();
-
-	const $playerParentElement = document.createElement("div");
-	const $readyElement = document.createElement("span");
-	$readyElement.innerText = "❌";
-	const $player = document.createElement("span");
-	$player.innerText =
-		(hostId === joiningPlayerId ? "👑 " : "") + joiningPlayerId;
+const handleJoinGame = (joiningPlayerId, newHost) => {
+	if (isPlayerHere(joiningPlayerId)) return;
 
 	const player = {
 		id: joiningPlayerId,
-		ready: false,
-		$element: $player,
-		$readyElement: $readyElement,
-		$playerParentElement: $playerParentElement,
+		$element: document.createElement("span"),
+		$readyElement: document.createElement("span"),
+		$playerParentElement: document.createElement("div"),
 	};
 
-	if (joiningPlayerId === playerId) players.unshift(player);
-	else players.push(player);
+	player.$readyElement.innerText = "❌";
+	player.$element.innerText = joiningPlayerId;
+	player.$playerParentElement.appendChild(player.$readyElement);
+	player.$playerParentElement.appendChild(player.$element);
+	$currentPlayers.appendChild(player.$playerParentElement);
 
-	$playerParentElement.appendChild($readyElement);
-	$playerParentElement.appendChild($player);
-	$currentPlayers.appendChild($playerParentElement);
+	players.push(player);
 
 	showSuccess(`Player ${joiningPlayerId} has joined the game!`);
 };
 
+const handleNewHost = (newHost) => {
+	hostId = newHost;
+	for (const player of players)
+		if (player.id !== hostId) player.$element.innerText = player.id;
+		else player.$element.innerText = "👑 " + player.id;
+};
+
 const handleLeaveGame = (disconnectingPlayerId) => {
-	if (disconnectingPlayerId === playerId) return;
-
-	handlePlayerUnready(disconnectingPlayerId);
-
-	this.players
-		.filter((x) => x.id === disconnectingPlayerId)
-		.forEach((x) => x.$playerParentElement.remove());
-
-	players.splice(
-		players.findIndex((x) => x.id === disconnectingPlayerId),
-		1,
-	);
+	const player = players.find((x) => x.id === disconnectingPlayerId);
+	player?.$playerParentElement.remove();
+	players.splice(players.indexOf(player), 1);
 
 	showError(`Player ${disconnectingPlayerId} has left the game`);
 };
 
-const readyButton = document.getElementById("ready-button");
+const $readyButton = document.getElementById("ready-button");
 
 const handlePlayerReady = (readyPlayerId) => {
+	console.log(readyPlayerId);
 	if (readyPlayerId === playerId) {
 		isPlayerReady = true;
-		readyButton.innerText = "Unready";
+		$readyButton.innerText = "Unready";
 	}
-	const player = players.find((x) => x.id === readyPlayerId);
-	player.ready = true;
-	player.$readyElement.innerText = "✅";
 
-	if (playerId !== hostId || players.some((player) => !player.ready)) return;
+	const player = players.find((x) => x.id === readyPlayerId);
+	player.$readyElement.innerText = "✅";
+};
+
+const handleGameReady = () => {
 	readyButtonToPlayButton();
 };
 
 const handlePlayerUnready = (readyPlayerId) => {
 	if (readyPlayerId === playerId) {
 		isPlayerReady = false;
-		readyButton.innerText = "Ready";
+		$readyButton.innerText = "Ready";
 	}
 	const player = players.find((x) => x.id === readyPlayerId);
 	player.ready = false;
 	player.$readyElement.innerText = "❌";
+};
 
-	console.log(players);
-	if (readyButton.innerText === "Start Game") readyButtonOriginalState();
+const handleGameUnready = () => {
+	readyButtonOriginalState();
 };
 
 const handleGameStart = () => {
@@ -337,12 +326,18 @@ websocket.addEventListener("message", (event) => {
 
 	if (ev.type === "error") showError(ev.text);
 
-	if (ev.type === "instruction") {
-		if (ev.instruction === "joinGame")
-			handleJoinGame(ev.playerId, ev.gameHostId);
+	if (ev.type === "lobbyInstruction") {
+		if (ev.instruction === "joinGame") handleJoinGame(ev.playerId);
+		if (ev.instruction === "newHost") handleNewHost(ev.playerId);
+
 		if (ev.instruction === "playerDisconnect") handleLeaveGame(ev.playerId);
+
 		if (ev.instruction === "playerReady") handlePlayerReady(ev.playerId);
+		if (ev.instruction === "gameReady") handleGameReady(ev.playerId);
+
 		if (ev.instruction === "playerUnready") handlePlayerUnready(ev.playerId);
+		if (ev.instruction === "gameUnready") handleGameUnready(ev.playerId);
+
 		if (ev.instruction === "startGame") handleGameStart(ev.playerId);
 		if (ev.instruction === "placeBoat")
 			handlePlaceBoat(ev.boatName, ev.row, ev.col, ev.vertical);
@@ -376,7 +371,7 @@ const readyUpListener = () => {
 	for (const shipId of Object.keys(Boats)) {
 		const [row, col] = Boats[shipId].positions[0].split(",");
 		const msg = JSON.stringify({
-			type: "gameInstruction",
+			type: "lobbyInstruction",
 			instruction: "placeBoat",
 			playerId: playerId,
 			boatName: shipId,
@@ -396,19 +391,19 @@ const readyUpListener = () => {
 };
 
 const readyButtonOriginalState = () => {
-	readyButton.className = "ready-button";
-	readyButton.innerText = isPlayerReady ? "Unready" : "Ready";
+	$readyButton.className = "ready-button";
+	$readyButton.innerText = isPlayerReady ? "Unready" : "Ready";
 
-	readyButton.addEventListener("click", readyUpListener);
-	readyButton.removeEventListener("click", startGameListener);
+	$readyButton.addEventListener("click", readyUpListener);
+	$readyButton.removeEventListener("click", startGameListener);
 };
 
 const readyButtonToPlayButton = () => {
-	readyButton.className = "play-button";
-	readyButton.innerText = "Start Game";
+	$readyButton.className = "play-button";
+	$readyButton.innerText = "Start Game";
 
-	readyButton.removeEventListener("click", readyUpListener);
-	readyButton.addEventListener("click", startGameListener);
+	$readyButton.removeEventListener("click", readyUpListener);
+	$readyButton.addEventListener("click", startGameListener);
 };
 
-readyButton.addEventListener("click", readyUpListener);
+$readyButton.addEventListener("click", readyUpListener);

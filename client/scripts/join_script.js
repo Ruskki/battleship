@@ -5,28 +5,48 @@ const websocket = new WebSocket("ws://192.168.4.237:8000");
 
 const onlineIndicator = document.getElementById("online-indicator");
 
-document.getElementById("create-game-button").addEventListener("click", () => {
-	createGame();
-});
+const creteGameButton = () => {
+	if (!websocket.OPEN) return;
+	const msg = JSON.stringify({
+		type: "lobbyInstruction",
+		instruction: "createGame",
+		playerId: $playerIdInput.value,
+	});
+	websocket.send(msg);
+};
 
-document.getElementById("join-button").addEventListener("click", () => {
-	joinGame();
-});
+document
+	.getElementById("create-game-button")
+	.addEventListener("click", creteGameButton);
+
+const joinGameButton = () => {
+	if (!websocket.OPEN) return;
+	const msg = JSON.stringify({
+		type: "lobbyInstruction",
+		instruction: "joinGame",
+		gameId: $gameIdInput.value,
+		playerId: $playerIdInput.value,
+	});
+	websocket.send(msg);
+};
+
+document
+	.getElementById("join-button")
+	.addEventListener("click", joinGameButton);
 
 const feedbackMessages = document.getElementById("feedback-messages");
-
 let feedbackTimeout = undefined;
+
+const clearFeedbackTimeout = () => {
+	clearTimeout(feedbackTimeout);
+	feedbackTimeout = undefined;
+};
 
 const showError = (text) => {
 	feedbackMessages.className = "error-message";
 	feedbackMessages.innerText = text;
-	if (feedbackTimeout) {
-		clearTimeout(feedbackTimeout);
-		feedbackTimeout = undefined;
-	}
-	feedbackTimeout = setTimeout(() => {
-		feedbackMessages.innerText = "";
-	}, 3000);
+	if (feedbackTimeout) clearFeedbackTimeout(feedbackTimeout);
+	feedbackTimeout = setTimeout(() => (feedbackMessages.innerText = ""), 3000);
 };
 
 websocket.addEventListener("open", () => {
@@ -49,31 +69,6 @@ websocket.addEventListener("message", (event) => {
 	}
 
 	if (ev.type === "error") showError(ev.text);
-	if (ev.type === "instruction" && ev.instruction === "joinGame")
+	if (ev.type === "lobbyInstruction" && ev.instruction === "joinGame")
 		window.location.href = `./fleet.html?playerId=${ev.playerId}&gameId=${ev.gameId}`;
 });
-
-const createGame = () => {
-	const playerId = $playerIdInput.value;
-	if (!websocket.OPEN) return;
-	websocket.send(
-		JSON.stringify({
-			type: "lobbyInstruction",
-			instruction: "createGame",
-			playerId: playerId,
-		}),
-	);
-};
-
-const joinGame = () => {
-	const playerId = $playerIdInput.value;
-	const gameId = $gameIdInput.value;
-	websocket.send(
-		JSON.stringify({
-			type: "lobbyInstruction",
-			instruction: "joinGame",
-			gameId: gameId,
-			playerId: playerId,
-		}),
-	);
-};

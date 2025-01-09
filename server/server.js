@@ -21,16 +21,22 @@ const Boats = {
 	},
 };
 
+const isValidString = (str) => (str ?? "").length;
+
 const gameList = {};
 
 class Game {
 	static websocketsInGames = new Set();
 
-	static playerIdsInGames = new Set();
+	static isWebsocketInGame = (ws) => Game.websocketsInGames.has(ws);
 
-	static getGameFromPlayerId = (pId) =>
+	static playersInGames = new Set();
+
+	static isPlayerInGame = (id) => Game.playersInGames.has(id);
+
+	static getGameFromPlayer = (pId) =>
 		Object.values(gameList).find((game) =>
-			game.players.some((player) => player?.id === pId),
+			game.players.some((player) => player.id === pId),
 		);
 
 	static getGameFromWebsocket = (ws) =>
@@ -40,47 +46,61 @@ class Game {
 
 	players = [];
 
+	getPlayer = (id) => this.players.find((x) => x?.id === id);
+
 	getPlayers = () => this.players.filter((x) => x);
 
-	getIndexFromId = (id) => this.players.findIndex((x) => x.id === id);
+	getOnlinePlayers = () => this.players.filter((x) => x?.websocket);
 
-	getPlayerCount = () => Object.values(this.players).filter((x) => x).length;
+	isPlayerOnline = (id) => this.getPlayer(id).websocket;
+
+	getPlayerIndex = (id) => this.players.findIndex((x) => x.id === id);
+
+	getPlayerCount = () => this.players.length;
+
 	turnNumber = 0;
+
 	id = "";
 
 	started = false;
+
+	// If someone isn't ready OR cannot Ready, don't start
+	canStart = () =>
+		this.getOnlinePlayers().length > 1 &&
+		!this.getOnlinePlayers().some((p) => !p.ready || !p.canReady());
 
 	self_destroy_timer = undefined;
 
 	getFreeSlot = () => this.players.length;
 
-	getPlayerFromId = (id) =>
-		Object.values(this.players).find((x) => x?.id === id);
+	isPlayerHost = (id) => this.players.indexOf(this.getPlayer(id)) === 0;
 
-	isPlayerHost = (id) => this.players.indexOf(this.getPlayerFromId(id)) === 0;
+	getHost = () => this.players[0];
 
 	canPlayerJoin = (id) => {
-		const player = this.getPlayerFromId(id);
+		const player = this.getPlayer(id);
 		if (player === undefined) return this.players.length < 4;
 		return player.websocket === undefined;
 	};
 
 	addNewPlayer = (ws, id) => {
-		const player = this.getPlayerFromId(id);
-		if (player !== undefined) return this.reconnectPlayer(ws, player);
+		const player = this.getPlayer(id);
+		if (player) return this.reconnectPlayer(ws, player);
 
 		const idx = this.getFreeSlot();
 		if (idx >= 4) return;
 
 		if (this.self_destroy_timer !== undefined) {
-			console.log(`${id} rejoined game ${this.id}, stopping self destruction`);
+			console.log(
+				`INFO: ${id} joined game ${this.id}, stopping self destruction`,
+			);
 			clearTimeout(this.self_destroy_timer);
 			this.self_destroy_timer = undefined;
 		}
 
 		this.players[idx] = new Player(id, idx, ws);
 		Game.websocketsInGames.add(ws);
-		Game.playerIdsInGames.add(id);
+		Game.playersInGames.add(id);
 
 		return this.players[idx];
 	};
@@ -91,7 +111,7 @@ class Game {
 
 		if (this.self_destroy_timer !== undefined) {
 			console.log(
-				`${player.id} rejoined game ${this.id}, stopping self destruction`,
+				`INFO: ${player.id} reconnected game ${this.id}, stopping self destruction`,
 			);
 			clearTimeout(this.self_destroy_timer);
 			this.self_destroy_timer = undefined;
@@ -101,19 +121,13 @@ class Game {
 	};
 
 	disconnectPlayer = (id) => {
-		const idx = this.getIndexFromId(id);
+		const idx = this.getPlayerIndex(id);
 		if (idx === -1) return;
 
-		Game.websocketsInGames.delete(this.players[idx]?.websocket);
+		Game.websocketsInGames.delete(this.players[idx].websocket);
 		this.players[idx].websocket = undefined;
 
-		if (idx === 0) {
-			this.players.push(this.players.shift());
-			for (const player of this.players.slice(0, this.players.length - 2)) {
-				if (player.websocket === undefined) continue;
-				sendPlayerJoin(player.websocket, player.id);
-			}
-		}
+		if (idx === 0) this.players.push(this.players.shift());
 
 		if (!this.players.some((x) => x.websocket)) {
 			console.log(`INFO: Everyone dc'd from ${this.id}, self deleting...`);
@@ -125,28 +139,20 @@ class Game {
 	};
 
 	removePlayer = (id, forced = false) => {
-		const idx = this.getIndexFromId(id);
+		const idx = this.getPlayerIndex(id);
 		if (idx === -1) return;
 
-		Game.websocketsInGames.delete(this.players[idx].websocket);
-		Game.playerIdsInGames.delete(id);
+		const player = this.getPlayer(id);
+		Game.websocketsInGames.delete(player?.websocket);
+		Game.playersInGames.delete(player?.id);
+		this.players.splice(this.getPlayerIndex(id), 1);
 
-		if (!this.started || forced) this.players.splice(idx, 1);
-		if (idx === 0) {
-			this.players.push(this.players.shift());
-			for (const player of this.players.slice(0, this.players.length - 2)) {
-				if (player.websocket === undefined) continue;
-				sendPlayerJoin(player.websocket, player.id);
-			}
-		}
-
-		if (!this.started && this.getPlayerCount() === 0) {
-			console.log("This game is empty, time to self destroy");
-			this.self_destroy_timer = setTimeout(() => {
-				console.log(`Time's up! deleting ${this.id}`);
-				this.deleteGame();
-			}, 5000);
-		}
+		if (this.getPlayerCount() !== 0) return;
+		console.log(`INFO: game ${this.id} is empty, selfdestroying...`);
+		this.self_destroy_timer = setTimeout(() => {
+			console.log(`INFO: permanently deleting ${this.id}`);
+			this.deleteGame();
+		}, 5000);
 	};
 
 	removeInactive = () => {
@@ -161,7 +167,7 @@ class Game {
 	deleteGame = () => {
 		this.players.forEach((i, idx) => {
 			Game.websocketsInGames.delete(this.players[idx]?.websocket);
-			Game.playerIdsInGames.delete(this.players[idx].id);
+			Game.playersInGames.delete(this.players[idx].id);
 			delete this.players[idx];
 		});
 
@@ -334,9 +340,15 @@ class Boat {
 	getSize = () => this.positions.length;
 	wasHealed = false;
 	placed = false;
+
+	constructor(name) {
+		this.name = name;
+	}
 }
 
 class Player {
+	getBoats = () => Object.values(this.boats);
+
 	placeBoat = (boatEnum, row, col, vertical) => {
 		const positions = vertical
 			? this.board.getSliceVertical(row, col, boatEnum.size)
@@ -365,7 +377,7 @@ class Player {
 		for (let pos of Object.values(this.board.positions)) {
 			// Refresh boats
 			if (pos.boat && pos.boatSlot === 0)
-				for (let player of Game.getGameFromPlayerId(this.id).players)
+				for (let player of Game.getGameFromPlayer(this.id).players)
 					sendPlaceBoat(
 						player.websocket,
 						this.id,
@@ -377,10 +389,14 @@ class Player {
 
 			// Refresh revealed slots
 			if (pos.revealed)
-				for (let player of Game.getGameFromPlayerId(this.id).players)
+				for (let player of Game.getGameFromPlayer(this.id).players)
 					sendRevealPosition(player.websocket, this.id, pos.row, pos.col);
 		}
 	};
+
+	canReady = () => !this.getBoats().some((b) => !b.placed);
+
+	readyUp = () => (this.ready = true);
 
 	constructor(id, playerSlot, websocket) {
 		this.id = id;
@@ -391,11 +407,11 @@ class Player {
 		this.ready = false;
 
 		this.boats = {
-			destroyer: new Boat(),
-			submarine: new Boat(),
-			cruise: new Boat(),
-			battleship: new Boat(),
-			aircraft: new Boat(),
+			destroyer: new Boat("destroyer"),
+			submarine: new Boat("submarine"),
+			cruise: new Boat("cruise"),
+			battleship: new Boat("battleship"),
+			aircraft: new Boat("aircraft"),
 		};
 	}
 }
@@ -412,7 +428,7 @@ class Player {
 const sendPlaceBoat = (ws, playerId, boatName, row, col, vertical) => {
 	ws.send(
 		JSON.stringify({
-			type: "instruction",
+			type: "lobbyInstruction",
 			instruction: "placeBoat",
 			playerId: playerId,
 			boatName: boatName,
@@ -429,11 +445,11 @@ const sendPlaceBoat = (ws, playerId, boatName, row, col, vertical) => {
 // row: string A - J
 // col: string 0 - 10
 const handlePlaceBoat = (ws, playerId, boatName, row, col, vertical) => {
-	const game = Game.getGameFromPlayerId(playerId);
+	const game = Game.getGameFromPlayer(playerId);
 	if (game === undefined)
 		return sendError(ws, `player ${playerId} is not currently in a game`);
 
-	const player = game.getPlayerFromId(playerId);
+	const player = game.getPlayer(playerId);
 
 	if (!game.started) {
 		player.placeBoat(Boats[boatName], row, col, vertical);
@@ -476,8 +492,8 @@ const sendDestroyPosition = (ws, playerSlot, row, col) => {
 // row: string A - J
 // col: string 0 - 10
 const handleDestroyPosition = (attackerId, victimId, row, col) => {
-	const game = Game.getGameFromPlayerId(attackerId);
-	const attacker = game.getPlayerFromId(attackerId);
+	const game = Game.getGameFromPlayer(attackerId);
+	const attacker = game.getPlayer(attackerId);
 	const victim = game.getGameFromPlayerId(victimId);
 
 	game.attackPlayer(
@@ -563,59 +579,80 @@ const sendPlaceMine = (ws, row, col) => {
 };
 
 const sendPlayerJoin = (ws, playerId) => {
-	const game = Game.getGameFromPlayerId(playerId);
-	ws.send(
-		JSON.stringify({
-			type: "instruction",
-			instruction: "joinGame",
-			gameId: game.id,
-			playerId: playerId,
-			gameHostId: game.players[0].id,
-		}),
-	);
+	const game = Game.getGameFromPlayer(playerId);
+	const msg = JSON.stringify({
+		type: "lobbyInstruction",
+		instruction: "joinGame",
+		gameId: game.id,
+		playerId: playerId,
+	});
+	ws.send(msg);
 };
 
 const sendPlayerDisconnect = (ws, playerId) => {
 	ws.send(
 		JSON.stringify({
-			type: "instruction",
+			type: "lobbyInstruction",
 			instruction: "playerDisconnect",
 			playerId: playerId,
 		}),
 	);
 };
 
+const sendNewHost = (ws, playerId) => {
+	const msg = JSON.stringify({
+		type: "lobbyInstruction",
+		instruction: "newHost",
+		playerId: playerId,
+	});
+	ws.send(msg);
+};
+
 const sendPlayerReady = (ws, playerId) => {
-	ws.send(
-		JSON.stringify({
-			type: "instruction",
-			instruction: "playerReady",
-			playerId: playerId,
-		}),
-	);
+	const msg = JSON.stringify({
+		type: "lobbyInstruction",
+		instruction: "playerReady",
+		playerId: playerId,
+	});
+	ws.send(msg);
+};
+
+const sendGameReady = (ws, playerId) => {
+	const msg = JSON.stringify({
+		type: "lobbyInstruction",
+		instruction: "gameReady",
+	});
+	ws.send(msg);
 };
 
 const sendPlayerUnready = (ws, playerId) => {
-	ws.send(
-		JSON.stringify({
-			type: "instruction",
-			instruction: "playerUnready",
-			playerId: playerId,
-		}),
-	);
+	const msg = JSON.stringify({
+		type: "lobbyInstruction",
+		instruction: "playerUnready",
+		playerId: playerId,
+	});
+	ws.send(msg);
+};
+
+const sendGameUnready = (ws, playerId) => {
+	const msg = JSON.stringify({
+		type: "lobbyInstruction",
+		instruction: "gameUnready",
+	});
+	ws.send(msg);
 };
 
 const sendStartGame = (ws) => {
 	ws.send(
 		JSON.stringify({
-			type: "instruction",
+			type: "lobbyInstruction",
 			instruction: "startGame",
 		}),
 	);
 };
 
 const sendSuccess = (ws, text) => {
-	console.log(`SUCCESS: ${text}`);
+	console.log(`SUCCESS: ${text}\n`);
 	ws.send(
 		JSON.stringify({
 			type: "success",
@@ -625,7 +662,7 @@ const sendSuccess = (ws, text) => {
 };
 
 const sendError = (ws, text) => {
-	console.log(`ERROR: ${text}`);
+	console.log(`ERROR: ${text}\n`);
 	ws.send(
 		JSON.stringify({
 			type: "error",
@@ -641,24 +678,23 @@ const generateGameId = () => {
 	return id;
 };
 
-const handleCreateGame = (ws, playerId, gameId = undefined) => {
+const handleCreateGame = (ws, playerId, gameId = "") => {
 	console.log(`INFO: The player ${playerId} is creating a game... ${gameId}`);
 
 	console.assert(ws, "Websocket somehow not here");
 
-	if (playerId === undefined) return sendError(ws, "playerId is undefined");
-	if (playerId === "") return sendError(ws, "playerId is empty");
-	if (Game.playerIdsInGames.has(playerId)) {
-		const game = Game.getGameFromPlayerId(playerId);
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (Game.isPlayerInGame(playerId)) {
+		const game = Game.getGameFromPlayer(playerId);
 		handleLeaveGame(ws, game.id, playerId);
 	}
 
-	if ((gameId !== undefined || gameId === "") && gameList[gameId] !== undefined)
+	if (isValidString(gameId) && gameList[gameId] !== undefined)
 		return sendError(ws, `game with id ${gameId} already exists`);
 
 	const newGame = new Game();
-	if (gameId === undefined || gameId === "") newGame.id = generateGameId();
-	else newGame.id = gameId;
+	if (isValidString(gameId)) newGame.id = gameId;
+	else newGame.id = generateGameId();
 
 	gameList[newGame.id] = newGame;
 	sendSuccess(ws, `created game with id of ${newGame.id}`);
@@ -668,76 +704,75 @@ const handleCreateGame = (ws, playerId, gameId = undefined) => {
 
 const handleJoinGame = (ws, gameId, playerId) => {
 	console.log(`INFO: The player ${playerId} is joining ${gameId}`);
-
 	console.assert(ws, "Websocket somehow not here");
 
-	if (playerId === undefined) return sendError(ws, "playerId is undefined");
-	if (playerId === "") return sendError(ws, "playerId is empty");
-
-	if (gameId === undefined) return sendError(ws, "gameId is undefined");
-	if (gameId === "") return sendError(ws, "gameId is empty");
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
 
 	const game = gameList[gameId];
-	if (game === undefined) return sendError(ws, `no game ${gameId} found`);
+	if (!game) return sendError(ws, `no game ${gameId} found`);
 	if (game.started)
+		// TODO: Code for reconecting started games
 		return sendError(
 			ws,
 			`Cannot join game ${gameId} because it already started`,
 		);
+
 	if (
-		game.getPlayerFromId(playerId) === undefined && // The player is NOT here
+		game.getPlayer(playerId) === undefined && // The player is NOT here
 		game.getPlayerCount() === 4 && // We reached the max
-		!game.removeInactive() // We can remove someone
+		!game.removeInactive() // We cannot remove someone
 	)
 		return sendError(ws, `Cannot join game ${gameId} because it's full`);
 
-	const otherGame = Game.getGameFromPlayerId(playerId);
-	if (otherGame && otherGame.id !== game.id)
-		otherGame.removePlayer(playerId, true);
+	// If the player is on a game different than the one he's trying to join
+	// remove him from that other game
+	const otherGame = Game.getGameFromPlayer(playerId);
+	if (otherGame && otherGame !== game) otherGame.removePlayer(playerId, true);
 
-	const player = game.getPlayerFromId(playerId);
-	if (player?.websocket)
+	// If the player is on the game he's trying to join
+	// check his online status
+	const player = game.getPlayer(playerId);
+	if (player && game.isPlayerOnline(player.id))
 		return sendError(
 			ws,
-			`player ${playerId} already connected from somewhere else`,
+			`player ${playerId} already connected to ${gameId} from somewhere else`,
 		);
 
+	// All checks passed, add player to this new game
 	const newPlayer = game.addNewPlayer(ws, playerId);
 
-	// Send notification to the player that's joining, that he joined
-	// Send a notification to every player about this player joining
-	// Send a notification to the new player about every other player that's in the game
-	sendPlayerJoin(newPlayer.websocket, newPlayer.id);
-	game.getPlayers().forEach((player) => {
-		if (player === newPlayer || player.websocket === undefined) return;
-		sendPlayerJoin(player.websocket, newPlayer.id);
-		sendPlayerJoin(newPlayer.websocket, player.id);
-	});
-
-	Object.keys(newPlayer.boats)
-		.filter((boat) => newPlayer.boats[boat].placed)
-		.forEach((boat) => {
-			const boatPos = newPlayer.boats[boat].positions[0];
-			const [row, col, vertical] = [boatPos.row, boatPos.col, boatPos.vertical];
-			sendPlaceBoat(
-				newPlayer.websocket,
-				newPlayer.id,
-				boat,
-				row,
-				col,
-				vertical,
-			);
-		});
-
-	// Now if the player is ready and game hasnt started, send a IM READY message
-	if (!game.started) {
-		if (newPlayer.ready) sendPlayerReady(newPlayer.websocket, newPlayer.id);
-		game.getPlayers().forEach((player) => {
-			if (player === newPlayer || player.websocket === undefined) return;
-			if (newPlayer.ready) sendPlayerReady(player.websocket, newPlayer.id);
-			if (player.ready) sendPlayerReady(newPlayer.websocket, player.id);
-		});
+	sendPlayerJoin(newPlayer.websocket, newPlayer.id); // Hey me, I joined
+	for (const player of game.getOnlinePlayers().filter((x) => x !== newPlayer)) {
+		sendPlayerJoin(player.websocket, newPlayer.id); // Hey old, new joined
+		sendPlayerJoin(newPlayer.websocket, player.id); // Hey new, old is here
 	}
+
+	for (const boat of newPlayer.getBoats().filter((x) => x.placed))
+		sendPlaceBoat(
+			newPlayer.websocket,
+			newPlayer.id,
+			boat.name,
+			boat.positions[0].row,
+			boat.positions[0].col,
+			boat.positions[0].vertical,
+		);
+
+	if (!game.started) {
+		// If new player is ready, notify everyone that he is
+		if (newPlayer.ready)
+			for (const player of game.getOnlinePlayers())
+				sendPlayerReady(player.websocket, newPlayer.id);
+
+		// If other's are ready, notify new guy
+		for (const player of game.getOnlinePlayers().filter((p) => p.ready))
+			sendPlayerReady(newPlayer.websocket, player.id);
+	}
+
+	if (game.canStart()) sendGameReady(game.getHost().websocket);
+	else sendGameUnready(game.getHost().websocket);
+
+	sendNewHost(newPlayer.websocket, game.getHost().id);
 
 	sendSuccess(ws, `player ${playerId} joined game ${gameId}`);
 };
@@ -746,25 +781,26 @@ const handleLeaveGame = (ws, gameId, playerId) => {
 	console.log(`INFO: The player ${playerId} is leaving ${gameId}`);
 	console.assert(ws, "ERROR: websocket somehow not here");
 
-	if (playerId === undefined) return sendError(ws, "playerId is undefined");
-	if (playerId === "") return sendError(ws, "playerId is empty");
-	if (!Game.playerIdsInGames.has(playerId))
+	// Validate playerId & gameId
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
+
+	// Check if player is in a game
+	if (!Game.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
-	if (gameId === undefined) return sendError(ws, "gameId is undefined");
-	if (gameId === "") return sendError(ws, "gameId is empty");
-
 	const game = gameList[gameId];
-	if (game === undefined) return sendError(ws, `no game ${gameId} found`);
-	if (game.getPlayerFromId(playerId) === undefined)
-		return sendError(ws, `${playerId} not found in ${gameId}`);
+	if (!game) return sendError(ws, `no game ${gameId} found`);
+
+	const player = game.getPlayer(playerId);
+	if (!player) return sendError(ws, `${playerId} not found in ${gameId}`);
 
 	game.removePlayer(playerId);
 
-	game.getPlayers().forEach((player) => {
-		if (player.websocket === undefined) return;
+	for (const player of game.getOnlinePlayers()) {
 		sendPlayerDisconnect(player.websocket, playerId);
-	});
+		sendNewHost(player.websocket, game.getHost().id);
+	}
 
 	sendSuccess(ws, `removed ${playerId} from game ${gameId}`);
 };
@@ -773,36 +809,32 @@ const handleDisconnectGame = (ws, gameId, playerId) => {
 	console.log(`INFO: The player ${playerId} is disconnecting from ${gameId}`);
 	console.assert(ws, "ERROR: websocket somehow not here");
 
-	if (playerId === undefined) return sendError(ws, "playerId is undefined");
-	if (playerId === "") return sendError(ws, "playerId is empty");
-	if (!Game.playerIdsInGames.has(playerId))
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
+	if (!Game.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
-
-	if (gameId === undefined) return sendError(ws, "gameId is undefined");
-	if (gameId === "") return sendError(ws, "gameId is empty");
 
 	const game = gameList[gameId];
 	if (game === undefined) return sendError(ws, `no game ${gameId} found`);
-	if (game.getPlayerFromId(playerId) === undefined)
+	if (game.getPlayer(playerId) === undefined)
 		return sendError(ws, `${playerId} not found in ${gameId}`);
-
-	// Tell the players the player is being disconnected
-	game
-		.getPlayers()
-		.filter(
-			(player) => player.id !== playerId && player.websocket !== undefined,
-		)
-		.forEach((player) => sendPlayerDisconnect(player.websocket, playerId));
 
 	// Then disconnect the player
 	game.disconnectPlayer(playerId);
 
+	// Tell the players the player is being disconnected
+	for (const player of game.getOnlinePlayers()) {
+		sendPlayerDisconnect(player.websocket, playerId);
+		sendNewHost(player.websocket, game.getHost().id);
+	}
+
 	// If game hasn't started refresh the readyness
-	if (!game.started) {
-		game.getPlayers().forEach((player) => {
-			if (player.websocket === undefined) return;
-			if (player.ready) sendPlayerReady(player.websocket, player.id);
-		});
+	if (game.canStart()) {
+		const p = game.players[0];
+		if (p.websocket) sendGameReady(p.websocket);
+	} else {
+		const p = game.players[0];
+		if (p.websocket) sendGameUnready(p.websocket);
 	}
 
 	sendSuccess(ws, `disconnected ${playerId} from game ${gameId}`);
@@ -813,13 +845,11 @@ const handleDeleteGame = (ws, gameId, playerId) => {
 
 	console.assert(ws, "Websocket somehow not here");
 
-	if (playerId === undefined) return sendError(ws, "playerId is undefined");
-	if (playerId === "") return sendError(ws, "playerId is empty");
-	if (!Game.playerIdsInGames.has(playerId))
-		return sendError(ws, `player ${playerId} not in a game`);
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
 
-	if (gameId === undefined) return sendError(ws, "gameId is undefined");
-	if (gameId === "") return sendError(ws, "gameId is empty");
+	if (!Game.isPlayerInGame(playerId))
+		return sendError(ws, `player ${playerId} not in a game`);
 
 	const game = gameList[gameId];
 	if (game === undefined) return sendError(ws, `no game ${gameId} found`);
@@ -835,13 +865,10 @@ const handleStartGame = (ws, gameId, playerId) => {
 
 	console.assert(ws, "Websocket somehow not here");
 
-	if (playerId === undefined) return sendError(ws, "playerId is undefined");
-	if (playerId === "") return sendError(ws, "playerId is empty");
-	if (!Game.playerIdsInGames.has(playerId))
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(playerId)) return sendError(ws, "gameId is empty");
+	if (!Game.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
-
-	if (gameId === undefined) return sendError(ws, "gameId is undefined");
-	if (gameId === "") return sendError(ws, "gameId is empty");
 
 	const game = gameList[gameId];
 	if (game === undefined) return sendError(ws, `no game ${gameId} found`);
@@ -863,43 +890,39 @@ const handleStartGame = (ws, gameId, playerId) => {
 
 const handlePlayerReady = (ws, playerId) => {
 	console.log(`INFO: The player ${playerId} is readying up`);
-
 	console.assert(ws, "Websocket somehow not here");
 
-	if (playerId === undefined) return sendError(ws, "playerId is undefined");
-	if (playerId === "") return sendError(ws, "playerId is empty");
-	if (!Game.playerIdsInGames.has(playerId))
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!Game.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
-	const game = Game.getGameFromPlayerId(playerId);
-	const player = game.getPlayerFromId(playerId);
+	const game = Game.getGameFromPlayer(playerId);
 
-	if (Object.values(player.boats).some((boat) => !boat.placed))
+	const player = game.getPlayer(playerId);
+	if (!player.canReady())
 		return sendError(ws, `player ${playerId} has not placed all their boats`);
-	player.ready = true;
+	player.readyUp();
 
-	for (const p of game.players) {
-		if (!p.websocket) continue;
+	for (const p of game.getOnlinePlayers())
 		sendPlayerReady(p.websocket, playerId);
-	}
+
+	if (game.canStart()) sendGameReady(game.players[0].websocket);
 
 	sendSuccess(ws, `${playerId} has readied up`);
 };
 
 const handlePlayerUnready = (ws, playerId) => {
 	console.log(`INFO: The player ${playerId} unreadying`);
-
 	console.assert(ws, "Websocket somehow not here");
 
-	if (playerId === undefined) return sendError(ws, "playerId is undefined");
-	if (playerId === "") return sendError(ws, "playerId is empty");
-	if (!Game.playerIdsInGames.has(playerId))
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!Game.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
-	const game = Game.getGameFromPlayerId(playerId);
-	const player = game.getPlayerFromId(playerId);
+	const game = Game.getGameFromPlayer(playerId);
+	const player = game.getPlayer(playerId);
 
-	Object.values(player.boats).forEach((boat) => {
+	player.getBoats().forEach((boat) => {
 		boat.positions.forEach((pos) => pos.removeBoat());
 		boat.placed = false;
 	});
@@ -907,6 +930,7 @@ const handlePlayerUnready = (ws, playerId) => {
 	player.ready = false;
 
 	for (const p of game.players) sendPlayerUnready(p.websocket, playerId);
+	if (!game.canStart()) sendGameUnready(game.players[0].websocket);
 
 	sendSuccess(ws, `${playerId} has unreadied`);
 };
@@ -914,20 +938,15 @@ const handlePlayerUnready = (ws, playerId) => {
 const handleWebsocketDisconnect = (ws) => {
 	console.log("INFO: A client is disconnecting...");
 
-	if (!Game.websocketsInGames.has(ws))
+	if (!Game.isWebsocketInGame(ws))
 		return console.log(
 			"INFO: a websocket disconnected without being in a game",
 		);
 
-	for (let game of Object.values(gameList)) {
-		for (let player of game.players) {
-			if (player === undefined) continue;
-			if (player.websocket === ws) {
-				handleDisconnectGame(ws, game.id, player.id);
-				console.log(`INFO: ${player.id} disconnected from ${game.id}`);
-			}
-		}
-	}
+	for (let game of Object.values(gameList))
+		for (let player of game.getOnlinePlayers())
+			if (player.websocket === ws)
+				return handleDisconnectGame(ws, game.id, player.id);
 };
 
 Deno.serve({ port: "8000", hostname: "0.0.0.0" }, (req) => {
@@ -949,15 +968,6 @@ Deno.serve({ port: "8000", hostname: "0.0.0.0" }, (req) => {
 		}
 
 		if (ev.type === "gameInstruction") {
-			if (ev.instruction === "placeBoat")
-				return handlePlaceBoat(
-					ws,
-					ev.playerId,
-					ev.boatName,
-					ev.row,
-					ev.col,
-					ev.vertical,
-				);
 		}
 
 		if (ev.type === "lobbyInstruction") {
@@ -975,6 +985,15 @@ Deno.serve({ port: "8000", hostname: "0.0.0.0" }, (req) => {
 				return handlePlayerReady(ws, ev.playerId);
 			if (ev.instruction === "playerUnready")
 				return handlePlayerUnready(ws, ev.playerId);
+			if (ev.instruction === "placeBoat")
+				return handlePlaceBoat(
+					ws,
+					ev.playerId,
+					ev.boatName,
+					ev.row,
+					ev.col,
+					ev.vertical,
+				);
 			return sendError(ws, "malformed instruction");
 		}
 	});
