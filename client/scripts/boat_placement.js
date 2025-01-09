@@ -236,14 +236,19 @@ const players = [];
 const $currentPlayers = document.getElementById("current-players");
 
 const handleJoinGame = (joiningPlayerId, _hostId) => {
-	if (!hostId && _hostId) hostId = _hostId; // Asign hostId if it's unasigned and _hostId is valid
+	hostId = _hostId;
+	console.log(hostId);
+	players.forEach((player) => {
+		if (player.id !== hostId) return;
+		player.$element.innerText = "👑 " + player.id;
+	});
 
 	const $playerParentElement = document.createElement("div");
 	const $readyElement = document.createElement("span");
 	$readyElement.innerText = "❌";
 	const $player = document.createElement("span");
 	$player.innerText =
-		(hostId === joiningPlayerId ? "👑" : "") + joiningPlayerId;
+		(hostId === joiningPlayerId ? "👑 " : "") + joiningPlayerId;
 
 	const player = {
 		id: joiningPlayerId,
@@ -326,6 +331,8 @@ websocket.addEventListener("message", (event) => {
 		console.error(e);
 		return;
 	}
+
+	if (ev.type === "error") showError(ev.text);
 
 	if (ev.type === "instruction") {
 		if (ev.instruction === "joinGame")

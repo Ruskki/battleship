@@ -30,7 +30,7 @@ class Game {
 
 	static getGameFromPlayerId = (pId) =>
 		Object.values(gameList).find((game) =>
-			game.players.some((player) => player.id === pId),
+			game.players.some((player) => player?.id === pId),
 		);
 
 	static getGameFromWebsocket = (ws) =>
@@ -107,8 +107,16 @@ class Game {
 		Game.websocketsInGames.delete(this.players[idx].websocket);
 		this.players[idx].websocket = undefined;
 
+		if (idx === 0) {
+			this.players.push(this.players.shift());
+			for (const player of this.players.slice(0, this.players.length - 2)) {
+				if (player.websocket === undefined) continue;
+				sendPlayerJoin(player.websocket, player.id);
+			}
+		}
+
 		if (!this.players.some((x) => x.websocket)) {
-			console.log("Everyone disconnected");
+			console.log(`INFO: Everyone dc'd from ${this.id}, self deleting...`);
 			this.self_destroy_timer = setTimeout(() => {
 				console.log(`Time's up! deleting ${this.id}`);
 				this.deleteGame();
@@ -116,14 +124,21 @@ class Game {
 		}
 	};
 
-	removePlayer = (id) => {
+	removePlayer = (id, forced = false) => {
 		const idx = this.getIndexFromId(id);
 		if (idx === -1) return;
 
 		Game.websocketsInGames.delete(this.players[idx].websocket);
 		Game.playerIdsInGames.delete(id);
 
-		if (!this.started) this.players.splice(idx, 1);
+		if (!this.started || forced) this.players.splice(idx, 1);
+		if (idx === 0) {
+			this.players.push(this.players.shift());
+			for (const player of this.players.slice(0, this.players.length - 2)) {
+				if (player.websocket === undefined) continue;
+				sendPlayerJoin(player.websocket, player.id);
+			}
+		}
 
 		if (!this.started && this.getPlayerCount() === 0) {
 			console.log("This game is empty, time to self destroy");
@@ -132,6 +147,16 @@ class Game {
 				this.deleteGame();
 			}, 5000);
 		}
+	};
+
+	removeInactive = () => {
+		const idx = this.players.findIndex((x) => x.websocket === undefined);
+		console.log("THE INDEX IS: " + idx);
+		if (idx === -1) return false;
+
+		console.log("THIS PLAYER IS INACTIVE " + idx + " REMOVING THEM");
+		this.removePlayer(this.players[idx].id);
+		return true;
 	};
 
 	deleteGame = () => {
@@ -540,6 +565,7 @@ const sendPlaceMine = (ws, row, col) => {
 
 const sendPlayerJoin = (ws, playerId) => {
 	const game = Game.getGameFromPlayerId(playerId);
+	console.log("THE PLAYER IS JOINING: ", game.id);
 	ws.send(
 		JSON.stringify({
 			type: "instruction",
@@ -661,12 +687,17 @@ const handleJoinGame = (ws, gameId, playerId) => {
 			`Cannot join game ${gameId} because it already started`,
 		);
 	if (
-		game.getPlayerFromId(playerId) === undefined &&
-		game.getPlayerCount() === 4
+		game.getPlayerFromId(playerId) === undefined && // The player is NOT here
+		game.getPlayerCount() === 4 && // We reached the max
+		!game.removeInactive() // We can remove someone
 	)
 		return sendError(ws, `Cannot join game ${gameId} because it's full`);
 
-	sendSuccess(ws, `player ${playerId} joined game ${gameId}`);
+	const otherGame = Game.getGameFromPlayerId(playerId);
+	console.log("THE THING: ", otherGame?.id);
+	console.log("THE THING: ", game.id);
+	if (otherGame && otherGame.id !== game.id)
+		otherGame.removePlayer(playerId, true);
 
 	const newPlayer = game.addNewPlayer(ws, playerId);
 
@@ -675,7 +706,7 @@ const handleJoinGame = (ws, gameId, playerId) => {
 	// Send a notification to the new player about every other player that's in the game
 	sendPlayerJoin(newPlayer.websocket, newPlayer.id);
 	game.getPlayers().forEach((player) => {
-		if (player === newPlayer) return;
+		if (player === newPlayer || player.websocket === undefined) return;
 		sendPlayerJoin(player.websocket, newPlayer.id);
 		sendPlayerJoin(newPlayer.websocket, player.id);
 	});
@@ -699,11 +730,13 @@ const handleJoinGame = (ws, gameId, playerId) => {
 	if (!game.started) {
 		if (newPlayer.ready) sendPlayerReady(newPlayer.websocket, newPlayer.id);
 		game.getPlayers().forEach((player) => {
-			if (player === newPlayer) return;
+			if (player === newPlayer || player.websocket === undefined) return;
 			if (newPlayer.ready) sendPlayerReady(player.websocket, newPlayer.id);
 			if (player.ready) sendPlayerReady(newPlayer.websocket, player.id);
 		});
 	}
+
+	sendSuccess(ws, `player ${playerId} joined game ${gameId}`);
 };
 
 const handleLeaveGame = (ws, gameId, playerId) => {
@@ -726,6 +759,7 @@ const handleLeaveGame = (ws, gameId, playerId) => {
 	game.removePlayer(playerId);
 
 	game.getPlayers().forEach((player) => {
+		if (player.websocket === undefined) return;
 		sendPlayerDisconnect(player.websocket, playerId);
 	});
 
@@ -870,6 +904,7 @@ const handleWebsocketDisconnect = (ws) => {
 
 	for (let game of Object.values(gameList)) {
 		for (let player of game.players) {
+			if (player === undefined) continue;
 			if (player.websocket === ws) {
 				handleDisconnectGame(ws, game.id, player.id);
 				console.log(`INFO: ${player.id} disconnected from ${game.id}`);
