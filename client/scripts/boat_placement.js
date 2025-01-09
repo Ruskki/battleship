@@ -237,11 +237,14 @@ const $currentPlayers = document.getElementById("current-players");
 
 const handleJoinGame = (joiningPlayerId, _hostId) => {
 	hostId = _hostId;
-	console.log(hostId);
 	players.forEach((player) => {
-		if (player.id !== hostId) return;
-		player.$element.innerText = "👑 " + player.id;
+		if (player.id !== hostId) player.$element.innerText = player.id;
+		else player.$element.innerText = "👑 " + player.id;
 	});
+
+	if (players.some((player) => player.id === joiningPlayerId)) return;
+
+	if (players.some((player) => !player.ready)) readyButtonOriginalState();
 
 	const $playerParentElement = document.createElement("div");
 	const $readyElement = document.createElement("span");
@@ -273,9 +276,9 @@ const handleLeaveGame = (disconnectingPlayerId) => {
 
 	handlePlayerUnready(disconnectingPlayerId);
 
-	players
-		.find((x) => x.id === disconnectingPlayerId)
-		?.$playerParentElement.remove();
+	this.players
+		.filter((x) => x.id === disconnectingPlayerId)
+		.forEach((x) => x.$playerParentElement.remove());
 
 	players.splice(
 		players.findIndex((x) => x.id === disconnectingPlayerId),
@@ -394,7 +397,7 @@ const readyUpListener = () => {
 
 const readyButtonOriginalState = () => {
 	readyButton.className = "ready-button";
-	readyButton.innerText = "Unready";
+	readyButton.innerText = isPlayerReady ? "Unready" : "Ready";
 
 	readyButton.addEventListener("click", readyUpListener);
 	readyButton.removeEventListener("click", startGameListener);

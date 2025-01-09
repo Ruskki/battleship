@@ -104,7 +104,7 @@ class Game {
 		const idx = this.getIndexFromId(id);
 		if (idx === -1) return;
 
-		Game.websocketsInGames.delete(this.players[idx].websocket);
+		Game.websocketsInGames.delete(this.players[idx]?.websocket);
 		this.players[idx].websocket = undefined;
 
 		if (idx === 0) {
@@ -160,7 +160,7 @@ class Game {
 
 	deleteGame = () => {
 		this.players.forEach((i, idx) => {
-			Game.websocketsInGames.delete(this.players[idx].websocket);
+			Game.websocketsInGames.delete(this.players[idx]?.websocket);
 			Game.playerIdsInGames.delete(this.players[idx].id);
 			delete this.players[idx];
 		});
@@ -698,6 +698,7 @@ const handleJoinGame = (ws, gameId, playerId) => {
 	const player = game.getPlayerFromId(playerId);
 	if (player?.websocket)
 		return sendError(
+			ws,
 			`player ${playerId} already connected from somewhere else`,
 		);
 
@@ -796,6 +797,14 @@ const handleDisconnectGame = (ws, gameId, playerId) => {
 	// Then disconnect the player
 	game.disconnectPlayer(playerId);
 
+	// If game hasn't started refresh the readyness
+	if (!game.started) {
+		game.getPlayers().forEach((player) => {
+			if (player.websocket === undefined) return;
+			if (player.ready) sendPlayerReady(player.websocket, player.id);
+		});
+	}
+
 	sendSuccess(ws, `disconnected ${playerId} from game ${gameId}`);
 };
 
@@ -844,7 +853,10 @@ const handleStartGame = (ws, gameId, playerId) => {
 
 	game.startGame();
 
-	game.players.forEach((player) => sendStartGame(player.websocket));
+	game.players.forEach((player) => {
+		if (!player.websocket) return;
+		sendStartGame(player.websocket);
+	});
 
 	sendSuccess(ws, `${playerId} has started ${gameId}`);
 };
@@ -866,7 +878,10 @@ const handlePlayerReady = (ws, playerId) => {
 		return sendError(ws, `player ${playerId} has not placed all their boats`);
 	player.ready = true;
 
-	for (const p of game.players) sendPlayerReady(p.websocket, playerId);
+	for (const p of game.players) {
+		if (!p.websocket) continue;
+		sendPlayerReady(p.websocket, playerId);
+	}
 
 	sendSuccess(ws, `${playerId} has readied up`);
 };
