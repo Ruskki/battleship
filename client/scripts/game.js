@@ -1,38 +1,38 @@
 const Boats = {
 	destroyer: {
-		name: "destroyer",
+		name: 'destroyer',
 		size: 2,
 	},
 	submarine: {
-		name: "submarine",
+		name: 'submarine',
 		size: 3,
 	},
 	cruise: {
-		name: "cruise",
+		name: 'cruise',
 		size: 3,
 	},
 	battleship: {
-		name: "battleship",
+		name: 'battleship',
 		size: 4,
 	},
 	aircraft: {
-		name: "aircraft",
+		name: 'aircraft',
 		size: 5,
 	},
 };
 
-const websocket = new WebSocket("ws://127.0.0.1:8000");
+const websocket = new WebSocket('ws://127.0.0.1:8000');
 
 const url_string = window.location.href;
 const url = new URL(url_string);
 
-const gameId = url.searchParams.get("gameId");
-const playerId = url.searchParams.get("playerId");
+const gameId = url.searchParams.get('gameId');
+const playerId = url.searchParams.get('playerId');
 
-websocket.addEventListener("open", () => {
+websocket.addEventListener('open', () => {
 	const msg = JSON.stringify({
-		type: "lobbyInstruction",
-		instruction: "joinGame",
+		type: 'lobbyInstruction',
+		instruction: 'joinGame',
 		gameId: gameId,
 		playerId: playerId,
 	});
@@ -72,7 +72,7 @@ const handleRevealPosition = (
 	const pos = player.board.getPosition(row, col);
 	if (!pos) return;
 
-	if (boatName !== "") pos.placeBoat(boatName, slot, vertical);
+	if (boatName !== '') pos.placeBoat(boatName, slot, vertical);
 	if (isDestroyed) pos.destroy();
 	if (hasMine) pos.plantMine();
 	if (hasShield) pos.shield();
@@ -99,18 +99,18 @@ const handleDisconnectGame = (playerId) => {
 	if (!player) return;
 
 	player.connected = false;
-	player.$playerName.innerText = playerId + " DISCONNECTED";
+	player.$playerName.innerText = playerId + ' DISCONNECTED';
 	showError(`${playerId} has disconnected!`);
 };
 
 const handlePlaceBoat = (playerId, boatName, row, col, vertical) => {
 	const player = Game.players[playerId];
-	if (!player) return console.error("ERROR: player ", playerId, " not found");
+	if (!player) return console.error('ERROR: player ', playerId, ' not found');
 
 	player.placeBoat(Boats[boatName], row, col, vertical);
 };
 
-websocket.addEventListener("message", (event) => {
+websocket.addEventListener('message', (event) => {
 	let ev;
 	try {
 		ev = JSON.parse(event.data);
@@ -119,16 +119,16 @@ websocket.addEventListener("message", (event) => {
 		return;
 	}
 
-	if (ev.type === "success") return showSuccess(ev.text);
+	if (ev.type === 'success') return showSuccess(ev.text);
 
-	if (ev.type === "error") return showError(ev.text);
+	if (ev.type === 'error') return showError(ev.text);
 
-	if (ev.type === "gameInstruction") {
-		if (ev.instruction === "playerWin") handlePlayerWin(ev.playerId);
-		if (ev.instruction === "destroyPosition")
+	if (ev.type === 'gameInstruction') {
+		if (ev.instruction === 'playerWin') handlePlayerWin(ev.playerId);
+		if (ev.instruction === 'destroyPosition')
 			handleDestroyPosition(ev.playerId, ev.row, ev.col);
-		if (ev.instruction === "turnOfPlayer") handleTurnOfPlayer(ev.playerId);
-		if (ev.instruction === "revealPosition")
+		if (ev.instruction === 'turnOfPlayer') handleTurnOfPlayer(ev.playerId);
+		if (ev.instruction === 'revealPosition')
 			handleRevealPosition(
 				ev.playerId,
 				ev.boatName,
@@ -141,65 +141,65 @@ websocket.addEventListener("message", (event) => {
 				ev.isDestroyed,
 			);
 
-		if (ev.instruction === "pointsUpdate") handleUpdatePoints(ev.points);
+		if (ev.instruction === 'pointsUpdate') handleUpdatePoints(ev.points);
 	}
 
-	if (ev.type === "lobbyInstruction") {
-		if (ev.instruction === "joinGame") handleJoinGame(ev.playerId);
-		if (ev.instruction === "playerDisconnect")
+	if (ev.type === 'lobbyInstruction') {
+		if (ev.instruction === 'joinGame') handleJoinGame(ev.playerId);
+		if (ev.instruction === 'playerDisconnect')
 			handleDisconnectGame(ev.playerId);
-		if (ev.instruction === "placeBoat")
+		if (ev.instruction === 'placeBoat')
 			handlePlaceBoat(ev.playerId, ev.boatName, ev.row, ev.col, ev.vertical);
 	}
 });
 
 const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-let selectedRow = "A";
-let selectedCol = "1";
+let selectedRow = 'A';
+let selectedCol = '1';
 let selectedPlayer = undefined;
 
-const $turnOfPlayer = document.getElementById("turn-of-player");
-const $pointsEl = document.getElementById("player-points");
+const $turnOfPlayer = document.getElementById('turn-of-player');
+const $pointsEl = document.getElementById('player-points');
 
-const $logMessagesEl = document.getElementById("log-messages");
+const $logMessagesEl = document.getElementById('log-messages');
 
 const showSuccess = (text) => {
-	$logMessagesEl.className = "success-message";
+	$logMessagesEl.className = 'success-message';
 	$logMessagesEl.innerText = text;
 };
 
 const showInformation = (text) => {
-	$logMessagesEl.className = "information-message";
+	$logMessagesEl.className = 'information-message';
 	$logMessagesEl.innerText = text;
 };
 
 const showError = (text) => {
-	$logMessagesEl.className = "error-message";
+	$logMessagesEl.className = 'error-message';
 	$logMessagesEl.innerText = text;
 };
 
-document.getElementById("attack-button").addEventListener("click", () => {
+document.getElementById('attack-button').addEventListener('click', () => {
 	Game.webAttackPlayer(playerId, selectedPlayer, selectedRow, selectedCol);
 });
 
-document.getElementById("sonar-button").addEventListener("click", () => {
+document.getElementById('sonar-button').addEventListener('click', () => {
 	Game.sonar(0, Game.slotFromId(selectedPlayer));
 });
 
-document.getElementById("airplanes-button").addEventListener("click", () => {
+document.getElementById('airplanes-button').addEventListener('click', () => {
 	Game.attackAirplanes(0, Game.slotFromId(selectedPlayer));
 });
 
-document.getElementById("mine-button").addEventListener("click", () => {
+document.getElementById('mine-button').addEventListener('click', () => {
 	Game.plantMine(0, selectedRow, selectedCol);
 });
 
-document.getElementById("shield-button").addEventListener("click", () => {
+document.getElementById('shield-button').addEventListener('click', () => {
 	Game.shieldPositions(0, selectedRow, selectedCol);
 });
 
-document.getElementById("missile-button").addEventListener("click", () => {
+document.getElementById('missile-button').addEventListener('click', () => {
 	Game.cruiseMissile(
 		0,
 		Game.slotFromId(selectedPlayer),
@@ -236,12 +236,12 @@ class Game {
 		}
 
 		if (pos.shielded) {
-			console.log("Bloqueado");
+			console.log('Bloqueado');
 			return;
 		}
 
 		pos.destroy();
-		if (pos.boat === undefined) return console.log("Miss!");
+		if (pos.boat === undefined) return console.log('Miss!');
 
 		user.setPoints(user.points + 5);
 	};
@@ -251,8 +251,8 @@ class Game {
 		const target = this.players[idTo];
 
 		const msg = JSON.stringify({
-			type: "gameInstruction",
-			instruction: "attackPosition",
+			type: 'gameInstruction',
+			instruction: 'attackPosition',
 			userId: user.id,
 			targetId: target.id,
 			row: row,
@@ -263,9 +263,9 @@ class Game {
 
 	static sonar = (slotFrom, slotTo) => {
 		const user = this.players[slotFrom];
-		if (user.points < 5) return console.log("User does not have enough points");
+		if (user.points < 5) return console.log('User does not have enough points');
 		if (user.boats[Boats.submarine.name].isDestroyed())
-			return console.log("Cannot use sonar, submarine is destroyed");
+			return console.log('Cannot use sonar, submarine is destroyed');
 
 		const target = this.players[slotTo];
 
@@ -282,9 +282,9 @@ class Game {
 	static attackAirplanes = (slotFrom, slotTo) => {
 		const user = this.players[slotFrom];
 		if (user.points < 10)
-			return console.log("User does not have enough points");
+			return console.log('User does not have enough points');
 		if (user.boats[Boats.aircraft.name].isDestroyed())
-			return console.log("Cannot use attack airplanes, aircraft is destroyed");
+			return console.log('Cannot use attack airplanes, aircraft is destroyed');
 		const target = this.players[slotTo];
 
 		const validPositions = Object.values(target.board.positions).filter(
@@ -302,12 +302,12 @@ class Game {
 
 	static plantMine = (slotFrom, row, col) => {
 		const user = this.players[slotFrom];
-		if (user.points < 5) return console.log("User does not have enough points");
+		if (user.points < 5) return console.log('User does not have enough points');
 
 		const pos = user.board.getPosition(row, col);
 		if (pos.boat !== undefined)
-			return console.log("Cannot plant mine where boat is");
-		if (pos.hasMine) return console.log("Position already has mine");
+			return console.log('Cannot plant mine where boat is');
+		if (pos.hasMine) return console.log('Position already has mine');
 		pos.plantMine();
 
 		pos.setPoints(user.points - 5);
@@ -316,7 +316,7 @@ class Game {
 	static shieldPositions = (slotFrom, row, col) => {
 		const user = this.players[slotFrom];
 		if (user.points < 15)
-			return console.log("User does not have enough points");
+			return console.log('User does not have enough points');
 
 		user.board.getArea(row, col).forEach((x) => {
 			x.shield();
@@ -328,7 +328,7 @@ class Game {
 	static cruiseMissile = (slotFrom, slotTo, row, col) => {
 		const user = this.players[slotFrom];
 		if (user.points < 15)
-			return console.log("User does not have enough points");
+			return console.log('User does not have enough points');
 
 		const target = this.players[slotTo];
 		target.board.getArea(row, col).forEach((x) => {
@@ -341,7 +341,7 @@ class Game {
 	static quickFix = (slotFrom, rowOne, colOne, rowTwo, colTwo) => {
 		const user = this.players[slotFrom];
 		if (user.points < 10)
-			return console.log("User does not have enough points");
+			return console.log('User does not have enough points');
 
 		const posOne = user.board.getPosition(rowOne, colOne);
 		const posTwo = user.board.getPosition(rowTwo, colTwo);
@@ -415,25 +415,25 @@ class BoardPosition {
 	};
 
 	destroy = () => {
-		this.cell.setAttribute("data-destroyed", "true");
+		this.cell.setAttribute('data-destroyed', 'true');
 		this.destroyed = true;
 	};
 
 	heal = () => {
-		this.cell.removeAttribute("data-destroyed");
+		this.cell.removeAttribute('data-destroyed');
 		this.destroyed = false;
 	};
 
 	makeVisible = () => {
 		this.visible = true;
-		const dir = this.vertical ? "v" : "h";
+		const dir = this.vertical ? 'v' : 'h';
 		if (this.boat)
 			this.cell.setAttribute(
-				"data-boat",
+				'data-boat',
 				`${this.boat}-${dir}${this.boatSlot}`,
 			);
-		if (this.hasMine) this.cell.setAttribute("data-mine", "true");
-		if (this.shielded) this.cell.setAttribute("data-shield", "true");
+		if (this.hasMine) this.cell.setAttribute('data-mine', 'true');
+		if (this.shielded) this.cell.setAttribute('data-shield', 'true');
 	};
 
 	constructor(cell, row, col, owner) {
@@ -464,10 +464,10 @@ class Boat {
 }
 
 class Board {
-	static rows = "ABCDEFGHIJ";
-	static cols = "123456789".split("").concat(["10"]);
+	static rows = 'ABCDEFGHIJ';
+	static cols = '123456789'.split('').concat(['10']);
 
-	positions = {}; // Filled with "1,A" and such
+	positions = {}; // Filled with '1,A' and such
 
 	getPosition = (row, col) => this.positions[`${row},${col}`];
 
@@ -479,7 +479,7 @@ class Board {
 
 		return Board.rows
 			.slice(minRow, maxRow)
-			.split("")
+			.split('')
 			.map((r) =>
 				Board.cols.slice(minCol, maxCol).map((c) => this.getPosition(r, c)),
 			)
@@ -494,7 +494,7 @@ class Board {
 
 		return Board.rows
 			.slice(minRow, maxRow)
-			.split("")
+			.split('')
 			.map((r) =>
 				Board.cols.slice(minCol, maxCol).map((c) => {
 					if (r === row && c === col) return;
@@ -513,34 +513,34 @@ class Board {
 	getSliceVertical = (row, col, size) =>
 		Board.rows
 			.slice(Board.rows.indexOf(row), Board.rows.indexOf(row) + size)
-			.split("")
+			.split('')
 			.map((x) => this.getPosition(x, col));
 
 	addCell = ($board, row, col) => {
-		const cell = document.createElement("div");
+		const cell = document.createElement('div');
 		const sum = row + col;
 
 		switch (sum) {
-			case "":
-				cell.className = "board-null";
+			case '':
+				cell.className = 'board-null';
 				break;
 			case row:
-				cell.className = "board-header-number";
+				cell.className = 'board-header-number';
 				cell.textContent = row;
 				break;
 			case col:
-				cell.className = "board-header-letter";
+				cell.className = 'board-header-letter';
 				cell.textContent = col;
 				break;
 			default:
 				cell.className = `board-pos row-${row} col-${col}`;
-				cell.addEventListener("click", () => {
+				cell.addEventListener('click', () => {
 					selectedRow = row;
 					selectedCol = col;
 					selectedPlayer = this.owner.id;
-					document.getElementById("target-row").innerText = row;
-					document.getElementById("target-col").innerText = col;
-					document.getElementById("target-player").innerText = this.owner.id;
+					document.getElementById('target-row').innerText = row;
+					document.getElementById('target-col').innerText = col;
+					document.getElementById('target-player').innerText = this.owner.id;
 				});
 
 				this.positions[`${row},${col}`] = new BoardPosition(
@@ -555,13 +555,13 @@ class Board {
 	};
 
 	createBoard = ($divContainer) => {
-		const board = document.createElement("div");
-		board.className = "board";
+		const board = document.createElement('div');
+		board.className = 'board';
 
-		this.addCell(board, "", "");
-		for (let num of Board.cols) this.addCell(board, "", num);
+		this.addCell(board, '', '');
+		for (let num of Board.cols) this.addCell(board, '', num);
 		for (let c of Board.rows) {
-			this.addCell(board, c, "");
+			this.addCell(board, c, '');
 			for (let n of Board.cols) this.addCell(board, c, n);
 		}
 		$divContainer.appendChild(board);
@@ -579,9 +579,9 @@ class Player {
 			? this.board.getSliceVertical(row, col, boatEnum.size)
 			: this.board.getSliceHorizontal(row, col, boatEnum.size);
 
-		if (positions.length !== boatEnum.size) return console.log("Boat too big");
+		if (positions.length !== boatEnum.size) return console.log('Boat too big');
 		if (positions.some((pos) => pos.boat !== undefined))
-			return console.log("Boat in the way");
+			return console.log('Boat in the way');
 
 		positions.forEach((pos, idx) =>
 			pos.placeBoat(boatEnum.name, idx + 1, vertical),
@@ -600,7 +600,7 @@ class Player {
 	constructor(id, $divContainer, mainPlayer = false) {
 		this.id = id;
 
-		this.$playerName = document.createElement("h2");
+		this.$playerName = document.createElement('h2');
 		this.$playerName.innerText = id;
 		$divContainer.appendChild(this.$playerName);
 
@@ -619,13 +619,13 @@ class Player {
 }
 
 const offlineTest = () => {
-	["player-1", "player-2", "player-3", "player-4"].forEach((x, idx) => {
-		const player = Game.addPlayer(x.split("-").at(-1), "Name", idx);
-		player.placeBoat(Boats.aircraft, "A", "1", false);
-		player.placeBoat(Boats.destroyer, "B", "1", true);
-		player.placeBoat(Boats.submarine, "B", "2", true);
-		player.placeBoat(Boats.cruise, "B", "3", true);
-		player.placeBoat(Boats.battleship, "B", "4", true);
+	['player-1', 'player-2', 'player-3', 'player-4'].forEach((x, idx) => {
+		const player = Game.addPlayer(x.split('-').at(-1), 'Name', idx);
+		player.placeBoat(Boats.aircraft, 'A', '1', false);
+		player.placeBoat(Boats.destroyer, 'B', '1', true);
+		player.placeBoat(Boats.submarine, 'B', '2', true);
+		player.placeBoat(Boats.cruise, 'B', '3', true);
+		player.placeBoat(Boats.battleship, 'B', '4', true);
 	});
 };
 
@@ -641,7 +641,7 @@ const sonarTest = () => {
 	// Sonar test
 	Game.players[0].points = 10;
 	Game.sonar(0, 1);
-	Game.players[0].boats["submarine"].destroy();
+	Game.players[0].boats['submarine'].destroy();
 	Game.sonar(0, 1);
 };
 
@@ -652,35 +652,35 @@ const airplanesTest = () => {
 
 const mineTest = () => {
 	Game.players[0].points = 10;
-	Game.plantMine(0, "J", "10");
-	Game.plantMine(0, "A", "1");
+	Game.plantMine(0, 'J', '10');
+	Game.plantMine(0, 'A', '1');
 
-	Game.attackPlayer(1, 0, "J", "10");
+	Game.attackPlayer(1, 0, 'J', '10');
 };
 
 const shieldTest = () => {
 	Game.players[0].points = 15;
-	Game.shieldPositions(0, "H", "8");
+	Game.shieldPositions(0, 'H', '8');
 
 	Game.players[1].points = 15;
-	Game.shieldPositions(1, "H", "8");
+	Game.shieldPositions(1, 'H', '8');
 
-	Game.attackPlayer(0, 1, "G", "7");
-	Game.attackPlayer(1, 0, "I", "9");
+	Game.attackPlayer(0, 1, 'G', '7');
+	Game.attackPlayer(1, 0, 'I', '9');
 };
 
 const missileTest = () => {
 	Game.players[0].points = 15;
-	Game.cruiseMissile(0, 1, "B", "2");
+	Game.cruiseMissile(0, 1, 'B', '2');
 };
 
 const testHeal = () => {
 	Game.players[1].points = 15;
-	Game.cruiseMissile(1, 0, "B", "2");
+	Game.cruiseMissile(1, 0, 'B', '2');
 
-	Game.quickFix(0, "B", "1", "C", "1");
-	Game.quickFix(0, "A", "1", "A", "2");
-	Game.quickFix(0, "A", "3", "A", "3");
+	Game.quickFix(0, 'B', '1', 'C', '1');
+	Game.quickFix(0, 'A', '1', 'A', '2');
+	Game.quickFix(0, 'A', '3', 'A', '3');
 };
 
 // randomTargetsTest();

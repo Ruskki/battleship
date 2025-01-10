@@ -1,27 +1,27 @@
 const Boats = {
 	destroyer: {
-		name: "destroyer",
+		name: 'destroyer',
 		size: 2,
 	},
 	submarine: {
-		name: "submarine",
+		name: 'submarine',
 		size: 3,
 	},
 	cruise: {
-		name: "cruise",
+		name: 'cruise',
 		size: 3,
 	},
 	battleship: {
-		name: "battleship",
+		name: 'battleship',
 		size: 4,
 	},
 	aircraft: {
-		name: "aircraft",
+		name: 'aircraft',
 		size: 5,
 	},
 };
 
-const isValidString = (str) => (str ?? "").length;
+const isValidString = (str) => (str ?? '').length;
 
 const gameList = {};
 
@@ -76,7 +76,7 @@ class Game {
 
 	turnNumber = 0;
 
-	id = "";
+	id = '';
 
 	started = false;
 
@@ -178,7 +178,7 @@ class Game {
 		const idx = this.players.findIndex((x) => x.websocket === undefined);
 		if (idx === -1) return false;
 
-		console.log("THIS PLAYER IS INACTIVE " + idx + " REMOVING THEM");
+		console.log('THIS PLAYER IS INACTIVE ' + idx + ' REMOVING THEM');
 		this.removePlayer(this.players[idx].id);
 		return true;
 	};
@@ -251,22 +251,22 @@ class Game {
 		}
 
 		if (pos.hasShield) {
-			sendSuccess(user.websocket, "Your attack was blocked");
-			sendSuccess(target.websocket, "You blocked an attack");
+			sendSuccess(user.websocket, 'Your attack was blocked');
+			sendSuccess(target.websocket, 'You blocked an attack');
 			this.nextTurn();
 			return;
 		}
 
 		if (pos.destroyed) {
-			sendError(user.websocket, "This position is already destroyed!");
+			sendError(user.websocket, 'This position is already destroyed!');
 			return;
 		}
 
 		this.destroyPosition(target.id, pos.row, pos.col);
 		this.nextTurn();
 
-		if (pos.boat === undefined) return console.log("Miss!");
-		else console.log("HIT");
+		if (pos.boat === undefined) return console.log('Miss!');
+		else console.log('HIT');
 
 		user.setPoints(user.points + 5);
 
@@ -320,7 +320,7 @@ class BoardPosition {
 
 	plantMine = () => {
 		if (this.boat !== undefined)
-			return sendError(this.owner.websocket, "Cannot place mine where boat is");
+			return sendError(this.owner.websocket, 'Cannot place mine where boat is');
 
 		this.hasMine = true;
 		sendPlaceMine(this.owner.websocket, this.row, this.col);
@@ -342,8 +342,8 @@ class BoardPosition {
 }
 
 class Board {
-	static rows = "ABCDEFGHIJ";
-	static cols = "123456789".split("").concat(["10"]);
+	static rows = 'ABCDEFGHIJ';
+	static cols = '123456789'.split('').concat(['10']);
 
 	positions = {}; // 'A,1' - 'J,10'
 
@@ -357,7 +357,7 @@ class Board {
 	getSliceVertical = (row, col, size) =>
 		Board.rows
 			.slice(Board.rows.indexOf(row), Board.rows.indexOf(row) + size)
-			.split("")
+			.split('')
 			.map((x) => this.getPosition(x, col));
 
 	getArea = (row, col) => {
@@ -368,7 +368,7 @@ class Board {
 
 		return Board.rows
 			.slice(minRow, maxRow)
-			.split("")
+			.split('')
 			.map((r) =>
 				Board.cols.slice(minCol, maxCol).map((c) => this.getPosition(r, c)),
 			)
@@ -383,7 +383,7 @@ class Board {
 
 		return Board.rows
 			.slice(minRow, maxRow)
-			.split("")
+			.split('')
 			.map((r) =>
 				Board.cols.slice(minCol, maxCol).map((c) => {
 					if (r === row && c === col) return;
@@ -427,9 +427,9 @@ class Player {
 			: this.board.getSliceHorizontal(row, col, boatEnum.size);
 
 		if (positions.length !== boatEnum.size)
-			return sendError(this.websocket, "boat too big");
+			return sendError(this.websocket, 'boat too big');
 		if (positions.some((pos) => pos.boat !== undefined))
-			return sendError(this.websocket, "boat in the way");
+			return sendError(this.websocket, 'boat in the way');
 
 		const boat = this.boats[boatEnum.name];
 		if (boat.placed)
@@ -485,11 +485,11 @@ class Player {
 		this.defeated = false;
 
 		this.boats = {
-			destroyer: new Boat("destroyer"),
-			submarine: new Boat("submarine"),
-			cruise: new Boat("cruise"),
-			battleship: new Boat("battleship"),
-			aircraft: new Boat("aircraft"),
+			destroyer: new Boat('destroyer'),
+			submarine: new Boat('submarine'),
+			cruise: new Boat('cruise'),
+			battleship: new Boat('battleship'),
+			aircraft: new Boat('aircraft'),
 		};
 	}
 }
@@ -497,8 +497,8 @@ class Player {
 const sendPlaceBoat = (ws, playerId, boatName, row, col, vertical) => {
 	ws.send(
 		JSON.stringify({
-			type: "lobbyInstruction",
-			instruction: "placeBoat",
+			type: 'lobbyInstruction',
+			instruction: 'placeBoat',
 			playerId: playerId,
 			boatName: boatName,
 			vertical: vertical,
@@ -530,8 +530,8 @@ const handlePlaceBoat = (ws, playerId, boatName, row, col, vertical) => {
 
 const sendDestroyPosition = (ws, playerId, row, col) => {
 	const msg = JSON.stringify({
-		type: "gameInstruction",
-		instruction: "destroyPosition",
+		type: 'gameInstruction',
+		instruction: 'destroyPosition',
 		playerId: playerId,
 		row: row,
 		col: col,
@@ -552,8 +552,8 @@ const sendRevealPosition = (
 	isDestroyed,
 ) => {
 	const msg = JSON.stringify({
-		type: "gameInstruction",
-		instruction: "revealPosition",
+		type: 'gameInstruction',
+		instruction: 'revealPosition',
 		playerId: playerId,
 		boatName: boatName,
 		slot: slot,
@@ -568,11 +568,11 @@ const sendRevealPosition = (
 };
 
 const handleAttackPosition = (ws, userId, targetId, row, col) => {
-	if (!isValidString(userId)) return sendError(ws, "ERROR: userId is empty");
+	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
 	if (!Game.isPlayerInGame(userId))
 		return sendError(ws, `ERROR: ${userId} is not in a game`);
 
-	if (!isValidString(targetId)) return console.log("ERROR: targetId is empty");
+	if (!isValidString(targetId)) return console.log('ERROR: targetId is empty');
 	if (!Game.isPlayerInGame(targetId))
 		return sendError(ws, `ERROR: ${targetId} is not in a game`);
 
@@ -588,8 +588,8 @@ const handleAttackPosition = (ws, userId, targetId, row, col) => {
 
 const sendTurnOfPlayer = (ws, playerId) => {
 	const msg = JSON.stringify({
-		type: "gameInstruction",
-		instruction: "turnOfPlayer",
+		type: 'gameInstruction',
+		instruction: 'turnOfPlayer',
 		playerId: playerId,
 		turnNumber: Game.getGameFromPlayer(playerId).turnNumber,
 	});
@@ -598,8 +598,8 @@ const sendTurnOfPlayer = (ws, playerId) => {
 
 const sendPlayerWin = (ws, playerId) => {
 	const msg = JSON.stringify({
-		type: "gameInstruction",
-		instruction: "playerWin",
+		type: 'gameInstruction',
+		instruction: 'playerWin',
 		playerId: playerId,
 	});
 	ws.send(msg);
@@ -607,8 +607,8 @@ const sendPlayerWin = (ws, playerId) => {
 
 const sendPointsUpdate = (ws, points) => {
 	const msg = JSON.stringify({
-		type: "gameInstruction",
-		instruction: "pointsUpdate",
+		type: 'gameInstruction',
+		instruction: 'pointsUpdate',
 		points: points,
 	});
 	ws.send(msg);
@@ -625,8 +625,8 @@ const sendHealPosition = (ws, slot, row, col) => {
 	game.players.forEach((player) => {
 		player.websocket.send(
 			JSON.stringify({
-				type: "instruction",
-				instruction: "destroyPosition",
+				type: 'instruction',
+				instruction: 'destroyPosition',
 				playerSlot: playerSlot,
 				row: row,
 				col: col,
@@ -642,8 +642,8 @@ const sendHealPosition = (ws, slot, row, col) => {
 const sendPlaceShield = (ws, row, col) => {
 	ws.send(
 		JSON.stringify({
-			type: "instruction",
-			instruction: "placeShield",
+			type: 'instruction',
+			instruction: 'placeShield',
 			row: row,
 			col: col,
 		}),
@@ -659,8 +659,8 @@ const sendPlaceShield = (ws, row, col) => {
 const sendPlaceMine = (ws, row, col) => {
 	ws.send(
 		JSON.stringify({
-			type: "instruction",
-			instruction: "placeMine",
+			type: 'instruction',
+			instruction: 'placeMine',
 			row: row,
 			col: col,
 		}),
@@ -670,8 +670,8 @@ const sendPlaceMine = (ws, row, col) => {
 const sendPlayerJoin = (ws, playerId) => {
 	const game = Game.getGameFromPlayer(playerId);
 	const msg = JSON.stringify({
-		type: "lobbyInstruction",
-		instruction: "joinGame",
+		type: 'lobbyInstruction',
+		instruction: 'joinGame',
 		gameId: game.id,
 		playerId: playerId,
 	});
@@ -681,8 +681,8 @@ const sendPlayerJoin = (ws, playerId) => {
 const sendPlayerDisconnect = (ws, playerId) => {
 	ws.send(
 		JSON.stringify({
-			type: "lobbyInstruction",
-			instruction: "playerDisconnect",
+			type: 'lobbyInstruction',
+			instruction: 'playerDisconnect',
 			playerId: playerId,
 		}),
 	);
@@ -690,8 +690,8 @@ const sendPlayerDisconnect = (ws, playerId) => {
 
 const sendNewHost = (ws, playerId) => {
 	const msg = JSON.stringify({
-		type: "lobbyInstruction",
-		instruction: "newHost",
+		type: 'lobbyInstruction',
+		instruction: 'newHost',
 		playerId: playerId,
 	});
 	ws.send(msg);
@@ -699,8 +699,8 @@ const sendNewHost = (ws, playerId) => {
 
 const sendPlayerReady = (ws, playerId) => {
 	const msg = JSON.stringify({
-		type: "lobbyInstruction",
-		instruction: "playerReady",
+		type: 'lobbyInstruction',
+		instruction: 'playerReady',
 		playerId: playerId,
 	});
 	ws.send(msg);
@@ -708,16 +708,16 @@ const sendPlayerReady = (ws, playerId) => {
 
 const sendGameReady = (ws, playerId) => {
 	const msg = JSON.stringify({
-		type: "lobbyInstruction",
-		instruction: "gameReady",
+		type: 'lobbyInstruction',
+		instruction: 'gameReady',
 	});
 	ws.send(msg);
 };
 
 const sendPlayerUnready = (ws, playerId) => {
 	const msg = JSON.stringify({
-		type: "lobbyInstruction",
-		instruction: "playerUnready",
+		type: 'lobbyInstruction',
+		instruction: 'playerUnready',
 		playerId: playerId,
 	});
 	ws.send(msg);
@@ -725,8 +725,8 @@ const sendPlayerUnready = (ws, playerId) => {
 
 const sendGameUnready = (ws, playerId) => {
 	const msg = JSON.stringify({
-		type: "lobbyInstruction",
-		instruction: "gameUnready",
+		type: 'lobbyInstruction',
+		instruction: 'gameUnready',
 	});
 	ws.send(msg);
 };
@@ -734,8 +734,8 @@ const sendGameUnready = (ws, playerId) => {
 const sendStartGame = (ws) => {
 	ws.send(
 		JSON.stringify({
-			type: "lobbyInstruction",
-			instruction: "startGame",
+			type: 'lobbyInstruction',
+			instruction: 'startGame',
 		}),
 	);
 };
@@ -744,7 +744,7 @@ const sendSuccess = (ws, text) => {
 	console.log(`SUCCESS: ${text}\n`);
 	ws.send(
 		JSON.stringify({
-			type: "success",
+			type: 'success',
 			text: text,
 		}),
 	);
@@ -754,7 +754,7 @@ const sendError = (ws, text) => {
 	console.log(`ERROR: ${text}\n`);
 	ws.send(
 		JSON.stringify({
-			type: "error",
+			type: 'error',
 			text: text,
 		}),
 	);
@@ -767,12 +767,12 @@ const generateGameId = () => {
 	return id;
 };
 
-const handleCreateGame = (ws, playerId, gameId = "") => {
+const handleCreateGame = (ws, playerId, gameId = '') => {
 	console.log(`INFO: The player ${playerId} is creating a game... ${gameId}`);
 
-	console.assert(ws, "Websocket somehow not here");
+	console.assert(ws, 'Websocket somehow not here');
 
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
 	if (Game.isPlayerInGame(playerId)) {
 		const game = Game.getGameFromPlayer(playerId);
 		handleLeaveGame(ws, game.id, playerId);
@@ -793,10 +793,10 @@ const handleCreateGame = (ws, playerId, gameId = "") => {
 
 const handleJoinGame = (ws, gameId, playerId) => {
 	console.log(`INFO: The player ${playerId} is joining ${gameId}`);
-	console.assert(ws, "Websocket somehow not here");
+	console.assert(ws, 'Websocket somehow not here');
 
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
-	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
 
 	const game = gameList[gameId];
 	if (!game) return sendError(ws, `no game ${gameId} found`);
@@ -894,11 +894,11 @@ const handleJoinGame = (ws, gameId, playerId) => {
 
 const handleLeaveGame = (ws, gameId, playerId) => {
 	console.log(`INFO: The player ${playerId} is leaving ${gameId}`);
-	console.assert(ws, "ERROR: websocket somehow not here");
+	console.assert(ws, 'ERROR: websocket somehow not here');
 
 	// Validate playerId & gameId
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
-	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
 
 	// Check if player is in a game
 	if (!Game.isPlayerInGame(playerId))
@@ -922,10 +922,10 @@ const handleLeaveGame = (ws, gameId, playerId) => {
 
 const handleDisconnectGame = (ws, gameId, playerId) => {
 	console.log(`INFO: The player ${playerId} is disconnecting from ${gameId}`);
-	console.assert(ws, "ERROR: websocket somehow not here");
+	console.assert(ws, 'ERROR: websocket somehow not here');
 
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
-	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
 	if (!Game.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
@@ -958,10 +958,10 @@ const handleDisconnectGame = (ws, gameId, playerId) => {
 const handleDeleteGame = (ws, gameId, playerId) => {
 	console.log(`INFO: The player ${playerId} is deleting ${gameId}`);
 
-	console.assert(ws, "Websocket somehow not here");
+	console.assert(ws, 'Websocket somehow not here');
 
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
-	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
 
 	if (!Game.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
@@ -978,10 +978,10 @@ const handleDeleteGame = (ws, gameId, playerId) => {
 const handleStartGame = (ws, gameId, playerId) => {
 	console.log(`INFO: The player ${playerId} is starting ${gameId}`);
 
-	console.assert(ws, "Websocket somehow not here");
+	console.assert(ws, 'Websocket somehow not here');
 
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
-	if (!isValidString(playerId)) return sendError(ws, "gameId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(playerId)) return sendError(ws, 'gameId is empty');
 	if (!Game.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
@@ -1005,9 +1005,9 @@ const handleStartGame = (ws, gameId, playerId) => {
 
 const handlePlayerReady = (ws, playerId) => {
 	console.log(`INFO: The player ${playerId} is readying up`);
-	console.assert(ws, "Websocket somehow not here");
+	console.assert(ws, 'Websocket somehow not here');
 
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
 	if (!Game.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
@@ -1028,9 +1028,9 @@ const handlePlayerReady = (ws, playerId) => {
 
 const handlePlayerUnready = (ws, playerId) => {
 	console.log(`INFO: The player ${playerId} unreadying`);
-	console.assert(ws, "Websocket somehow not here");
+	console.assert(ws, 'Websocket somehow not here');
 
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
 	if (!Game.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
@@ -1051,11 +1051,11 @@ const handlePlayerUnready = (ws, playerId) => {
 };
 
 const handleWebsocketDisconnect = (ws) => {
-	console.log("INFO: A client is disconnecting...");
+	console.log('INFO: A client is disconnecting...');
 
 	if (!Game.isWebsocketInGame(ws))
 		return console.log(
-			"INFO: a websocket disconnected without being in a game",
+			'INFO: a websocket disconnected without being in a game',
 		);
 
 	for (let game of Object.values(gameList))
@@ -1064,7 +1064,7 @@ const handleWebsocketDisconnect = (ws) => {
 				return handleDisconnectGame(ws, game.id, player.id);
 };
 
-const BASE_PATH = "./client";
+const BASE_PATH = './client';
 
 const reqHandler = async (req) => {
 	let filePath = BASE_PATH + new URL(req.url).pathname;
@@ -1073,69 +1073,69 @@ const reqHandler = async (req) => {
 		fileSize = (await Deno.stat(filePath)).size;
 	} catch (e) {
 		if (e instanceof Deno.errors.NotFound) {
-			filePath = "./client/index.html";
+			filePath = './client/index.html';
 			fileSize = (await Deno.stat(filePath)).size;
 		} else {
 			return new Response(null, { status: 500 });
 		}
 	}
-	if (filePath === "./client/") {
-		filePath = "./client/index.html";
+	if (filePath === './client/') {
+		filePath = './client/index.html';
 		fileSize = (await Deno.stat(filePath)).size;
 	}
 	const body = (await Deno.open(filePath)).readable;
 	let fileType;
-	if (filePath.endsWith("html")) fileType = "text/html";
-	if (filePath.endsWith("css")) fileType = "text/css";
-	if (filePath.endsWith("js")) fileType = "text/javascript";
-	if (filePath.endsWith("png")) fileType = "image/png";
+	if (filePath.endsWith('html')) fileType = 'text/html';
+	if (filePath.endsWith('css')) fileType = 'text/css';
+	if (filePath.endsWith('js')) fileType = 'text/javascript';
+	if (filePath.endsWith('png')) fileType = 'image/png';
 	return new Response(body, {
 		headers: {
-			"content-length": fileSize.toString(),
-			"content-type": fileType || "application/octet-stream",
+			'content-length': fileSize.toString(),
+			'content-type': fileType || 'application/octet-stream',
 		},
 	});
 };
 
-Deno.serve({ port: "8000", hostname: "0.0.0.0" }, (req) => {
-	if (req.headers.get("upgrade") != "websocket") {
+Deno.serve({ port: '8000', hostname: '0.0.0.0' }, (req) => {
+	if (req.headers.get('upgrade') != 'websocket') {
 		return reqHandler(req);
 	}
 
 	const { socket: ws, response } = Deno.upgradeWebSocket(req);
-	ws.addEventListener("open", () => {
-		console.log("CONNECTION: A new client connected!");
+	ws.addEventListener('open', () => {
+		console.log('CONNECTION: A new client connected!');
 	});
 
-	ws.addEventListener("message", (event) => {
+	ws.addEventListener('message', (event) => {
 		let ev;
 		try {
 			ev = JSON.parse(event.data);
 		} catch {
-			return console.log("data not valid json\ndata:" + event.data);
+			return console.log('data not valid json\ndata:' + event.data);
 		}
 
-		if (ev.type === "gameInstruction") {
-			if (ev.instruction === "attackPosition")
+		if (ev.type === 'gameInstruction') {
+			if (ev.instruction === 'attackPosition')
 				handleAttackPosition(ws, ev.userId, ev.targetId, ev.row, ev.col);
 		}
 
-		if (ev.type === "lobbyInstruction") {
-			if (ev.instruction === "createGame")
+		if (ev.type === 'lobbyInstruction') {
+			if (ev.instruction === 'createGame')
 				return handleCreateGame(ws, ev.playerId, ev?.gameId);
-			if (ev.instruction === "joinGame")
+			if (ev.instruction === 'joinGame')
 				return handleJoinGame(ws, ev.gameId, ev.playerId);
-			if (ev.instruction === "leaveGame")
+			if (ev.instruction === 'leaveGame')
 				return handleLeaveGame(ws, ev.gameId, ev.playerId);
-			if (ev.instruction === "deleteGame")
+			if (ev.instruction === 'deleteGame')
 				return handleDeleteGame(ws, ev.gameId, ev.playerId);
-			if (ev.instruction === "startGame")
+			if (ev.instruction === 'startGame')
 				return handleStartGame(ws, ev.gameId, ev.playerId);
-			if (ev.instruction === "playerReady")
+			if (ev.instruction === 'playerReady')
 				return handlePlayerReady(ws, ev.playerId);
-			if (ev.instruction === "playerUnready")
+			if (ev.instruction === 'playerUnready')
 				return handlePlayerUnready(ws, ev.playerId);
-			if (ev.instruction === "placeBoat")
+			if (ev.instruction === 'placeBoat')
 				return handlePlaceBoat(
 					ws,
 					ev.playerId,
@@ -1144,11 +1144,11 @@ Deno.serve({ port: "8000", hostname: "0.0.0.0" }, (req) => {
 					ev.col,
 					ev.vertical,
 				);
-			return sendError(ws, "malformed instruction");
+			return sendError(ws, 'malformed instruction');
 		}
 	});
 
-	ws.addEventListener("close", () => handleWebsocketDisconnect(ws));
+	ws.addEventListener('close', () => handleWebsocketDisconnect(ws));
 
 	return response;
 });

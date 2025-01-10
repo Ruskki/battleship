@@ -1,5 +1,5 @@
 const url_string = window.location.href;
 const url = new URL(url_string);
-const winnerId = url.searchParams.get("winnerId");
+const winnerId = url.searchParams.get('winnerId');
 
-document.getElementById("winner-id").innerText = winnerId;
+document.getElementById('winner-id').innerText = winnerId;

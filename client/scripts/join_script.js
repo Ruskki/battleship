@@ -1,29 +1,29 @@
-const $playerIdInput = document.getElementById("player-id");
-const $gameIdInput = document.getElementById("game-id");
+const $playerIdInput = document.getElementById('player-id');
+const $gameIdInput = document.getElementById('game-id');
 
-const websocket = new WebSocket("ws://127.0.0.1:8000");
+const websocket = new WebSocket('ws://127.0.0.1:8000');
 
-const onlineIndicator = document.getElementById("online-indicator");
+const onlineIndicator = document.getElementById('online-indicator');
 
 const creteGameButton = () => {
 	if (!websocket.OPEN) return;
 	const msg = JSON.stringify({
-		type: "lobbyInstruction",
-		instruction: "createGame",
+		type: 'lobbyInstruction',
+		instruction: 'createGame',
 		playerId: $playerIdInput.value,
 	});
 	websocket.send(msg);
 };
 
 document
-	.getElementById("create-game-button")
-	.addEventListener("click", creteGameButton);
+	.getElementById('create-game-button')
+	.addEventListener('click', creteGameButton);
 
 const joinGameButton = () => {
 	if (!websocket.OPEN) return;
 	const msg = JSON.stringify({
-		type: "lobbyInstruction",
-		instruction: "joinGame",
+		type: 'lobbyInstruction',
+		instruction: 'joinGame',
 		gameId: $gameIdInput.value,
 		playerId: $playerIdInput.value,
 	});
@@ -31,10 +31,10 @@ const joinGameButton = () => {
 };
 
 document
-	.getElementById("join-button")
-	.addEventListener("click", joinGameButton);
+	.getElementById('join-button')
+	.addEventListener('click', joinGameButton);
 
-const feedbackMessages = document.getElementById("feedback-messages");
+const feedbackMessages = document.getElementById('feedback-messages');
 let feedbackTimeout = undefined;
 
 const clearFeedbackTimeout = () => {
@@ -43,23 +43,23 @@ const clearFeedbackTimeout = () => {
 };
 
 const showError = (text) => {
-	feedbackMessages.className = "error-message";
+	feedbackMessages.className = 'error-message';
 	feedbackMessages.innerText = text;
 	if (feedbackTimeout) clearFeedbackTimeout(feedbackTimeout);
-	feedbackTimeout = setTimeout(() => (feedbackMessages.innerText = ""), 3000);
+	feedbackTimeout = setTimeout(() => (feedbackMessages.innerText = ''), 3000);
 };
 
-websocket.addEventListener("open", () => {
-	onlineIndicator.className = "indicator-online";
-	onlineIndicator.innerHTML = "•";
+websocket.addEventListener('open', () => {
+	onlineIndicator.className = 'indicator-online';
+	onlineIndicator.innerHTML = '•';
 });
 
-websocket.addEventListener("close", () => {
-	onlineIndicator.className = "indicator-offline";
-	onlineIndicator.innerHTML = "• Servers offline";
+websocket.addEventListener('close', () => {
+	onlineIndicator.className = 'indicator-offline';
+	onlineIndicator.innerHTML = '• Servers offline';
 });
 
-websocket.addEventListener("message", (event) => {
+websocket.addEventListener('message', (event) => {
 	let ev;
 	try {
 		ev = JSON.parse(event.data);
@@ -68,7 +68,7 @@ websocket.addEventListener("message", (event) => {
 		return;
 	}
 
-	if (ev.type === "error") showError(ev.text);
-	if (ev.type === "lobbyInstruction" && ev.instruction === "joinGame")
+	if (ev.type === 'error') showError(ev.text);
+	if (ev.type === 'lobbyInstruction' && ev.instruction === 'joinGame')
 		window.location.href = `./fleet.html?playerId=${$playerIdInput.value}&gameId=${ev.gameId}`;
 });
