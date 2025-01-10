@@ -1097,7 +1097,7 @@ const reqHandler = async (req) => {
 	});
 };
 
-Deno.serve({ port: '8000', hostname: '0.0.0.0' }, (req) => {
+Deno.serve({ port: '8000', hostname: '127.0.0.1' }, (req) => {
 	if (req.headers.get('upgrade') != 'websocket') {
 		return reqHandler(req);
 	}
