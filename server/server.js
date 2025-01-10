@@ -987,7 +987,7 @@ const handleStartGame = (ws, gameId, playerId) => {
 	if (!game.isPlayerHost(playerId))
 		return sendError(ws, `${playerId} is not host of ${gameId}`);
 
-	if (game.players.some((player) => !player.ready))
+	if (game.getOnlinePlayers((player) => !player.ready))
 		return sendError(ws, `cannot start ${gameId} not everyone is ready`);
 
 	game.startGame();
