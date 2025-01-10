@@ -1074,11 +1074,15 @@ const reqHandler = async (req) => {
 	} catch (e) {
 		if (e instanceof Deno.errors.NotFound) {
 			filePath = "./client/index.html";
+			fileSize = (await Deno.stat(filePath)).size;
 		} else {
 			return new Response(null, { status: 500 });
 		}
 	}
-	if (filePath === "./client/") filePath = "./client/index.html";
+	if (filePath === "./client/") {
+		filePath = "./client/index.html";
+		fileSize = (await Deno.stat(filePath)).size;
+	}
 	const body = (await Deno.open(filePath)).readable;
 	let fileType;
 	if (filePath.endsWith("html")) fileType = "text/html";
