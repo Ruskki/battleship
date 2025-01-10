@@ -1088,6 +1088,7 @@ const reqHandler = async (req) => {
 	if (filePath.endsWith("html")) fileType = "text/html";
 	if (filePath.endsWith("css")) fileType = "text/css";
 	if (filePath.endsWith("js")) fileType = "text/javascript";
+	if (filePath.endsWith("png")) fileType = "image/png";
 	return new Response(body, {
 		headers: {
 			"content-length": fileSize.toString(),
