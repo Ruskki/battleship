@@ -211,7 +211,7 @@ const playerId = url.searchParams.get("playerId");
 
 document.getElementById("room-id").innerText = gameId;
 
-const websocket = new WebSocket("ws://100.93.129.57:8000");
+const websocket = new WebSocket("ws://127.0.0.1:8000");
 
 websocket.addEventListener("open", () => {
 	const msg = JSON.stringify({

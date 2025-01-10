@@ -21,7 +21,7 @@ const Boats = {
 	},
 };
 
-const websocket = new WebSocket("ws://100.93.129.57:8000");
+const websocket = new WebSocket("ws://127.0.0.1:8000");
 
 const url_string = window.location.href;
 const url = new URL(url_string);

@@ -81,9 +81,12 @@ class Game {
 	started = false;
 
 	// If someone isn't ready OR cannot Ready, don't start
-	canStart = () =>
-		this.getOnlinePlayers().length > 1 &&
-		!this.getOnlinePlayers().some((p) => !p.ready || !p.canReady());
+	canStart = () => {
+		return (
+			this.getOnlinePlayers().length > 1 &&
+			this.getOnlinePlayers().every((p) => p.ready)
+		);
+	};
 
 	self_destroy_timer = undefined;
 
@@ -987,7 +990,7 @@ const handleStartGame = (ws, gameId, playerId) => {
 	if (!game.isPlayerHost(playerId))
 		return sendError(ws, `${playerId} is not host of ${gameId}`);
 
-	if (game.getOnlinePlayers((player) => !player.ready))
+	if (!game.canStart())
 		return sendError(ws, `cannot start ${gameId} not everyone is ready`);
 
 	game.startGame();
@@ -1070,7 +1073,7 @@ const reqHandler = async (req) => {
 		fileSize = (await Deno.stat(filePath)).size;
 	} catch (e) {
 		if (e instanceof Deno.errors.NotFound) {
-			return new Response(null, { status: 404 });
+			filePath = "./client/index.html";
 		}
 		return new Response(null, { status: 500 });
 	}
