@@ -26,7 +26,7 @@ cd battleship
 Una vez ahi, correr el comando
 
 ```bash
-deno run --allow-network ./server/server.js
+deno run --allow-read --allow-network ./server/server.js
 ```
 
 Esto correra una instancia del servidor de juego en la maquina local en el puerto 8000
