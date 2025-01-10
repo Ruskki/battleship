@@ -1,7 +1,7 @@
 const $playerIdInput = document.getElementById("player-id");
 const $gameIdInput = document.getElementById("game-id");
 
-const websocket = new WebSocket("ws://127.0.0.1:8000");
+const websocket = new WebSocket("ws://100.93.129.57:8000");
 
 const onlineIndicator = document.getElementById("online-indicator");
 
@@ -70,5 +70,5 @@ websocket.addEventListener("message", (event) => {
 
 	if (ev.type === "error") showError(ev.text);
 	if (ev.type === "lobbyInstruction" && ev.instruction === "joinGame")
-		window.location.href = `./fleet.html?playerId=${ev.playerId}&gameId=${ev.gameId}`;
+		window.location.href = `./fleet.html?playerId=${$playerIdInput.value}&gameId=${ev.gameId}`;
 });

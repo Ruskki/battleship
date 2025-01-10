@@ -845,9 +845,13 @@ const handleJoinGame = (ws, gameId, playerId) => {
 
 	// Player lobby signals
 	if (!game.started) {
-		if (newPlayer.ready)
-			for (const player of game.getOnlinePlayers())
-				sendPlayerReady(player.websocket, newPlayer.id);
+		if (newPlayer.ready) {
+			sendPlayerJoin(newPlayer.websocket, newPlayer.id); // Hey me, I joined
+			for (const player of game
+				.getOnlinePlayers()
+				.filter((x) => x !== newPlayer))
+				sendPlayerJoin(player.websocket, newPlayer.id); // Hey old, new joined
+		}
 
 		for (const player of game.getOnlinePlayers().filter((p) => p.ready))
 			sendPlayerReady(newPlayer.websocket, player.id);
@@ -1057,9 +1061,34 @@ const handleWebsocketDisconnect = (ws) => {
 				return handleDisconnectGame(ws, game.id, player.id);
 };
 
+const BASE_PATH = "./client";
+
+const reqHandler = async (req) => {
+	const filePath = BASE_PATH + new URL(req.url).pathname;
+	let fileSize;
+	try {
+		fileSize = (await Deno.stat(filePath)).size;
+	} catch (e) {
+		if (e instanceof Deno.errors.NotFound) {
+			return new Response(null, { status: 404 });
+		}
+		return new Response(null, { status: 500 });
+	}
+	const body = (await Deno.open(filePath)).readable;
+	let fileType;
+	if (filePath.endsWith("html")) fileType = "text/html";
+	if (filePath.endsWith("css")) fileType = "text/css";
+	return new Response(body, {
+		headers: {
+			"content-length": fileSize.toString(),
+			"content-type": fileType || "application/octet-stream",
+		},
+	});
+};
+
 Deno.serve({ port: "8000", hostname: "0.0.0.0" }, (req) => {
 	if (req.headers.get("upgrade") != "websocket") {
-		return new Response(null, { status: 501 });
+		return reqHandler(req);
 	}
 
 	const { socket: ws, response } = Deno.upgradeWebSocket(req);
