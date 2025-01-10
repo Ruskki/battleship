@@ -237,9 +237,9 @@ class Game {
 		const target = this.getPlayer(idTo);
 
 		if (user === target)
-			return sendError(user.websocket, `Can't attack own board!`);
+			return sendError(user.websocket, 'Can\'t attack own board!');
 		if (user !== this.turnOf)
-			return sendError(user.websocket, `It's not your turn`);
+			return sendError(user.websocket, 'It\'s not your turn');
 
 		const pos = target.board.getPosition(row, col);
 
