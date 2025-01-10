@@ -1067,17 +1067,23 @@ const handleWebsocketDisconnect = (ws) => {
 const BASE_PATH = "./client";
 
 const reqHandler = async (req) => {
-	const filePath = BASE_PATH + new URL(req.url).pathname;
+	let filePath = BASE_PATH + new URL(req.url).pathname;
 	let fileSize;
 	try {
 		fileSize = (await Deno.stat(filePath)).size;
 	} catch (e) {
-		if (e instanceof Deno.errors.NotFound) filePath = "./client/index.html";
+		if (e instanceof Deno.errors.NotFound) {
+			filePath = "./client/index.html";
+		} else {
+			return new Response(null, { status: 500 });
+		}
 	}
+	if (filePath === "./client/") filePath = "./client/index.html";
 	const body = (await Deno.open(filePath)).readable;
 	let fileType;
 	if (filePath.endsWith("html")) fileType = "text/html";
 	if (filePath.endsWith("css")) fileType = "text/css";
+	if (filePath.endsWith("js")) fileType = "text/javascript";
 	return new Response(body, {
 		headers: {
 			"content-length": fileSize.toString(),
@@ -1086,7 +1092,7 @@ const reqHandler = async (req) => {
 	});
 };
 
-Deno.serve({ port: "8000", hostname: "127.0.0.1" }, (req) => {
+Deno.serve({ port: "8000", hostname: "0.0.0.0" }, (req) => {
 	if (req.headers.get("upgrade") != "websocket") {
 		return reqHandler(req);
 	}
