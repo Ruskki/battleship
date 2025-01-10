@@ -33,7 +33,7 @@ Esto correra una instancia del servidor de juego en la maquina local en el puert
 
 ## Conectandose con el servidor
 
-Para conectarse con el servidor se debe abrir con el navegador el archivo `index.html`, el cual se encuentra dentro de la carpeta `client` en un navegador web
+Para conectarse con el servidor abra en su navegador `http://127.0.0.1:8000`
 
 Una vez ahi, se podra seleccionar la opcion "Play Online" para abrir el menu de juegos online
 
@@ -61,21 +61,11 @@ Al presionar el boton "Start Game", todos los jugadores seran enviados a la pagi
 > El servidor solamente guardara los barcos colocados una vez el jugador presione el boton de "Ready", si el jugador presiona el boton "Unready" el servidor no guardara la posicion de sus barcos
 
 > ADVERTENCIA
-> Para ahorrar memoria, una sala en la que todos los usuarios se desconectaron sera permanentemente eliminada luego de 30 segundos de inactividad
+> Una sala en la que todos los usuarios se desconectaron sera permanentemente eliminada luego de 30 segundos de inactividad
 
 ## Pagina de Juego
 
-Por los momentos, la pagina de juego no establece una conexion con el servidor, pero se han creado funciones de manipulacion del DOM para las siguientes acciones
+Por los momentos, solo se encuentran funcionales estas acciones
 
 - Presionar posicion: Marca la posicion como seleccionada
 - ATTACK: Destruye esa posicion
-- Sonar: Revela una posicion con un barco del tablero seleccionado al azar
-- Attack Airplanes: Ataca 5 posiciones del tablero seleccionado al azar
-- Marine Mine: Sin importar que tablero se seleccione, toma la posicion seleccionada y planta una mina en el tablero superior izquierdo
-- Defensive Shield: Sin importar que tablero se selecciones, toma la posicion seleccionada y planta una mina en el tablero superior izquierdo
-- Cruiser Missile; Destruye una posicion en un area de 3x3 de un tablero seleccionado, con centro en la posicion seleccionada
-- Quick Fix: Actualmente se encuentra deshabilitada
-- EMP Attack: Actualmente se encuentra deshabilitada
-
-> Al plantar la mina marina, uno puede atacar su propio tablero para observar su funcionamiento, si fuese otro jugador atacando, su tablero seria el destruido
-> Al utilizar los escudos, estos niegan los ataques regulares, de los aviones y del crucero
