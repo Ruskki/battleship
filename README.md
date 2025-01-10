@@ -33,7 +33,7 @@ Esto correra una instancia del servidor de juego en la maquina local en el puert
 
 ## Conectandose con el servidor
 
-Para conectarse con el servidor abra en su navegador `http://127.0.0.1:8000`
+Para conectarse con el servidor abra en su navegador `http://127.0.0.1:8000/index.html`
 
 Una vez ahi, se podra seleccionar la opcion "Play Online" para abrir el menu de juegos online
 
