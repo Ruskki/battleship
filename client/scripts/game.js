@@ -39,6 +39,12 @@ websocket.addEventListener("open", () => {
 	websocket.send(msg);
 });
 
+const handlePlayerWin = (playerId) => {
+	const player = Game.players[playerId];
+	if (!player) return;
+	window.location.href = `./winner.html?winnerId=${playerId}`;
+};
+
 const handleDestroyPosition = (playerId, row, col) => {
 	const player = Game.players[playerId];
 	if (!player) return;
@@ -118,6 +124,7 @@ websocket.addEventListener("message", (event) => {
 	if (ev.type === "error") return showError(ev.text);
 
 	if (ev.type === "gameInstruction") {
+		if (ev.instruction === "playerWin") handlePlayerWin(ev.playerId);
 		if (ev.instruction === "destroyPosition")
 			handleDestroyPosition(ev.playerId, ev.row, ev.col);
 		if (ev.instruction === "turnOfPlayer") handleTurnOfPlayer(ev.playerId);

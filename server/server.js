@@ -266,6 +266,15 @@ class Game {
 		else console.log("HIT");
 
 		user.setPoints(user.points + 5);
+
+		if (!target.getBoats().some((boat) => !boat.isDestroyed())) {
+			target.defeated = true;
+			if (this.getPlayers().filter((p) => !p.defeated).length === 1) {
+				for (const player of this.getOnlinePlayers())
+					sendPlayerWin(player.websocket, user.id);
+				handleDeleteGame(this.getHost().websocket, this.id, this.getHost().id);
+			}
+		}
 	};
 }
 
@@ -399,6 +408,7 @@ class Boat {
 	getSize = () => this.positions.length;
 	wasHealed = false;
 	placed = false;
+	isDestroyed = () => !this.positions.some((pos) => !pos.destroyed);
 
 	constructor(name) {
 		this.name = name;
@@ -469,6 +479,7 @@ class Player {
 		this.playerSlot = playerSlot;
 		this.points = 0;
 		this.ready = false;
+		this.defeated = false;
 
 		this.boats = {
 			destroyer: new Boat("destroyer"),
@@ -554,17 +565,20 @@ const sendRevealPosition = (
 };
 
 const handleAttackPosition = (ws, userId, targetId, row, col) => {
-	if (!isValidString(userId)) sendError(ws, "ERROR: userId is empty");
+	if (!isValidString(userId)) return sendError(ws, "ERROR: userId is empty");
 	if (!Game.isPlayerInGame(userId))
-		sendError(ws, `ERROR: ${userId} is not in a game`);
+		return sendError(ws, `ERROR: ${userId} is not in a game`);
 
-	if (!isValidString(targetId)) console.log("ERROR: targetId is empty");
+	if (!isValidString(targetId)) return console.log("ERROR: targetId is empty");
 	if (!Game.isPlayerInGame(targetId))
-		sendError(ws, `ERROR: ${targetId} is not in a game`);
+		return sendError(ws, `ERROR: ${targetId} is not in a game`);
 
 	const game = Game.getGameFromPlayer(userId);
 	if (!game.getPlayer(targetId))
-		sendError(ws, `ERROR: ${targetId} is not in the same game as ${userId}`);
+		return sendError(
+			ws,
+			`ERROR: ${targetId} is not in the same game as ${userId}`,
+		);
 
 	game.attackPlayer(userId, targetId, row, col);
 };
@@ -575,6 +589,15 @@ const sendTurnOfPlayer = (ws, playerId) => {
 		instruction: "turnOfPlayer",
 		playerId: playerId,
 		turnNumber: Game.getGameFromPlayer(playerId).turnNumber,
+	});
+	ws.send(msg);
+};
+
+const sendPlayerWin = (ws, playerId) => {
+	const msg = JSON.stringify({
+		type: "gameInstruction",
+		instruction: "playerWin",
+		playerId: playerId,
 	});
 	ws.send(msg);
 };

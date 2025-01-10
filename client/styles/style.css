@@ -8,7 +8,6 @@
 @import url("./online.css");
 @import url("./helper-classes.css");
 
-
 * {
 	color: white;
 	text-decoration: none;
@@ -75,4 +74,10 @@ body {
 
 	margin: var(--body-margin);
 	padding: var(--body-padding);
+}
+
+#winner-id {
+	font-size: 32px;
+	padding: 0 0 0 25px;
+	color: gold;
 }
