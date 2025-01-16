@@ -25,6 +25,33 @@ const isValidString = (str) => (str ?? '').length;
 
 const gameList = {};
 
+class GameList {
+	#websockets = {};
+	isWebsocketInGame = (ws) => this.#websockets.has(ws);
+	getGameFromWebsocket = (ws) => this.#websockets[ws];
+
+	#players = {};
+	isPlayerInGame = (id) => this.#players.has(id);
+	getPlayerFromGame = (id) => this.#players[id];
+
+	#generateGameId = () => {
+		let id;
+		while (!id || !!this.#gameList[id])
+			id = Math.random().toString(32).slice(2, 8).toString();
+		return id;
+	};
+
+	#gameList = {};
+	createGame = () => {
+		const game = new Game();
+		game.id = this.#generateGameId();
+		this.#gameList[game.id] = game;
+		return game;
+	};
+}
+
+const GAME_LIST = new GameList();
+
 class Game {
 	static websocketsInGames = new Set();
 
@@ -758,35 +785,22 @@ const sendError = (ws, text) => {
 	);
 };
 
-const generateGameId = () => {
-	let id = undefined;
-	while (id === undefined || gameList[id] !== undefined)
-		id = Math.random().toString(32).slice(2, 8).toString();
-	return id;
+// This instruction tells the websocket to make this player join a game
+const sendJoinGame = (ws, gameId) => {
+	const msg = JSON.stringify({
+		type: 'lobbyInstruction',
+		instruction: 'joinGame',
+		gameId,
+	});
+	ws.send(msg);
 };
 
-const handleCreateGame = (ws, playerId, gameId = '') => {
-	console.log(`INFO: The player ${playerId} is creating a game... ${gameId}`);
+const handleCreateGame = (ws) => {
+	console.log('INSTRUCTION: A game is being created...');
 
-	console.assert(ws, 'Websocket somehow not here');
+	const newGame = GAME_LIST.createGame();
 
-	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
-	if (Game.isPlayerInGame(playerId)) {
-		const game = Game.getGameFromPlayer(playerId);
-		handleLeaveGame(ws, game.id, playerId);
-	}
-
-	if (isValidString(gameId) && gameList[gameId] !== undefined)
-		return sendError(ws, `game with id ${gameId} already exists`);
-
-	const newGame = new Game();
-	if (isValidString(gameId)) newGame.id = gameId;
-	else newGame.id = generateGameId();
-
-	gameList[newGame.id] = newGame;
-	sendSuccess(ws, `created game with id of ${newGame.id}`);
-
-	handleJoinGame(ws, newGame.id, playerId);
+	sendJoinGame(ws, newGame.id);
 };
 
 const handleJoinGame = (ws, gameId, playerId) => {
