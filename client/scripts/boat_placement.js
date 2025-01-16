@@ -203,31 +203,68 @@ const getCosecutivePositions = (row, col, size, vertical) => {
 ////////////////////// Websocket //////////////////////
 ///////////////////////////////////////////////////////
 
-const url_string = window.location.href;
-const url = new URL(url_string);
+const urlString = window.location.href;
+const url = new URL(urlString);
 
 const gameId = url.searchParams.get('gameId');
 const playerId = url.searchParams.get('playerId');
 
 document.getElementById('room-id').innerText = gameId;
 
-const websocket = new WebSocket('ws://127.0.0.1:8000');
-
-websocket.addEventListener('open', () => {
-	const msg = JSON.stringify({
-		type: 'lobbyInstruction',
+const websocketOnOpen = (ws) => {
+	const joinMsg = JSON.stringify({
+		type: 'instruction',
 		instruction: 'joinGame',
-		gameId: gameId,
-		playerId: playerId,
+		gameId,
+		playerId,
 	});
-	websocket.send(msg);
-});
+	ws.send(joinMsg);
 
-websocket.addEventListener('close', () => {
-	showError(
-		'You\'ve been disconnected from the match! Check your internet connection',
-	);
-});
+	const boatMsg = JSON.stringify({
+		type: 'instruction',
+		instruction: 'getBoats',
+		playerId,
+	});
+	ws.send(boatMsg);
+
+};
+
+const websocketOnMessage = (event) => {
+	let ev;
+	try {
+		ev = JSON.parse(event.data);
+	} catch (e) {
+		console.error(e);
+		return;
+	}
+
+	if (ev.type === 'error') showError(ev.text);
+
+	if (ev.type === 'instruction') {
+		if (ev.instruction === 'joinGame') handleJoinGame(ev.playerId);
+		if (ev.instruction === 'playerDisconnect') handleLeaveGame(ev.playerId);
+
+		if (ev.instruction === 'newHost') handleNewHost(ev.playerId);
+
+		if (ev.instruction === 'playerReady') handlePlayerReady(ev.playerId);
+		if (ev.instruction === 'playerUnready') handlePlayerUnready(ev.playerId);
+
+		if (ev.instruction === 'gameReady') readyButtonToPlayButton();
+		if (ev.instruction === 'gameUnready') readyButtonOriginalState();
+
+		if (ev.instruction === 'startGame') handleGameStart();
+		if (ev.instruction === 'placeBoat')
+			handlePlaceBoat(ev.boatName, ev.row, ev.col, ev.vertical);
+	}
+};
+
+const websocketOnClose = () =>
+	showError('You\'ve been disconnected from the match! Check your internet connection');
+
+const websocket = new WebSocket('ws://127.0.0.1:8000');
+websocket.addEventListener('open', _ => websocketOnOpen(websocket));
+websocket.addEventListener('message', websocketOnMessage);
+websocket.addEventListener('close', websocketOnClose);
 
 const players = [];
 
@@ -254,6 +291,13 @@ const handleJoinGame = (joiningPlayerId, newHost) => {
 	players.push(player);
 
 	showSuccess(`Player ${joiningPlayerId} has joined the game!`);
+
+	const readyMsg = JSON.stringify({
+		type: 'instruction',
+		instruction: 'getReadyPlayers',
+		gameId,
+	});
+	websocket.send(readyMsg);
 };
 
 const handleNewHost = (newHost) => {
@@ -272,7 +316,7 @@ const handleLeaveGame = (disconnectingPlayerId) => {
 const $readyButton = document.getElementById('ready-button');
 
 const handlePlayerReady = (readyPlayerId) => {
-	if (readyPlayerId === playerId) {
+	if (!isPlayerReady && readyPlayerId === playerId) {
 		isPlayerReady = true;
 		$readyButton.innerText = 'Unready';
 	}
@@ -304,43 +348,14 @@ const handlePlaceBoat = (boatName, row, col, vertical) => {
 	handleDrop(undefined, document.getElementById(`${row},${col}`));
 };
 
-websocket.addEventListener('message', (event) => {
-	let ev;
-	try {
-		ev = JSON.parse(event.data);
-	} catch (e) {
-		console.error(e);
-		return;
-	}
 
-	if (ev.type === 'error') showError(ev.text);
-
-	if (ev.type === 'gameInstruction') handleGameStart();
-
-	if (ev.type === 'lobbyInstruction') {
-		if (ev.instruction === 'joinGame') handleJoinGame(ev.playerId);
-		if (ev.instruction === 'playerDisconnect') handleLeaveGame(ev.playerId);
-
-		if (ev.instruction === 'newHost') handleNewHost(ev.playerId);
-
-		if (ev.instruction === 'playerReady') handlePlayerReady(ev.playerId);
-		if (ev.instruction === 'playerUnready') handlePlayerUnready(ev.playerId);
-
-		if (ev.instruction === 'gameReady') readyButtonToPlayButton();
-		if (ev.instruction === 'gameUnready') readyButtonOriginalState();
-
-		if (ev.instruction === 'startGame') handleGameStart();
-		if (ev.instruction === 'placeBoat')
-			handlePlaceBoat(ev.boatName, ev.row, ev.col, ev.vertical);
-	}
-});
 
 const startGameListener = () => {
 	const startMsg = JSON.stringify({
 		type: 'lobbyInstruction',
 		instruction: 'startGame',
-		playerId: playerId,
-		gameId: gameId,
+		playerId,
+		gameId,
 	});
 	websocket.send(startMsg);
 };
@@ -350,7 +365,7 @@ const readyUpListener = () => {
 		const msg = JSON.stringify({
 			type: 'lobbyInstruction',
 			instruction: 'playerUnready',
-			playerId: playerId,
+			playerId,
 		});
 		websocket.send(msg);
 		return;
@@ -364,10 +379,10 @@ const readyUpListener = () => {
 		const msg = JSON.stringify({
 			type: 'lobbyInstruction',
 			instruction: 'placeBoat',
-			playerId: playerId,
+			playerId,
 			boatName: shipId,
-			row: row,
-			col: col,
+			row,
+			col,
 			vertical: Boats[shipId].vertical,
 		});
 		websocket.send(msg);
@@ -376,7 +391,7 @@ const readyUpListener = () => {
 	const readyMsg = JSON.stringify({
 		type: 'lobbyInstruction',
 		instruction: 'playerReady',
-		playerId: playerId,
+		playerId,
 	});
 	websocket.send(readyMsg);
 };
@@ -390,6 +405,7 @@ const readyButtonOriginalState = () => {
 };
 
 const readyButtonToPlayButton = () => {
+	console.log($readyButton)
 	$readyButton.className = 'play-button';
 	$readyButton.innerText = 'Start Game';
 

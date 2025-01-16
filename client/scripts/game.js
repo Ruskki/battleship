@@ -23,20 +23,21 @@ const Boats = {
 
 const websocket = new WebSocket('ws://127.0.0.1:8000');
 
-const url_string = window.location.href;
-const url = new URL(url_string);
+const urlString = window.location.href;
+const url = new URL(urlString);
 
 const gameId = url.searchParams.get('gameId');
 const playerId = url.searchParams.get('playerId');
 
 websocket.addEventListener('open', () => {
 	const msg = JSON.stringify({
-		type: 'lobbyInstruction',
+		type: 'instruction',
 		instruction: 'joinGame',
-		gameId: gameId,
-		playerId: playerId,
+		gameId,
+		playerId,
 	});
 	websocket.send(msg);
+
 });
 
 const handlePlayerWin = (playerId) => {
@@ -83,15 +84,31 @@ const handleUpdatePoints = (newPoints) => {
 	$pointsEl.innerText = newPoints;
 };
 
-const handleJoinGame = (playerId) => {
-	const player = Game.players[playerId];
+const handleJoinGame = (pId) => {
+	const player = Game.players[pId];
 	if (player) {
 		player.connected = true;
-		player.$playerName.innerText = playerId;
+		player.$playerName.innerText = pId;
 	}
 
-	showSuccess(`${playerId} has connected!`);
-	Game.addPlayer(playerId);
+	if (pId === playerId) {
+		const boatMsg = JSON.stringify({
+			type: 'instruction',
+			instruction: 'getBoats',
+			playerId,
+		});
+		websocket.send(boatMsg);
+
+		const turnMsg = JSON.stringify({
+			type: 'instruction',
+			instruction: 'getTurnOf',
+			gameId,
+		});
+		websocket.send(turnMsg);
+	}
+
+	showSuccess(`${pId} has connected!`);
+	Game.addPlayer(pId);
 };
 
 const handleDisconnectGame = (playerId) => {
@@ -103,11 +120,18 @@ const handleDisconnectGame = (playerId) => {
 	showError(`${playerId} has disconnected!`);
 };
 
-const handlePlaceBoat = (playerId, boatName, row, col, vertical) => {
-	const player = Game.players[playerId];
-	if (!player) return console.error('ERROR: player ', playerId, ' not found');
+const handlePlaceBoat = (boatName, row, col, vertical) => {
+	Object.values(Game.players)[0].placeBoat(Boats[boatName], row, col, vertical);
+};
 
-	player.placeBoat(Boats[boatName], row, col, vertical);
+const handleAttackPosition = (playerId, row, col, success) => {
+	const player = Game.players[playerId];
+	if (!player) return;
+
+	const pos = player.board.getPosition(row, col);
+	if (!pos) return;
+
+	pos.destroy(success);
 };
 
 websocket.addEventListener('message', (event) => {
@@ -123,11 +147,14 @@ websocket.addEventListener('message', (event) => {
 
 	if (ev.type === 'error') return showError(ev.text);
 
-	if (ev.type === 'gameInstruction') {
+	console.log(ev);
+
+	if (ev.type === 'instruction') {
 		if (ev.instruction === 'playerWin') handlePlayerWin(ev.playerId);
 		if (ev.instruction === 'destroyPosition')
 			handleDestroyPosition(ev.playerId, ev.row, ev.col);
 		if (ev.instruction === 'turnOfPlayer') handleTurnOfPlayer(ev.playerId);
+		if (ev.instruction === 'attack') handleAttackPosition(ev.playerId, ev.row, ev.col, ev.success);
 		if (ev.instruction === 'revealPosition')
 			handleRevealPosition(
 				ev.playerId,
@@ -142,14 +169,12 @@ websocket.addEventListener('message', (event) => {
 			);
 
 		if (ev.instruction === 'pointsUpdate') handleUpdatePoints(ev.points);
-	}
 
-	if (ev.type === 'lobbyInstruction') {
 		if (ev.instruction === 'joinGame') handleJoinGame(ev.playerId);
 		if (ev.instruction === 'playerDisconnect')
 			handleDisconnectGame(ev.playerId);
 		if (ev.instruction === 'placeBoat')
-			handlePlaceBoat(ev.playerId, ev.boatName, ev.row, ev.col, ev.vertical);
+			handlePlaceBoat(ev.boatName, ev.row, ev.col, ev.vertical);
 	}
 });
 
@@ -255,8 +280,8 @@ class Game {
 			instruction: 'attackPosition',
 			userId: user.id,
 			targetId: target.id,
-			row: row,
-			col: col,
+			row,
+			col,
 		});
 		websocket.send(msg);
 	};
@@ -349,36 +374,36 @@ class Game {
 		let oneHealed = false;
 		let twoHealed = false;
 
-		if (posOne.boat === undefined) {
+		if (posOne.boat === undefined)
 			console.log(`${rowOne},${colOne} does not have a boat`);
-		} else if (user.boats[posOne.boat].wasHealed) {
+		else if (user.boats[posOne.boat].wasHealed)
 			console.log(
 				`Unable to heal ${posOne.boat} because it was already healed`,
 			);
-		} else if (user.boats[posOne.boat].isDestroyed()) {
+		else if (user.boats[posOne.boat].isDestroyed())
 			console.log(
 				`The boat ${posOne.boat} from ${user.name} is already fully destroyed`,
 			);
-		} else if (!posOne.destroyed) {
+		else if (!posOne.destroyed)
 			console.log(`${rowOne},${colOne} is not destroyed`);
-		} else {
+		else {
 			posOne.heal();
 			oneHealed = true;
 		}
 
-		if (posTwo.boat === undefined) {
+		if (posTwo.boat === undefined)
 			console.log(`${rowTwo},${colTwo} does not have a boat`);
-		} else if (user.boats[posTwo.boat].wasHealed) {
+		else if (user.boats[posTwo.boat].wasHealed)
 			console.log(
 				`Unable to heal ${posTwo.boat} because it was already healed`,
 			);
-		} else if (user.boats[posTwo.boat].isDestroyed()) {
+		else if (user.boats[posTwo.boat].isDestroyed())
 			console.log(
 				`The boat ${posTwo.boat} from ${user.name} is already fully destroyed`,
 			);
-		} else if (!posTwo.destroyed) {
+		else if (!posTwo.destroyed)
 			console.log(`${rowTwo},${colTwo} is not destroyed`);
-		} else {
+		else {
 			posTwo.heal();
 			twoHealed = true;
 		}
@@ -414,8 +439,9 @@ class BoardPosition {
 		this.shielded = true;
 	};
 
-	destroy = () => {
-		this.cell.setAttribute('data-destroyed', 'true');
+	destroy = (success = true) => {
+		if (success) this.cell.setAttribute('data-destroyed', 'true');
+		else this.cell.setAttribute('data-miss', 'true');
 		this.destroyed = true;
 	};
 
@@ -559,10 +585,10 @@ class Board {
 		board.className = 'board';
 
 		this.addCell(board, '', '');
-		for (let num of Board.cols) this.addCell(board, '', num);
-		for (let c of Board.rows) {
+		for (const num of Board.cols) this.addCell(board, '', num);
+		for (const c of Board.rows) {
 			this.addCell(board, c, '');
-			for (let n of Board.cols) this.addCell(board, c, n);
+			for (const n of Board.cols) this.addCell(board, c, n);
 		}
 		$divContainer.appendChild(board);
 	};

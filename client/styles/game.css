@@ -118,6 +118,14 @@ div[data-destroyed="true"]::after {
 	background: rgba(255, 0, 0, 0.75) !important;
 }
 
+div[data-miss="true"]::after {
+	display: block;
+	content: "";
+	width: 50px;
+	height: 50px;
+	background: rgba(255, 0, 255, 0.75) !important;
+}
+
 .targetted-information {
 	display: flex;
 

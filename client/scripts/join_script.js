@@ -6,11 +6,9 @@ const websocket = new WebSocket('ws://127.0.0.1:8000');
 const onlineIndicator = document.getElementById('online-indicator');
 
 const creteGameButton = () => {
-	if (!websocket.OPEN) return;
 	const msg = JSON.stringify({
 		type: 'lobbyInstruction',
 		instruction: 'createGame',
-		playerId: $playerIdInput.value,
 	});
 	websocket.send(msg);
 };
@@ -22,7 +20,7 @@ document
 const joinGameButton = () => {
 	if (!websocket.OPEN) return;
 	const msg = JSON.stringify({
-		type: 'lobbyInstruction',
+		type: 'instruction',
 		instruction: 'joinGame',
 		gameId: $gameIdInput.value,
 		playerId: $playerIdInput.value,
@@ -69,6 +67,8 @@ websocket.addEventListener('message', (event) => {
 	}
 
 	if (ev.type === 'error') showError(ev.text);
-	if (ev.type === 'lobbyInstruction' && ev.instruction === 'joinGame')
+	if (ev.instruction === 'createGame')
+		window.location.href = `./fleet.html?playerId=${$playerIdInput.value}&gameId=${ev.gameId}`;
+	if (ev.instruction === 'joinGame')
 		window.location.href = `./fleet.html?playerId=${$playerIdInput.value}&gameId=${ev.gameId}`;
 });
