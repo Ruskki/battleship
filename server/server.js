@@ -169,6 +169,41 @@ const handleAttackPosition = (ws, userId, targetId, row, col) => {
 	game.attackPlayer(userId, targetId, row, col);
 };
 
+const sendJoinTourney = (ws, playerId, tourneyId) => sendInstruction(ws, 'joinTourney', { playerId, tourneyId });
+
+const handleCreateTourney = (ws, { playerId }) => {
+	const tourney = TOURNEY_LIST.createTourney();
+	sendJoinTourney(ws, playerId, tourney.id);
+};
+
+const handleJoinTourney = (ws, { playerId, tourneyId }) => {
+	const tourney = TOURNEY_LIST.getTourney(tourneyId);
+	if (!tourney) return sendError(`No tourney ${tourneyId} found`);
+
+	if (tourney.getOnlinePlayers().length >= Tourney.playerLimit)
+		return sendError(ws, `Cannot join ${tourneyId} because it's full!`);
+
+	tourney.addPlayer(ws, playerId);
+	sendJoinTourney(ws, playerId, tourney.id);
+	for (const player of tourney.getOnlinePlayers()) {
+		sendJoinTourney(ws, player.id, tourney.id);
+		sendJoinTourney(player.websocket, playerId, tourney.id);
+	}
+};
+
+const handleDisconnectTourney = (ws, { playerId, tourneyId }) => {
+	const tourney = TOURNEY_LIST.getTourney(tourneyId);
+	if (!tourney) return sendError(ws, `Tourney ${tourneyId} not found`);
+
+	const disconnectingPlayer = tourney.getPlayer(playerId);
+	if (!disconnectingPlayer) return sendError(ws, `Player ${playerId} not found in ${tourneyId}`);
+
+	tourney.disconnectPlayer(playerId);
+
+	for (const player of tourney.getOnlinePlayers())
+		sendPlayerDisconnect(player.websocket, disconnectingPlayer.id);
+};
+
 class InstructionHandler {
 	#instructions = {
 		'createGame': {
@@ -197,6 +232,12 @@ class InstructionHandler {
 		},
 		'attackPosition': {
 			handle: (ws, ev) => handleAttackPosition(ws, ev.userId, ev.targetId, ev.row, ev.col)
+		},
+		'createTourney': {
+			handle: (ws, ev) => handleCreateTourney(ws, ev)
+		},
+		'joinTourney': {
+			handle: (ws, ev) => handleJoinTourney(ws, ev)
 		},
 		'placeBoat': {
 			handle: (ws, ev) => handlePlaceBoat(
@@ -246,7 +287,78 @@ const Boats = {
 
 const isValidString = (str) => (str ?? '').length;
 
-const gameList = {};
+class TourneyList {
+	#tourneys = {};
+
+	getTourney = (id) => this.#tourneys[id];
+
+	getTourneys = () => Object.values(this.#tourneys);
+
+	#generateTourneyId = () => {
+		let id;
+		while (!id || !!this.#tourneys[id])
+			id = Math.random().toString(32).slice(2, 8).toString();
+		return id;
+	};
+
+	createTourney = () => {
+		const id = this.#generateTourneyId();
+		const tourney = new Tourney(id);
+		this.#tourneys[id] = tourney;
+		return tourney;
+	};
+
+}
+
+class Tourney {
+	static playerLimit = 4;
+
+	#playerList = [];
+
+	getPlayer = (id) => this.#playerList.find(p => p.id === id);
+
+	getPlayers = () => this.#playerList;
+
+	getOnlinePlayers = () => this.#playerList.filter(p => p.websocket);
+
+	removeOfflinePlayer = () => {
+		for (const pIdx in this.#playerList) {
+			if (this.#playerList[pIdx].websocket) continue;
+			return this.#playerList.splice(pIdx, 1);
+		}
+	};
+
+	disconnectPlayer = (id) => {
+		const player = this.getPlayer(id);
+		if (!player) return;
+
+		player.websocket = undefined;
+	};
+
+	reconnectPlayer = (ws, playerObj) => {
+		playerObj.websocket = ws;
+		return playerObj;
+	};
+
+	addPlayer = (ws, playerId) => {
+		const p = this.getPlayer(playerId);
+		if (p) return this.reconnectPlayer(ws, p);
+
+		if (this.getPlayers().length !== this.getOnlinePlayers().length)
+			this.removeOfflinePlayer();
+
+		const player = new Player(playerId, ws);
+		this.#playerList.push(player);
+		console.log(this.#playerList.map(x => x.id).length);
+		return player;
+	};
+
+	constructor(id) {
+		this.id = id;
+	}
+}
+
+const TOURNEY_LIST = new TourneyList();
 
 class GameList {
 	#websockets = [];
@@ -400,11 +512,11 @@ class Game {
 
 		if (this.getPlayerIndex(id) === 0) this.players.push(this.players.shift());
 
-		if (!this.players.some((x) => x.websocket)) 
+		if (!this.players.some((x) => x.websocket))
 			this.selfDestroyTimer = setTimeout(() => {
 				this.deleteGame();
 			}, 30000);
-		
+
 	};
 
 	removePlayer = (id) => {
@@ -726,11 +838,10 @@ class Player {
 		sendPointsUpdate(this.websocket, this.points);
 	};
 
-	constructor(id, playerSlot, websocket) {
+	constructor(id, websocket) {
 		this.id = id;
 		this.board = new Board(this);
 		this.websocket = websocket;
-		this.playerSlot = playerSlot;
 		this.points = 0;
 		this.ready = false;
 		this.defeated = false;
@@ -827,71 +938,14 @@ const sendPointsUpdate = (ws, points) => {
 	ws.send(msg);
 };
 
-// Placing Shield - Sent to every player
-// instruction: 'healPosition'
-// playerSlot: number 0 - 3
-// row: string A - J
-// col: string 1 - 10
-const sendHealPosition = (ws, row, col) => {
-	const game = Game.getGameFromWebsocket(ws);
-	assert(game !== undefined);
-	game.players.forEach((player) => {
-		player.websocket.send(
-			JSON.stringify({
-				type: 'instruction',
-				instruction: 'destroyPosition',
-				playerSlot,
-				row,
-				col,
-			}),
-		);
-	});
-};
-
-// Placing Shield - Sent to the player that placed it
-// instruction: 'placeShield'
-// row: string A - J
-// col: string 1 - 10
-const sendPlaceShield = (ws, row, col) => {
-	ws.send(
-		JSON.stringify({
-			type: 'instruction',
-			instruction: 'placeShield',
-			row,
-			col,
-		}),
-	);
-};
-
-// Placing Mines - Sent to the player that placed it
-// instruction: 'placeMine'
-// gameId: string
-// playerId: string
-// row: string A - J
-// col: string 1 - 10
-const sendPlaceMine = (ws, row, col) => {
-	ws.send(
-		JSON.stringify({
-			type: 'instruction',
-			instruction: 'placeMine',
-			row,
-			col,
-		}),
-	);
-};
-
-
-
 const sendNewHost = (ws, playerId) => {
 	const msg = JSON.stringify({
-		type: 'lobbyInstruction',
+		type: 'instruction',
 		instruction: 'newHost',
 		playerId,
 	});
 	ws.send(msg);
 };
-
-
 
 const sendSuccess = (ws, text) => {
 	console.log(`SUCCESS: ${text}`);
@@ -993,6 +1047,11 @@ const handleDeleteGame = (ws, gameId, playerId) => {
 };
 
 const handleWebsocketDisconnect = (ws) => {
+	for (const tourney of TOURNEY_LIST.getTourneys())
+		for (const player of tourney.getOnlinePlayers())
+			if (player.websocket === ws)
+				return handleDisconnectTourney(ws, { tourneyId: tourney.id, playerId: player.id });
+
 	if (!GAME_LIST.isWebsocketInGame(ws))
 		return console.log('INFO: a websocket disconnected without being in a game',);
 
