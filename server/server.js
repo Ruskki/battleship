@@ -393,6 +393,9 @@ class InstructionHandler {
 		'joinTourney': {
 			handle: handleJoinTourney
 		},
+		'startTourney': {
+			handle: handleStartTourney
+		},
 		'placeBoat': {
 			handle: handlePlaceBoat
 		}
@@ -552,8 +555,29 @@ class Tourney {
 	};
 
 	/** @returns {void} */
+	nextRound() {
+		while (this.players.length > 0) {
+			const [playerOne, playerTwo] = this.#playerList.splice(0, 2);
+			if (playerOne && playerTwo) {
+				const game = GAME_LIST.createTourneyGame(`${this.id}-${playerOne.id}-${playerTwo.id}`);
+				game.addPlayer(playerOne);
+				game.addPlayer(playerTwo);
+				for (const player of game.players)
+					sendPlayerJoin(player.websocket, player.id, game.id);
+				game.startGame();
+			}
+			else {
+				console.log('NOT ENOUGH PLAYERS');
+				break;
+			}
+		}
+	};
+
+	/** @returns {void} */
 	start() {
 		this.#started = true;
+
+		this.nextRound();
 	};
 
 	/** @param {string} id */
@@ -669,6 +693,16 @@ class GameList {
 	 * @param {string} id
 	 * @returns {Game}
 	 */
+	createTourneyGame(id) {
+		const game = new Game(id);
+		this.#gameList[game.id] = game;
+		return game;
+	};
+
+	/**
+	 * @param {string} id
+	 * @returns {Game}
+	 */
 	getGame(id) {
 		return this.#gameList[id];
 	}
@@ -772,6 +806,29 @@ class Game {
 
 	/** @returns {Player} */
 	getHost() { return this.players.at(0); }
+
+	/**
+	 * @param {Player} player
+	 * @returns {void}
+	 */
+	addPlayer(player) {
+		const p = this.getPlayer(player.id);
+		if (p) {
+			this.#reconnectPlayer(player.websocket, p);
+			return;
+		}
+
+		if (this.isFull()) return;
+
+		if (this.#selfDestroyTimer) {
+			clearTimeout(this.#selfDestroyTimer);
+			this.selfDestroyTimer = undefined;
+		}
+
+		this.players.push(player);
+		GAME_LIST.registerWebsocket(player.websocket, this);
+		GAME_LIST.registerPlayer(player.id, this);
+	}
 
 	/**
 	 * @param {WebSocket} ws
