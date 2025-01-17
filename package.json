@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^9.18.0",
+    "eslint-plugin-deno": "^0.0.1",
+    "eslint-plugin-jsdoc": "^50.6.1"
+  }
+}
