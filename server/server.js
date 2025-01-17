@@ -498,6 +498,18 @@ class TourneyList {
 		return Object.values(this.#tourneys);
 	}
 
+	/** @type {{[key: string]: number}} */
+	#medals = {};
+
+	/**
+	 * @param {string} playerId
+	 * @returns {void}
+	 */
+	registerWin(playerId) {
+		if (playerId in this.#medals) this.#medals[playerId] += 1;
+		else this.#medals[playerId] = 1;
+	}
+
 	/**
 	 * @param {string} id
 	 * @returns {Tourney}
@@ -618,6 +630,10 @@ class Tourney {
 		return player;
 	};
 
+	/** @type {boolean} */
+	#lastGame;
+	get lastGame() { return this.#lastGame; }
+
 	/** @returns {void} */
 	nextRound() {
 		while (this.players.length > 0) {
@@ -629,6 +645,11 @@ class Tourney {
 				for (const player of game.players) {
 					sendPlayerJoin(player.websocket, player.id, game.id);
 					this.#playersInGames.push({ player, game });
+				}
+
+				if (this.players.length === 0 && this.playersInGames.length === 2) {
+					console.log('LAST GAME');
+					this.#lastGame = true;
 				}
 			}
 			else {
@@ -1073,18 +1094,21 @@ class Game {
 
 		user.points += 5;
 
-		if (!target.boats.some((/** @type {Boat} */ boat) => !boat.destroyed)) {
+		if (!target.boats.some(boat => !boat.destroyed)) {
 			target.defeated = true;
 			if (this.players.filter((p) => !p.defeated).length === 1) {
-				if (this.tourney) {
+				if (this.tourney && this.tourney.lastGame) {
+					TOURNEY_LIST.registerWin(user.id);
+					for (const player of this.getOnlinePlayers())
+						sendPlayerWin(player.websocket, user.id);
+				} else if (this.tourney) {
 					this.tourney.playerWin(user.id);
 					user.reset();
 					sendJoinTourney(user.websocket, user.id, this.tourney.id);
 
 					this.tourney.playerLose(target.id);
 					sendLeaveTourney(target.websocket, target.id, this.tourney.id);
-				}
-				else
+				} else
 					for (const player of this.getOnlinePlayers())
 						sendPlayerWin(player.websocket, user.id);
 				handleDeleteGame(this.getHost().websocket, { gameId: this.id, playerId: this.getHost().id });
@@ -1554,12 +1578,7 @@ function sendAttack(ws, playerId, row, col, success) {
  * @returns {void}
  */
 function sendPlayerWin(ws, playerId) {
-	const msg = JSON.stringify({
-		type: 'gameInstruction',
-		instruction: 'playerWin',
-		playerId,
-	});
-	ws.send(msg);
+	sendInstruction(ws, 'playerWin', { playerId });
 };
 
 /**
