@@ -66,6 +66,7 @@ websocket.addEventListener('message', (event) => {
 		return;
 	}
 
+	console.log(ev);
 	if (ev.type === 'error') showError(ev.text);
 	if (ev.instruction === 'createGame')
 		window.location.href = `./fleet.html?playerId=${$playerIdInput.value}&gameId=${ev.gameId}`;

@@ -405,7 +405,7 @@ const readyButtonOriginalState = () => {
 };
 
 const readyButtonToPlayButton = () => {
-	console.log($readyButton)
+	console.log($readyButton);
 	$readyButton.className = 'play-button';
 	$readyButton.innerText = 'Start Game';
 
