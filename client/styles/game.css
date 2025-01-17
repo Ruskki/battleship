@@ -49,6 +49,10 @@ input {
 	font-size: 20px;
 }
 
+.power-up-button.disabled {
+	background: rgba(30, 30, 30);
+}
+
 div[data-boat^="destroyer"] {
 	background-image: url("../images/destroyer.png");
 }

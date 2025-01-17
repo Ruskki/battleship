@@ -15,12 +15,12 @@ function pickRandom(array) {
 function sendInstruction(ws, instruction, data) {
 	console.log(`SEND: ${instruction}, data: ${JSON.stringify(data)}`);
 	const msg = JSON.stringify({
-		type: 'instruction',
+		type: "instruction",
 		instruction,
-		...data
+		...data,
 	});
 	ws.send(msg);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -28,7 +28,7 @@ function sendInstruction(ws, instruction, data) {
  * @returns {void}
  */
 function sendCreateGame(ws, gameId) {
-	sendInstruction(ws, 'createGame', { gameId });
+	sendInstruction(ws, "createGame", { gameId });
 }
 
 /**
@@ -38,7 +38,7 @@ function sendCreateGame(ws, gameId) {
 function handleCreateGame(ws) {
 	const newGame = GAME_LIST.createGame();
 	sendCreateGame(ws, newGame.id);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -46,7 +46,9 @@ function handleCreateGame(ws) {
  * @param {string} gameId
  * @returns {void}
  */
-function sendPlayerJoin(ws, playerId, gameId) { sendInstruction(ws, 'joinGame', { playerId, gameId }); }
+function sendPlayerJoin(ws, playerId, gameId) {
+	sendInstruction(ws, "joinGame", { playerId, gameId });
+}
 
 /**
  * @param {WebSocket} ws
@@ -56,8 +58,8 @@ function sendPlayerJoin(ws, playerId, gameId) { sendInstruction(ws, 'joinGame', 
  * @returns {void}
  */
 function handleJoinGame(ws, { playerId, gameId }) {
-	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
-	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
 
 	const game = GAME_LIST.getGame(gameId);
 	if (!game) return sendError(ws, `no game ${gameId} found`);
@@ -65,25 +67,31 @@ function handleJoinGame(ws, { playerId, gameId }) {
 		return sendError(ws, `Cannot join game ${gameId} because it's full`);
 
 	const otherGame = GAME_LIST.getPlayerGame(playerId);
-	if (otherGame && otherGame !== game)
-		otherGame.removePlayer(playerId);
+	if (otherGame && otherGame !== game) otherGame.removePlayer(playerId);
 
-	if (GAME_LIST.getPlayerGame(playerId) && GAME_LIST.getPlayer(playerId).isOnline())
-		return sendError(ws, `Player ${playerId} already connected to ${gameId} from somewhere else`);
+	if (
+		GAME_LIST.getPlayerGame(playerId) &&
+		GAME_LIST.getPlayer(playerId).isOnline()
+	)
+		return sendError(
+			ws,
+			`Player ${playerId} already connected to ${gameId} from somewhere else`,
+		);
 
 	const newPlayer = game.addNewPlayer(ws, playerId);
 
 	sendPlayerJoin(newPlayer.websocket, newPlayer.id, game.id); // Hey me, I joined
-	for (const player of game.getOnlinePlayers().filter((/** @type {Player} */x) => x !== newPlayer)) {
+	for (const player of game
+		.getOnlinePlayers()
+		.filter((/** @type {Player} */ x) => x !== newPlayer)) {
 		sendPlayerJoin(player.websocket, newPlayer.id, game.id); // Hey old, new joined
 		sendPlayerJoin(newPlayer.websocket, player.id, game.id); // Hey new, old is here
 	}
 
-	if (game.canStart())
-		sendGameReady(game.getHost().websocket);
+	if (game.canStart()) sendGameReady(game.getHost().websocket);
 
 	sendSuccess(ws, `Player ${playerId} joined game ${gameId}`);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -95,7 +103,9 @@ function handleGetBoats(ws, { playerId }) {
 	const player = GAME_LIST.getPlayer(playerId);
 	if (!player) return sendError(ws, `Player ${playerId} not found in a game`);
 
-	for (const boat of player.boats.filter((/** @type {Boat} */ boat) => boat.placed))
+	for (const boat of player.boats.filter(
+		(/** @type {Boat} */ boat) => boat.placed,
+	))
 		sendPlaceBoat(
 			ws,
 			boat,
@@ -103,7 +113,7 @@ function handleGetBoats(ws, { playerId }) {
 			boat.positions[0].col,
 			boat.positions[0].vertical,
 		);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -114,9 +124,8 @@ function handleGetBoats(ws, { playerId }) {
 function handleGetReadyPlayers(ws, { gameId }) {
 	const game = GAME_LIST.getGame(gameId);
 	if (!game) return sendError(ws, `Game ${gameId} not found`);
-	for (const p of game.getReadyPlayers())
-		sendPlayerReady(ws, p.id);
-};
+	for (const p of game.getReadyPlayers()) sendPlayerReady(ws, p.id);
+}
 
 /**
  * @param {WebSocket} ws
@@ -130,7 +139,7 @@ function handleGetReadyStatus(ws, { playerId }) {
 
 	if (player.ready) return sendPlayerReady(ws, playerId);
 	sendPlayerUnready(ws, playerId);
-};
+}
 
 /**
  * @param { WebSocket} ws
@@ -138,7 +147,7 @@ function handleGetReadyStatus(ws, { playerId }) {
  * @returns {void}
  */
 function sendPlayerReady(ws, playerId) {
-	sendInstruction(ws, 'playerReady', { playerId });
+	sendInstruction(ws, "playerReady", { playerId });
 }
 
 /**
@@ -148,7 +157,7 @@ function sendPlayerReady(ws, playerId) {
  * @returns {void}
  */
 function handlePlayerReady(ws, { playerId }) {
-	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
 	if (!GAME_LIST.getPlayerGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
@@ -165,7 +174,7 @@ function handlePlayerReady(ws, { playerId }) {
 	if (game.canStart()) sendGameReady(game.getHost().websocket);
 
 	sendSuccess(ws, `${playerId} has readied up`);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -173,7 +182,7 @@ function handlePlayerReady(ws, { playerId }) {
  * @returns {void}
  */
 function sendPlayerUnready(ws, playerId) {
-	sendInstruction(ws, 'playerUnready', { playerId });
+	sendInstruction(ws, "playerUnready", { playerId });
 }
 
 /**
@@ -183,7 +192,7 @@ function sendPlayerUnready(ws, playerId) {
  * @returns {void}
  */
 function handlePlayerUnready(ws, { playerId }) {
-	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
 	if (!GAME_LIST.isPlayerInGame(playerId))
 		return sendError(ws, `Player ${playerId} not in a game`);
 
@@ -196,23 +205,28 @@ function handlePlayerUnready(ws, { playerId }) {
 
 	player.ready = false;
 
-	for (const player of game.players) sendPlayerUnready(player.websocket, playerId);
+	for (const player of game.players)
+		sendPlayerUnready(player.websocket, playerId);
 	if (!game.canStart()) sendGameUnready(game.getHost().websocket);
 
 	sendSuccess(ws, `${playerId} has unreadied`);
-};
+}
 
 /**
  * @param {WebSocket} ws
  * @returns {void}
  */
-function sendGameReady(ws) { sendInstruction(ws, 'gameReady'); }
+function sendGameReady(ws) {
+	sendInstruction(ws, "gameReady");
+}
 
 /**
  * @param {WebSocket} ws
  * @returns {void}
  */
-function sendGameUnready(ws) { sendInstruction(ws, 'gameUnready'); }
+function sendGameUnready(ws) {
+	sendInstruction(ws, "gameUnready");
+}
 
 /**
  * @param {WebSocket} ws
@@ -220,7 +234,9 @@ function sendGameUnready(ws) { sendInstruction(ws, 'gameUnready'); }
  * @param {number} turnNumber
  * @returns {void}
  */
-function sendTurnOfPlayer(ws, playerId, turnNumber) { sendInstruction(ws, 'turnOfPlayer', { playerId, turnNumber }); }
+function sendTurnOfPlayer(ws, playerId, turnNumber) {
+	sendInstruction(ws, "turnOfPlayer", { playerId, turnNumber });
+}
 
 /**
  * @param {WebSocket} ws
@@ -231,13 +247,15 @@ function sendTurnOfPlayer(ws, playerId, turnNumber) { sendInstruction(ws, 'turnO
 function handleGetTurnOf(ws, { gameId }) {
 	const game = GAME_LIST.getGame(gameId);
 	sendTurnOfPlayer(ws, game.turnOf.id, game.turnNumber);
-};
+}
 
 /**
  * @param {WebSocket} ws
  * @returns {void}
  */
-function sendStartGame(ws) { sendInstruction(ws, 'startGame'); }
+function sendStartGame(ws) {
+	sendInstruction(ws, "startGame");
+}
 
 /**
  * @param {WebSocket} ws
@@ -247,8 +265,8 @@ function sendStartGame(ws) { sendInstruction(ws, 'startGame'); }
  * @returns {void}
  */
 function handleStartGame(ws, { gameId, playerId }) {
-	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
-	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
 	if (!GAME_LIST.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
@@ -262,11 +280,10 @@ function handleStartGame(ws, { gameId, playerId }) {
 
 	game.startGame();
 
-	for (const player of game.getOnlinePlayers())
-		sendStartGame(player.websocket);
+	for (const player of game.getOnlinePlayers()) sendStartGame(player.websocket);
 
 	sendSuccess(ws, `${playerId} has started ${gameId}`);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -278,11 +295,12 @@ function handleStartGame(ws, { gameId, playerId }) {
  * @returns {void}
  */
 function handleAttackPosition(ws, { userId, targetId, row, col }) {
-	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
+	if (!isValidString(userId)) return sendError(ws, "ERROR: userId is empty");
 	if (!GAME_LIST.isPlayerInGame(userId))
 		return sendError(ws, `ERROR: ${userId} is not in a game`);
 
-	if (!isValidString(targetId)) return sendError(ws, 'ERROR: targetId is empty');
+	if (!isValidString(targetId))
+		return sendError(ws, "ERROR: targetId is empty");
 	if (!GAME_LIST.isPlayerInGame(targetId))
 		return sendError(ws, `ERROR: ${targetId} is not in a game`);
 
@@ -291,7 +309,7 @@ function handleAttackPosition(ws, { userId, targetId, row, col }) {
 		return sendError(ws, `${targetId} is not in the same game as ${userId}`);
 
 	game.attackPlayer(userId, targetId, row, col);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -299,7 +317,9 @@ function handleAttackPosition(ws, { userId, targetId, row, col }) {
  * @param {string} tourneyId
  * @returns {void}
  */
-function sendJoinTourney(ws, playerId, tourneyId) { sendInstruction(ws, 'joinTourney', { playerId, tourneyId }); }
+function sendJoinTourney(ws, playerId, tourneyId) {
+	sendInstruction(ws, "joinTourney", { playerId, tourneyId });
+}
 
 /**
  * @param {WebSocket} ws
@@ -307,7 +327,9 @@ function sendJoinTourney(ws, playerId, tourneyId) { sendInstruction(ws, 'joinTou
  * @param {string} tourneyId
  * @returns {void}
  */
-function sendLeaveTourney(ws, playerId, tourneyId) { sendInstruction(ws, 'leaveTourney', { playerId, tourneyId }); }
+function sendLeaveTourney(ws, playerId, tourneyId) {
+	sendInstruction(ws, "leaveTourney", { playerId, tourneyId });
+}
 
 /**
  * @param {WebSocket} ws
@@ -318,7 +340,7 @@ function sendLeaveTourney(ws, playerId, tourneyId) { sendInstruction(ws, 'leaveT
 function handleCreateTourney(ws, { playerId }) {
 	const tourney = TOURNEY_LIST.createTourney();
 	sendJoinTourney(ws, playerId, tourney.id);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -340,7 +362,7 @@ function handleJoinTourney(ws, { playerId, tourneyId }) {
 		sendJoinTourney(ws, player.id, tourney.id);
 		sendJoinTourney(player.websocket, playerId, tourney.id);
 	}
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -354,13 +376,14 @@ function handleDisconnectTourney(ws, { playerId, tourneyId }) {
 	if (!tourney) return sendError(ws, `Tourney ${tourneyId} not found`);
 
 	const disconnectingPlayer = tourney.findPlayer(playerId);
-	if (!disconnectingPlayer) return sendError(ws, `Player ${playerId} not found in ${tourneyId}`);
+	if (!disconnectingPlayer)
+		return sendError(ws, `Player ${playerId} not found in ${tourneyId}`);
 
 	tourney.disconnectPlayer(playerId);
 
 	for (const player of tourney.getOnlinePlayers())
 		sendPlayerDisconnect(player.websocket, disconnectingPlayer.id);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -374,18 +397,81 @@ function handleStartTourney(ws, { playerId, tourneyId }) {
 	if (!tourney) return sendError(ws, `Tourney ${tourneyId} not found`);
 
 	const startPlayer = tourney.findPlayer(playerId);
-	if (!startPlayer) return sendError(ws, `Player ${playerId} not found in ${tourneyId}`);
+	if (!startPlayer)
+		return sendError(ws, `Player ${playerId} not found in ${tourneyId}`);
 
 	if (tourney.playersInGames.length > 0)
-		return sendError(ws, 'Some players are still in games');
+		return sendError(ws, "Some players are still in games");
 
 	tourney.start();
-};
+}
+
+/**
+ * @param {WebSocket} ws
+ * @returns {void}
+ */
+function handlePowerActivateQuickFix(ws) {
+	const game = GAME_LIST.getWebsocketGame(ws);
+	if (!game) return sendError(ws, "Websocket not in a game :(");
+	const player = GAME_LIST.getWebsocketPlayer(ws);
+	if (!player) return sendError(ws, "Websocket is not assigned to a player");
+	if (!game.getPlayer(player.id))
+		return sendError(ws, `${player.id} not in ${game.id}`);
+	game.activateQuickFix(player.id);
+}
 
 /**
  * @param {WebSocket} ws
  * @param {object} ev
- * @param {object} ev.gameId
+ * @param {string} ev.row
+ * @param {string} ev.col
+ * @returns {void}
+ */
+function handleUseQuickFix(ws, { row, col }) {
+	const game = GAME_LIST.getWebsocketGame(ws);
+	if (!game) return sendError(ws, "Websocket not in a game :(");
+	const player = GAME_LIST.getWebsocketPlayer(ws);
+	if (!player) return sendError(ws, "Websocket is not assigned to a player");
+	if (!game.getPlayer(player.id))
+		return sendError(ws, `${player.id} not in ${game.id}`);
+	game.useQuickFix(player.id, row, col);
+}
+
+/**
+ * @param {WebSocket} ws
+ * @returns {void}
+ */
+function handlePowerEMP(ws) {
+	const game = GAME_LIST.getWebsocketGame(ws);
+	if (!game) return sendError(ws, "Websocket not in a game :(");
+	const player = GAME_LIST.getWebsocketPlayer(ws);
+	if (!player) return sendError(ws, "Websocket is not assigned to a player");
+	if (!game.getPlayer(player.id))
+		return sendError(ws, `${player.id} not in ${game.id}`);
+	game.useEMP(player.id);
+}
+
+/**
+ * @param {WebSocket} ws
+ * @param {object} ev
+ * @param {string} ev.row
+ * @param {string} ev.col
+ * @returns {void}
+ */
+function handlePowerShield(ws, { row, col }) {
+	const game = GAME_LIST.getWebsocketGame(ws);
+	if (!game) return sendError(ws, "Websocket not in a game :(");
+	const player = GAME_LIST.getWebsocketPlayer(ws);
+	if (!player) return sendError(ws, "Websocket is not assigned to a player");
+	if (!game.getPlayer(player.id))
+		return sendError(ws, `${player.id} not in ${game.id}`);
+	game.usePowerShield(player.id, row, col);
+}
+
+/**
+ * @param {WebSocket} ws
+ * @param {object} ev
+ * @param {string} ev.gameId
  * @returns {void}
  */
 function handleGetHost(ws, { gameId }) {
@@ -395,53 +481,128 @@ function handleGetHost(ws, { gameId }) {
 	sendGetHost(ws, game.getHost().id);
 }
 
+/**
+ * @param {WebSocket} ws
+ * @param {string} row
+ * @param {string} col
+ * @returns {void}
+ */
+function sendPlaceShield(ws, row, col) {
+	sendInstruction(ws, "powerPlaceShield", { row, col });
+}
+
+/**
+ * @param {WebSocket} ws
+ * @param {string} row
+ * @param {string} col
+ * @returns {void}
+ */
+function sendRemoveShield(ws, row, col) {
+	sendInstruction(ws, "powerRemoveShield", { row, col });
+}
+
+/**
+ * @param {WebSocket} ws
+ * @returns {void}
+ */
+function sendActivatePowerups(ws) {
+	sendInstruction(ws, "activatePowerups");
+}
+
+/**
+ * @param {WebSocket} ws
+ * @returns {void}
+ */
+function sendDeactivatePowerups(ws) {
+	sendInstruction(ws, "deactivatePowerups");
+}
+
+/**
+ * @param {WebSocket} ws
+ * @returns {void}
+ */
+function sendActivateQuickFix(ws) {
+	sendInstruction(ws, "activateQuickFix");
+}
+
+/**
+ * @param {WebSocket} ws
+ * @returns {void}
+ */
+function sendDeactivateQuickFix(ws) {
+	sendInstruction(ws, "deactivateQuickFix");
+}
+
+/**
+ * @param {WebSocket} ws
+ * @param {string} playerId
+ * @param {string} row
+ * @param {string} col
+ * @returns {void}
+ */
+function sendHealPosition(ws, playerId, row, col) {
+	sendInstruction(ws, "healPosition", { playerId, row, col });
+}
+
 class InstructionHandler {
 	#instructions = {
-		'createGame': {
+		createGame: {
 			handle: handleCreateGame,
 		},
-		'joinGame': {
+		joinGame: {
 			handle: handleJoinGame,
 		},
-		'getBoats': {
+		getBoats: {
 			handle: handleGetBoats,
 		},
-		'getReadyPlayers': {
+		getReadyPlayers: {
 			handle: handleGetReadyPlayers,
 		},
-		'getReadyStatus': {
+		getReadyStatus: {
 			handle: handleGetReadyStatus,
 		},
-		'playerReady': {
+		playerReady: {
 			handle: handlePlayerReady,
 		},
-		'playerUnready': {
-			handle: handlePlayerUnready
+		playerUnready: {
+			handle: handlePlayerUnready,
 		},
-		'startGame': {
-			handle: handleStartGame
+		startGame: {
+			handle: handleStartGame,
 		},
-		'getTurnOf': {
-			handle: handleGetTurnOf
+		getTurnOf: {
+			handle: handleGetTurnOf,
 		},
-		'getHost': {
-			handle: handleGetHost
+		getHost: {
+			handle: handleGetHost,
 		},
-		'attackPosition': {
-			handle: handleAttackPosition
+		attackPosition: {
+			handle: handleAttackPosition,
 		},
-		'createTourney': {
-			handle: handleCreateTourney
+		createTourney: {
+			handle: handleCreateTourney,
 		},
-		'joinTourney': {
-			handle: handleJoinTourney
+		joinTourney: {
+			handle: handleJoinTourney,
 		},
-		'startTourney': {
-			handle: handleStartTourney
+		startTourney: {
+			handle: handleStartTourney,
 		},
-		'placeBoat': {
-			handle: handlePlaceBoat
-		}
+		placeBoat: {
+			handle: handlePlaceBoat,
+		},
+		powerShield: {
+			handle: handlePowerShield,
+		},
+		powerActivateQuickFix: {
+			handle: handlePowerActivateQuickFix,
+		},
+		powerUseQuickFix: {
+			handle: handleUseQuickFix,
+		},
+		powerEMP: {
+			handle: handlePowerEMP,
+		},
 	};
 
 	/**
@@ -456,29 +617,29 @@ class InstructionHandler {
 		console.log(`HANDLE: ${ev.instruction} data: ${JSON.stringify(ev)}`);
 		instruction.handle(ws, ev);
 	};
-};
+}
 
 const INSTRUCTION_HANDLER = new InstructionHandler();
 
 const BoatEnum = {
 	destroyer: {
-		name: 'destroyer',
+		name: "destroyer",
 		size: 2,
 	},
 	submarine: {
-		name: 'submarine',
+		name: "submarine",
 		size: 3,
 	},
 	cruise: {
-		name: 'cruise',
+		name: "cruise",
 		size: 3,
 	},
 	battleship: {
-		name: 'battleship',
+		name: "battleship",
 		size: 4,
 	},
 	aircraft: {
-		name: 'aircraft',
+		name: "aircraft",
 		size: 5,
 	},
 };
@@ -488,7 +649,7 @@ const BoatEnum = {
  * @returns {boolean}
  */
 function isValidString(str) {
-	return !!(str ?? '').length;
+	return !!(str ?? "").length;
 }
 
 class TourneyList {
@@ -523,7 +684,7 @@ class TourneyList {
 		while (!id || !!this.#tourneys[id])
 			id = Math.random().toString(32).slice(2, 8).toString();
 		return id;
-	};
+	}
 
 	createTourney = () => {
 		const id = this.#generateTourneyId();
@@ -531,7 +692,6 @@ class TourneyList {
 		this.#tourneys[id] = tourney;
 		return tourney;
 	};
-
 }
 
 class Tourney {
@@ -539,26 +699,39 @@ class Tourney {
 
 	/** @type {string} id */
 	#id;
-	get id() { return this.#id; }
+	get id() {
+		return this.#id;
+	}
 
 	/** @type {boolean} started */
 	#started = false;
-	get started() { return this.#started; }
+	get started() {
+		return this.#started;
+	}
 
 	/** @type {Player[]} #playerList */
 	#playerList = [];
-	get players() { return this.#playerList; }
+	get players() {
+		return this.#playerList;
+	}
 
 	/** @type {{ player: Player, game: Game }[]} */
 	#playersInGames = [];
-	get playersInGames() { return this.#playersInGames; }
+	get playersInGames() {
+		return this.#playersInGames;
+	}
 
 	/**
 	 * @param {string} id
 	 * @returns {void}
 	 */
 	playerWin(id) {
-		const p = this.#playersInGames.splice(this.#playersInGames.findIndex(p => p.player.id === id), 1).at(0);
+		const p = this.#playersInGames
+			.splice(
+				this.#playersInGames.findIndex((p) => p.player.id === id),
+				1,
+			)
+			.at(0);
 		this.#playerList.push(p.player);
 	}
 
@@ -567,7 +740,10 @@ class Tourney {
 	 * @returns {void}
 	 */
 	playerLose(id) {
-		this.#playersInGames.splice(this.#playersInGames.findIndex(p => p.player.id === id), 1);
+		this.#playersInGames.splice(
+			this.#playersInGames.findIndex((p) => p.player.id === id),
+			1,
+		);
 	}
 
 	/**
@@ -575,12 +751,12 @@ class Tourney {
 	 * @returns {Player}
 	 */
 	findPlayer(id) {
-		return this.#playerList.find(p => p.id === id);
+		return this.#playerList.find((p) => p.id === id);
 	}
 
 	/** @returns {Player[]} */
 	getOnlinePlayers() {
-		return this.#playerList.filter(p => p.websocket);
+		return this.#playerList.filter((p) => p.websocket);
 	}
 
 	/** @returns {void} */
@@ -589,7 +765,7 @@ class Tourney {
 			if (this.#playerList[i].websocket) return;
 			return this.#playerList.splice(i, 1);
 		});
-	};
+	}
 
 	/**
 	 * @param {string} id
@@ -600,7 +776,7 @@ class Tourney {
 		if (!player) return;
 
 		player.disconnect();
-	};
+	}
 
 	/**
 	 * @param {WebSocket} ws
@@ -610,7 +786,7 @@ class Tourney {
 	reconnectPlayer(ws, player) {
 		player.reconnect(ws);
 		return player;
-	};
+	}
 
 	/**
 	 * @param {WebSocket} ws
@@ -626,20 +802,25 @@ class Tourney {
 
 		const player = new Player(playerId, ws);
 		this.#playerList.push(player);
-		console.log(this.#playerList.map(x => x.id).length);
+		console.log(this.#playerList.map((x) => x.id).length);
 		return player;
-	};
+	}
 
 	/** @type {boolean} */
 	#lastGame;
-	get lastGame() { return this.#lastGame; }
+	get lastGame() {
+		return this.#lastGame;
+	}
 
 	/** @returns {void} */
 	nextRound() {
 		while (this.players.length > 0) {
 			const [playerOne, playerTwo] = this.#playerList.splice(0, 2);
 			if (playerOne && playerTwo) {
-				const game = GAME_LIST.createTourneyGame(`${this.id}-${playerOne.id}-${playerTwo.id}`, this);
+				const game = GAME_LIST.createTourneyGame(
+					`${this.id}-${playerOne.id}-${playerTwo.id}`,
+					this,
+				);
 				game.addPlayer(playerOne);
 				game.addPlayer(playerTwo);
 				for (const player of game.players) {
@@ -648,23 +829,22 @@ class Tourney {
 				}
 
 				if (this.players.length === 0 && this.playersInGames.length === 2) {
-					console.log('LAST GAME');
+					console.log("LAST GAME");
 					this.#lastGame = true;
 				}
-			}
-			else {
-				console.log('NOT ENOUGH PLAYERS');
+			} else {
+				console.log("NOT ENOUGH PLAYERS");
 				break;
 			}
 		}
-	};
+	}
 
 	/** @returns {void} */
 	start() {
 		this.#started = true;
 
 		this.nextRound();
-	};
+	}
 
 	/** @param {string} id */
 	constructor(id) {
@@ -684,7 +864,7 @@ class GameList {
 	 * @returns {boolean}
 	 */
 	isWebsocketInGame(ws) {
-		return this.#websockets.some(x => x.socket === ws);
+		return this.#websockets.some((x) => x.socket === ws);
 	}
 
 	/**
@@ -692,7 +872,17 @@ class GameList {
 	 * @returns {Game}
 	 */
 	getWebsocketGame(ws) {
-		return this.#websockets.find(x => x.socket === ws).game;
+		return this.#websockets.find((x) => x.socket === ws).game;
+	}
+
+	/**
+	 * @param {WebSocket} ws
+	 * @returns {Player}
+	 */
+	getWebsocketPlayer(ws) {
+		return this.#websockets
+			.find((x) => x.socket === ws)
+			.game.players.find((x) => x.websocket === ws);
 	}
 
 	/**
@@ -709,7 +899,10 @@ class GameList {
 	 * @returns {void}
 	 */
 	removeWebsocket(ws) {
-		this.#websockets.splice(this.#websockets.findIndex(x => x.socket === ws), 1);
+		this.#websockets.splice(
+			this.#websockets.findIndex((x) => x.socket === ws),
+			1,
+		);
 	}
 
 	/** @type {{[key: string]: Game}} */
@@ -762,18 +955,20 @@ class GameList {
 		while (!id || !!this.#gameList[id])
 			id = Math.random().toString(32).slice(2, 8).toString();
 		return id;
-	};
+	}
 
 	/** @type {{[key: string]: Game}} */
 	#gameList = {};
-	get gameList() { return Object.values(this.#gameList); }
+	get gameList() {
+		return Object.values(this.#gameList);
+	}
 
 	/** @returns {Game} */
 	createGame() {
 		const game = new Game(this.#generateGameId());
 		this.#gameList[game.id] = game;
 		return game;
-	};
+	}
 
 	/**
 	 * @param {string} id
@@ -784,7 +979,7 @@ class GameList {
 		const game = new Game(id, tourney);
 		this.#gameList[game.id] = game;
 		return game;
-	};
+	}
 
 	/**
 	 * @param {string} id
@@ -806,8 +1001,7 @@ class GameList {
 	static #instance;
 
 	constructor() {
-		if (GameList.#instance)
-			return GameList.#instance;
+		if (GameList.#instance) return GameList.#instance;
 		GameList.#instance = this;
 		return this;
 	}
@@ -827,27 +1021,39 @@ class Game {
 
 	/** @type {string} */
 	#id;
-	get id() { return this.#id; }
+	get id() {
+		return this.#id;
+	}
 
 	/** @type {Player[]} */
 	#players = [];
-	get players() { return this.#players; }
+	get players() {
+		return this.#players;
+	}
 
 	/** @type {Tourney} */
 	#tourney;
-	get tourney() { return this.#tourney; }
+	get tourney() {
+		return this.#tourney;
+	}
 
 	/**
 	 * @param {string} id
 	 * @returns {Player}
 	 */
-	getPlayer(id) { return this.players.find((p) => p.id === id); }
+	getPlayer(id) {
+		return this.players.find((p) => p.id === id);
+	}
 
 	/** @returns {Player[]} */
-	getReadyPlayers() { return this.players.filter(p => p.ready); }
+	getReadyPlayers() {
+		return this.players.filter((p) => p.ready);
+	}
 
 	/** @returns {Player[]} */
-	getOnlinePlayers() { return this.players.filter((x) => x.websocket ?? undefined !== undefined); }
+	getOnlinePlayers() {
+		return this.players.filter((x) => x.websocket ?? undefined !== undefined);
+	}
 
 	/**
 	 * @param {string} id
@@ -859,10 +1065,24 @@ class Game {
 
 	/** @type {Player} */
 	#turnOf;
-	get turnOf() { return this.#turnOf; }
+	get turnOf() {
+		return this.#turnOf;
+	}
 
 	nextTurn = () => {
 		this.turnNumber += 1;
+
+		for (const pos of this.turnOf.board.getShieldPositions()) {
+			pos.countDownShield();
+			if (!pos.hasShield())
+				sendRemoveShield(this.turnOf.websocket, pos.row, pos.col);
+		}
+
+		for (const player of this.players.filter((p) => p.disabled)) {
+			player.disabledCountdown();
+			if (!player.disabled && player.isOnline())
+				sendActivatePowerups(player.websocket);
+		}
 
 		let idx = (this.#playerIndex(this.turnOf.id) + 1) % this.players.length;
 		// Skip turn of offline players
@@ -877,13 +1097,17 @@ class Game {
 	turnNumber = 0;
 
 	#started = false;
-	get started() { return this.#started; }
+	get started() {
+		return this.#started;
+	}
 
 	/** @returns {boolean} */
 	canStart() {
-		return !this.#started &&
+		return (
+			!this.#started &&
 			this.getOnlinePlayers().length > 1 &&
-			this.getOnlinePlayers().every((p) => p.ready);
+			this.getOnlinePlayers().every((p) => p.ready)
+		);
 	}
 
 	/** @type {number} */
@@ -898,7 +1122,9 @@ class Game {
 	}
 
 	/** @returns {Player} */
-	getHost() { return this.players.at(0); }
+	getHost() {
+		return this.players.at(0);
+	}
 
 	/**
 	 * @param {Player} player
@@ -946,7 +1172,7 @@ class Game {
 		GAME_LIST.registerWebsocket(ws, this);
 		GAME_LIST.registerPlayer(id, this);
 		return newPlayer;
-	};
+	}
 
 	/**
 	 * @param {WebSocket} newWebsocket
@@ -964,7 +1190,7 @@ class Game {
 		}
 
 		return player;
-	};
+	}
 
 	/**
 	 * @param {string} id
@@ -984,8 +1210,7 @@ class Game {
 			}, 30000);
 			console.log(`Everyone's gone from ${this.id}, self destroying...`);
 		}
-
-	};
+	}
 
 	/**
 	 * @param {string} id
@@ -1006,7 +1231,7 @@ class Game {
 		this.#selfDestroyTimer = setTimeout(() => {
 			this.deleteGame();
 		}, 5000);
-	};
+	}
 
 	/** @returns {void} */
 	deleteGame() {
@@ -1017,13 +1242,13 @@ class Game {
 		});
 
 		GAME_LIST.removeGame(this.id);
-	};
+	}
 
 	/** @returns {boolean} */
 	isFull() {
 		if (this.#started) return this.players.length === 4;
 		return this.getOnlinePlayers().length === 4;
-	};
+	}
 
 	/** @returns {void} */
 	startGame() {
@@ -1033,7 +1258,7 @@ class Game {
 		this.#players = this.getOnlinePlayers();
 
 		this.#turnOf = this.players[0];
-	};
+	}
 
 	/**
 	 * @param {string} id
@@ -1047,8 +1272,8 @@ class Game {
 
 		pos.destroy();
 		for (const player of this.getOnlinePlayers())
-			sendAttack(player.websocket, target.id, pos.row, pos.col, !!pos.boat);
-	};
+			sendAttack(player.websocket, target.id, pos.row, pos.col, !!pos.boatName);
+	}
 
 	/**
 	 * @param {string} idFrom
@@ -1062,9 +1287,9 @@ class Game {
 		const target = this.getPlayer(idTo);
 
 		if (user === target)
-			return sendError(user.websocket, 'Can\'t attack own board!');
+			return sendError(user.websocket, "Can't attack own board!");
 		if (user !== this.turnOf)
-			return sendError(user.websocket, 'It\'s not your turn');
+			return sendError(user.websocket, "It's not your turn");
 
 		const pos = target.board.getPosition(row, col);
 
@@ -1075,26 +1300,26 @@ class Game {
 			return;
 		}
 
-		if (pos.hasShield) {
-			sendSuccess(user.websocket, 'Your attack was blocked');
-			sendSuccess(target.websocket, 'You blocked an attack');
+		if (pos.hasShield()) {
+			sendSuccess(user.websocket, "Your attack was blocked");
+			sendSuccess(target.websocket, "You blocked an attack");
 			this.nextTurn();
 			return;
 		}
 
 		if (pos.destroyed) {
-			sendError(user.websocket, 'This position is already destroyed!');
+			sendError(user.websocket, "This position is already destroyed!");
 			return;
 		}
 
 		this.#destroyPosition(target.id, pos.row, pos.col);
 		this.nextTurn();
 
-		if (pos.boat === undefined) return;
+		if (pos.boatName === undefined) return;
 
 		user.points += 5;
 
-		if (!target.boats.some(boat => !boat.destroyed)) {
+		if (!target.boats.some((boat) => !boat.destroyed)) {
 			target.defeated = true;
 			if (this.players.filter((p) => !p.defeated).length === 1) {
 				if (this.tourney && this.tourney.lastGame) {
@@ -1111,43 +1336,191 @@ class Game {
 				} else
 					for (const player of this.getOnlinePlayers())
 						sendPlayerWin(player.websocket, user.id);
-				handleDeleteGame(this.getHost().websocket, { gameId: this.id, playerId: this.getHost().id });
+				handleDeleteGame(this.getHost().websocket, {
+					gameId: this.id,
+					playerId: this.getHost().id,
+				});
 			}
 		}
-	};
+	}
+
+	/**
+	 * @param {string} id
+	 * @param {string} row
+	 * @param {string} col
+	 * @returns {void}
+	 */
+	usePowerShield(id, row, col) {
+		const player = this.getPlayer(id);
+		if (!player) return;
+		if (player.points < 15)
+			return sendError(player.websocket, "You don't have enough points to use the Shield :(");
+
+		if (player.onQuickFix)
+			return sendError(player.websocket, "Finish using quickfix mode first!");
+		if (player.disabled)
+			return sendError(player.websocket, "You're being disabled by an EMP attack!");
+
+		if (!player.board.getPosition(row, col))
+			return sendError(
+				player.websocket,
+				`${row},${col} is not a valid position`,
+			);
+		const area = player.board.getArea(row, col);
+		for (const pos of area) {
+			pos.placeShield();
+			sendPlaceShield(player.websocket, pos.row, pos.col);
+		}
+
+		player.points -= 15;
+	}
+
+	/**
+	 * @param {string} id
+	 * @returns {void}
+	 */
+	activateQuickFix(id) {
+		const player = this.getPlayer(id);
+		if (!player) return;
+		if (player.points < 10)
+			return sendError(player.websocket, "You don't have enough points to use the EMP :(");
+
+		if (player.onQuickFix)
+			return sendError(player.websocket, "You're already using quick fix!");
+		if (player.disabled)
+			return sendError(player.websocket, "You're being disabled by an EMP attack!");
+
+		// Look for boats that haven't been destroyed or healed yet
+		const boats = player.boats.filter(boat => !boat.destroyed && !boat.wasHealed);
+		if (boats.length === 0)
+			return sendError(player.websocket, "All boats are either destroyed or already healed!");
+
+		player.onQuickFix = true;
+
+		sendActivateQuickFix(player.websocket);
+	}
+
+	/**
+	 * @param {string} id
+	 * @param {string} row
+	 * @param {string} col
+	 * @returns {void}
+	 */
+	useQuickFix(id, row, col) {
+		const player = this.getPlayer(id);
+		if (!player) return;
+		if (player.points < 10)
+			return sendError(player.websocket, "You don't have enough points to use the EMP :(");
+
+		if (!player.onQuickFix)
+			return sendError(player.websocket, "You're not currently using QuickFix!");
+		if (player.disabled)
+			return sendError(player.websocket, "You're being disabled by an EMP attack!");
+
+		const pos = player.board.getPosition(row, col);
+		if (!pos)
+			return sendError(player.websocket, `${row},${col} is not a valid position!`);
+
+		const boat = player.getBoat(pos.boatName);
+		if (pos.boatName === undefined)
+			return sendError(player.websocket, `The position ${row},${col} doesn't have a boat!`);
+		if (boat.destroyed)
+			return sendError(player.websocket, `Cannot heal the ${boat.name} because it's completely destroyed!`);
+		if (boat.wasHealed)
+			return sendError(player.websocket, `Cannot heal the ${boat.name} because it's already been healed!`);
+		if (!pos.destroyed)
+			return sendError(player.websocket, `Cannot heal the ${row},${col} because it's not destroyed!`);
+		if (player.healingBoat && player.healingBoat !== boat)
+			return sendError(player.websocket, `Cannot heal two different boats (Keep healing the ${player.healingBoat.name})!`);
+
+		pos.heal();
+
+		// If the healing boat is already defined, it means this is the second usage of quickfix
+		// on the other hand
+		// If the boat we're healing does not have any more positions to heal, also end
+		if (player.healingBoat || !boat.getDestroyedPositions().length) {
+			player.finishQuickfix();
+			sendDeactivateQuickFix(player.websocket);
+		} else
+			player.healingBoat = boat;
+
+		for (const p of this.getOnlinePlayers())
+			sendHealPosition(p.websocket, player.id, pos.row, pos.col);
+	}
+
+	/**
+	 * @param {string} id
+	 * @returns {void}
+	 */
+	useEMP(id) {
+		const player = this.getPlayer(id);
+		if (!player) return;
+		if (player.points < 25)
+			return sendError(
+				player.websocket,
+				"You don't have enough points to use the EMP :(",
+			);
+
+		if (player.onQuickFix)
+			return sendError(player.websocket, "Finish using quickfix mode first!");
+		if (player.disabled)
+			return sendError(player.websocket, "You're being disabled by an EMP attack!");
+
+		for (const p of this.players.filter((x) => x !== player)) p.disable();
+
+		for (const p of this.getOnlinePlayers().filter((x) => x !== player))
+			sendDeactivatePowerups(p.websocket);
+		sendSuccess(player.websocket, "Everyone is disabled now :)");
+
+		player.points -= 25;
+	}
 }
 
 class BoardPosition {
 	/** @type {boolean} */
 	#revealed = false;
-	get revealed() { return this.#revealed; }
+	get revealed() {
+		return this.#revealed;
+	}
 
-	/** @type {boolean} */
-	#hasShield = false;
-	get hasShield() { return this.#hasShield; }
+	/** @type {number} */
+	#shieldCounter = 0;
+	hasShield() {
+		return this.#shieldCounter > 0;
+	}
 
 	/** @type {boolean} */
 	#hasMine = false;
-	get hasMine() { return this.#hasMine; }
+	get hasMine() {
+		return this.#hasMine;
+	}
 
 	/** @type {boolean} */
 	#destroyed = false;
-	get destroyed() { return this.#destroyed; }
+	get destroyed() {
+		return this.#destroyed;
+	}
 
-	/** @type {Boat} */
+	/** @type {string} */
 	#boat;
-	get boat() { return this.#boat; }
+	get boatName() {
+		return this.#boat;
+	}
 
 	/** @type {boolean} */
 	#vertical;
-	get vertical() { return this.#vertical; }
+	get vertical() {
+		return this.#vertical;
+	}
 
 	/** @type {number} */
 	#slot;
-	get slot() { return this.#slot; }
+	get slot() {
+		return this.#slot;
+	}
 
 	/**
-	 * @param {Boat} boat
+	 * @param {string} boat
 	 * @param {number} slot
 	 * @param {boolean} vertical
 	 * @returns {void}
@@ -1156,40 +1529,44 @@ class BoardPosition {
 		this.#boat = boat;
 		this.#vertical = vertical;
 		this.#slot = slot;
-	};
+	}
 
 	/** @returns {void} */
 	removeBoat() {
 		this.#boat = undefined;
 		this.#vertical = undefined;
 		this.#slot = undefined;
-	};
+	}
 
 	/** @returns {void} */
 	destroy() {
 		this.#destroyed = true;
-	};
+	}
 
 	/** @returns {void} */
 	heal() {
 		this.#destroyed = false;
-		this.boat.wasHealed = true;
-	};
+	}
 
 	/** @returns {void} */
 	reveal() {
 		this.#revealed = true;
-	};
+	}
 
 	/** @returns {void} */
 	placeShield() {
-		this.#hasShield = true;
-	};
+		this.#shieldCounter += 3;
+	}
+
+	/** @returns {void} */
+	countDownShield() {
+		this.#shieldCounter--;
+	}
 
 	/** @returns {void} */
 	plantMine() {
 		this.#hasMine = true;
-	};
+	}
 
 	/**
 	 * @param {string} row
@@ -1205,13 +1582,15 @@ class BoardPosition {
 
 class Board {
 	/** @type {string[]} */
-	static #rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+	static #rows = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 	/** @type {string[]} */
-	static #cols = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+	static #cols = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 
 	/** @type {{[key: string]: BoardPosition}} */
 	#positions = {};
-	get positions() { return Object.values(this.positions); }
+	get positions() {
+		return Object.values(this.#positions);
+	}
 
 	/**
 	 * @param {string} row
@@ -1263,7 +1642,7 @@ class Board {
 				Board.#cols.slice(minCol, maxCol).map((c) => this.getPosition(r, c)),
 			)
 			.flat(); // Transforms from 3 arrays of 3 to 1 array of 9
-	};
+	}
 
 	/**
 	 * @param {string} row
@@ -1286,14 +1665,18 @@ class Board {
 			)
 			.flat() // Transforms from 3 arrays of 3 to 1 array of 9
 			.filter((x) => x); // This last step filters the undefined out
-	};
+	}
+
+	getShieldPositions() {
+		return this.positions.filter((p) => p.hasShield());
+	}
 
 	/** @returns {void} */
 	#createBoard() {
 		for (const r of Board.#rows)
 			for (const c of Board.#cols)
 				this.#positions[`${r},${c}`] = new BoardPosition(r, c, this.owner);
-	};
+	}
 
 	/** @param {Player} playerObj */
 	constructor(playerObj) {
@@ -1305,20 +1688,32 @@ class Board {
 class Boat {
 	/** @type {BoardPosition[]} */
 	#positions = [];
-	get positions() { return this.#positions; }
-	set positions(val) { this.#positions = val; }
+	get positions() {
+		return this.#positions;
+	}
+	set positions(val) {
+		this.#positions = val;
+	}
+
+	getDestroyedPositions() {
+		return this.positions.filter(x => x.destroyed);
+	}
 
 	/** @type {boolean} */
 	#wasHealed = false;
-	get wasHealed() { return this.#wasHealed; }
-	set wasHealed(val) { this.#wasHealed = this.#wasHealed || val; }
+	get wasHealed() {
+		return this.#wasHealed;
+	}
+	set wasHealed(val) {
+		this.#wasHealed = this.#wasHealed || val;
+	}
 
 	get placed() {
 		return this.#positions.length > 0;
 	}
 
 	get destroyed() {
-		return this.#positions.every(pos => pos.destroyed);
+		return this.#positions.every((pos) => pos.destroyed);
 	}
 
 	/** @param {string} name */
@@ -1330,7 +1725,9 @@ class Boat {
 class Player {
 	/** @type {{destroyer: Boat, submarine: Boat, cruise: Boat, battleship: Boat, aircraft: Boat}} */
 	#boats;
-	get boats() { return Object.values(this.#boats); }
+	get boats() {
+		return Object.values(this.#boats);
+	}
 
 	/**
 	 * @param {string} name
@@ -1353,9 +1750,9 @@ class Player {
 			: this.board.getSliceHorizontal(row, col, boatEnum.size);
 
 		if (positions.length !== boatEnum.size)
-			return sendError(this.websocket, 'boat too big');
-		if (positions.some((pos) => pos.boat !== undefined))
-			return sendError(this.websocket, 'boat in the way');
+			return sendError(this.websocket, "boat too big");
+		if (positions.some((pos) => pos.boatName !== undefined))
+			return sendError(this.websocket, "boat in the way");
 
 		const boat = this.getBoat(boatEnum.name);
 		if (boat.placed)
@@ -1368,15 +1765,17 @@ class Player {
 		boat.positions.forEach((pos, idx) =>
 			pos.placeBoat(boatEnum.name, idx + 1, vertical),
 		);
-	};
+	}
 
 	refreshBoard() {
 		// TODO: Make a function that sends information about all modified slots
 		// This includes ships, destroyed slots, etc
-	};
+	}
 
 	/** @returns {boolean} */
-	canReady() { return !this.boats.some((b) => !b.placed); }
+	canReady() {
+		return !this.boats.some((b) => !b.placed);
+	}
 
 	/** @returns {void} */
 	readyUp() {
@@ -1384,15 +1783,21 @@ class Player {
 	}
 
 	/** @returns {boolean} */
-	isOnline() { return !!this.websocket; }
+	isOnline() {
+		return !!this.websocket;
+	}
 
 	/** @type {string} */
 	#id;
-	get id() { return this.#id; }
+	get id() {
+		return this.#id;
+	}
 
 	/** @type {WebSocket} */
 	#websocket;
-	get websocket() { return this.#websocket; }
+	get websocket() {
+		return this.#websocket;
+	}
 
 	/**
 	 * @param {WebSocket} websocket
@@ -1409,15 +1814,56 @@ class Player {
 
 	/** @type {Board} */
 	#board;
-	get board() { return this.#board; }
+	get board() {
+		return this.#board;
+	}
 
 	/** @type {number} */
 	#points = 0;
-	get points() { return this.#points; }
+	get points() {
+		return this.#points;
+	}
 	set points(val) {
 		this.#points = val;
 		sendPointsUpdate(this.websocket, this.#points);
-	};
+	}
+
+	/** @type {boolean} */
+	#onQuickFix;
+	get onQuickFix() {
+		return this.#onQuickFix;
+	}
+	set onQuickFix(val) {
+		this.#onQuickFix = val;
+	}
+
+	/** @type {Boat} */
+	#healingBoat;
+	get healingBoat() {
+		return this.#healingBoat;
+	}
+	set healingBoat(val) {
+		if (this.#healingBoat && val) console.warn("WARNING: Reassigning healing boat when NOT undefined");
+		this.#healingBoat = val;
+	}
+
+	finishQuickfix() {
+		this.#onQuickFix = false;
+		this.#healingBoat.wasHealed = true;
+		this.#healingBoat = undefined;
+	}
+
+	/** @type {number} */
+	#disabled = 0;
+	get disabled() {
+		return this.#disabled > 0;
+	}
+	disable() {
+		this.#disabled = 3;
+	}
+	disabledCountdown() {
+		this.#disabled--;
+	}
 
 	reset() {
 		this.#board = new Board(this);
@@ -1426,11 +1872,11 @@ class Player {
 		this.defeated = false;
 
 		this.#boats = {
-			destroyer: new Boat('destroyer'),
-			submarine: new Boat('submarine'),
-			cruise: new Boat('cruise'),
-			battleship: new Boat('battleship'),
-			aircraft: new Boat('aircraft'),
+			destroyer: new Boat("destroyer"),
+			submarine: new Boat("submarine"),
+			cruise: new Boat("cruise"),
+			battleship: new Boat("battleship"),
+			aircraft: new Boat("aircraft"),
 		};
 	}
 
@@ -1447,11 +1893,11 @@ class Player {
 		this.defeated = false;
 
 		this.#boats = {
-			destroyer: new Boat('destroyer'),
-			submarine: new Boat('submarine'),
-			cruise: new Boat('cruise'),
-			battleship: new Boat('battleship'),
-			aircraft: new Boat('aircraft'),
+			destroyer: new Boat("destroyer"),
+			submarine: new Boat("submarine"),
+			cruise: new Boat("cruise"),
+			battleship: new Boat("battleship"),
+			aircraft: new Boat("aircraft"),
 		};
 	}
 }
@@ -1465,7 +1911,7 @@ class Player {
  * @returns {void}
  */
 function sendPlaceBoat(ws, boatName, row, col, vertical) {
-	sendInstruction(ws, 'placeBoat', { boatName, vertical, row, col });
+	sendInstruction(ws, "placeBoat", { boatName, vertical, row, col });
 }
 
 /**
@@ -1496,8 +1942,7 @@ function handlePlaceBoat(ws, { playerId, boatName, row, col, vertical }) {
 		ws,
 		`game ${game.id} started, unable to place boat for player ${playerId}`,
 	);
-};
-
+}
 
 /**
  * @param {WebSocket} ws
@@ -1509,15 +1954,15 @@ function handlePlaceBoat(ws, { playerId, boatName, row, col, vertical }) {
  */
 function sendDestroyPosition(ws, playerId, row, col, success) {
 	const msg = JSON.stringify({
-		type: 'gameInstruction',
-		instruction: 'destroyPosition',
+		type: "gameInstruction",
+		instruction: "destroyPosition",
 		playerId,
 		row,
 		col,
-		success
+		success,
 	});
 	ws.send(msg);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -1545,8 +1990,8 @@ function sendRevealPosition(
 	isDestroyed,
 ) {
 	const msg = JSON.stringify({
-		type: 'gameInstruction',
-		instruction: 'revealPosition',
+		type: "gameInstruction",
+		instruction: "revealPosition",
 		playerId,
 		boatName,
 		slot,
@@ -1558,7 +2003,7 @@ function sendRevealPosition(
 		isDestroyed,
 	});
 	ws.send(msg);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -1569,7 +2014,7 @@ function sendRevealPosition(
  * @returns {void}
  */
 function sendAttack(ws, playerId, row, col, success) {
-	sendInstruction(ws, 'attack', { playerId, row, col, success });
+	sendInstruction(ws, "attack", { playerId, row, col, success });
 }
 
 /**
@@ -1578,8 +2023,8 @@ function sendAttack(ws, playerId, row, col, success) {
  * @returns {void}
  */
 function sendPlayerWin(ws, playerId) {
-	sendInstruction(ws, 'playerWin', { playerId });
-};
+	sendInstruction(ws, "playerWin", { playerId });
+}
 
 /**
  * @param {WebSocket} ws
@@ -1588,12 +2033,12 @@ function sendPlayerWin(ws, playerId) {
  */
 function sendPointsUpdate(ws, points) {
 	const msg = JSON.stringify({
-		type: 'gameInstruction',
-		instruction: 'pointsUpdate',
+		type: "gameInstruction",
+		instruction: "pointsUpdate",
 		points,
 	});
 	ws.send(msg);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -1601,7 +2046,7 @@ function sendPointsUpdate(ws, points) {
  * @returns {void}
  */
 function sendGetHost(ws, hostId) {
-	sendInstruction(ws, 'getHost', { hostId });
+	sendInstruction(ws, "getHost", { hostId });
 }
 
 /**
@@ -1613,11 +2058,11 @@ function sendSuccess(ws, text) {
 	console.log(`SUCCESS: ${text}`);
 	ws.send(
 		JSON.stringify({
-			type: 'success',
+			type: "success",
 			text,
 		}),
 	);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -1628,11 +2073,11 @@ function sendError(ws, text) {
 	console.log(`ERROR: ${text}`);
 	ws.send(
 		JSON.stringify({
-			type: 'error',
+			type: "error",
 			text,
 		}),
 	);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -1643,8 +2088,8 @@ function sendError(ws, text) {
  */
 function handleLeaveGame(ws, { gameId, playerId }) {
 	// Validate playerId & gameId
-	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
-	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
 
 	// Check if player is in a game
 	if (!GAME_LIST.isPlayerInGame(playerId))
@@ -1662,7 +2107,7 @@ function handleLeaveGame(ws, { gameId, playerId }) {
 		sendPlayerDisconnect(player.websocket, playerId);
 
 	sendSuccess(ws, `removed ${playerId} from game ${gameId}`);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -1670,7 +2115,7 @@ function handleLeaveGame(ws, { gameId, playerId }) {
  * @returns {void}
  */
 function sendPlayerDisconnect(ws, playerId) {
-	sendInstruction(ws, 'playerDisconnect', { playerId });
+	sendInstruction(ws, "playerDisconnect", { playerId });
 }
 
 /**
@@ -1681,8 +2126,8 @@ function sendPlayerDisconnect(ws, playerId) {
  * @returns {void}
  */
 function handleDisconnectGame(ws, { gameId, playerId }) {
-	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
-	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
 	if (!GAME_LIST.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
@@ -1699,7 +2144,7 @@ function handleDisconnectGame(ws, { gameId, playerId }) {
 		sendPlayerDisconnect(player.websocket, playerId);
 
 	sendSuccess(ws, `disconnected ${playerId} from game ${gameId}`);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -1709,8 +2154,8 @@ function handleDisconnectGame(ws, { gameId, playerId }) {
  * @returns {void}
  */
 function handleDeleteGame(ws, { gameId, playerId }) {
-	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
-	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
+	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
 
 	if (!GAME_LIST.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
@@ -1722,7 +2167,7 @@ function handleDeleteGame(ws, { gameId, playerId }) {
 
 	game.deleteGame();
 	sendSuccess(ws, `${playerId} has deleted ${gameId}`);
-};
+}
 
 /**
  * @param {WebSocket} ws
@@ -1732,18 +2177,23 @@ function handleWebsocketDisconnect(ws) {
 	for (const tourney of TOURNEY_LIST.tourneys)
 		for (const player of tourney.getOnlinePlayers())
 			if (player.websocket === ws)
-				return handleDisconnectTourney(ws, { tourneyId: tourney.id, playerId: player.id });
+				return handleDisconnectTourney(ws, {
+					tourneyId: tourney.id,
+					playerId: player.id,
+				});
 
 	if (!GAME_LIST.isWebsocketInGame(ws))
-		return console.log('INFO: a websocket disconnected without being in a game',);
+		return console.log(
+			"INFO: a websocket disconnected without being in a game",
+		);
 
 	const game = GAME_LIST.getWebsocketGame(ws);
 	for (const player of game.getOnlinePlayers())
 		if (player.websocket === ws)
 			return handleDisconnectGame(ws, { gameId: game.id, playerId: player.id });
-};
+}
 
-const BASE_PATH = './client';
+const BASE_PATH = "./client";
 
 /**
  * @param {Request} req
@@ -1758,58 +2208,58 @@ async function reqHandler(req) {
 	} catch (e) {
 		// @ts-ignore
 		if (e instanceof Deno.errors.NotFound) {
-			filePath = './client/index.html';
+			filePath = "./client/index.html";
 			// @ts-ignore
 			fileSize = (await Deno.stat(filePath)).size;
-		} else
-			return new Response(null, { status: 500 });
-
+		} else return new Response(null, { status: 500 });
 	}
-	if (filePath === './client/') {
-		filePath = './client/index.html';
+	if (filePath === "./client/") {
+		filePath = "./client/index.html";
 		// @ts-ignore
 		fileSize = (await Deno.stat(filePath)).size;
 	}
 	// @ts-ignore
 	const body = (await Deno.open(filePath)).readable;
 	let fileType;
-	if (filePath.endsWith('html')) fileType = 'text/html';
-	if (filePath.endsWith('css')) fileType = 'text/css';
-	if (filePath.endsWith('js')) fileType = 'text/javascript';
-	if (filePath.endsWith('png')) fileType = 'image/png';
+	if (filePath.endsWith("html")) fileType = "text/html";
+	if (filePath.endsWith("css")) fileType = "text/css";
+	if (filePath.endsWith("js")) fileType = "text/javascript";
+	if (filePath.endsWith("png")) fileType = "image/png";
 	return new Response(body, {
 		headers: {
-			'content-length': fileSize.toString(),
-			'content-type': fileType || 'application/octet-stream',
+			"content-length": fileSize.toString(),
+			"content-type": fileType || "application/octet-stream",
 		},
 	});
-};
+}
 
 // @ts-ignore
-Deno.serve({ port: '8000', hostname: '127.0.0.1' }, (/** @type {Request} */ req) => {
-	if (req.headers.get('upgrade') !== 'websocket')
-		return reqHandler(req);
+Deno.serve(
+	{ port: "8000", hostname: "127.0.0.1" },
+	(/** @type {Request} */ req) => {
+		if (req.headers.get("upgrade") !== "websocket") return reqHandler(req);
 
-	/** @type { {socket: WebSocket, response: Response} } */
-	// @ts-ignore
-	const { socket, response } = Deno.upgradeWebSocket(req);
+		/** @type { {socket: WebSocket, response: Response} } */
+		// @ts-ignore
+		const { socket, response } = Deno.upgradeWebSocket(req);
 
-	socket.addEventListener('open', _ => {
-		console.log('CONNECTION: A new client connected!');
-	});
+		socket.addEventListener("open", (_) => {
+			console.log("CONNECTION: A new client connected!");
+		});
 
-	socket.addEventListener('message', (event) => {
-		let ev;
-		try {
-			ev = JSON.parse(event.data);
-		} catch {
-			return console.log('data not valid jsondata:' + event.data);
-		}
+		socket.addEventListener("message", (event) => {
+			let ev;
+			try {
+				ev = JSON.parse(event.data);
+			} catch {
+				return console.log("data not valid jsondata:" + event.data);
+			}
 
-		return INSTRUCTION_HANDLER.handleInstruction(socket, ev);
-	});
+			return INSTRUCTION_HANDLER.handleInstruction(socket, ev);
+		});
 
-	socket.addEventListener('close', () => handleWebsocketDisconnect(socket));
+		socket.addEventListener("close", () => handleWebsocketDisconnect(socket));
 
-	return response;
-});
+		return response;
+	},
+);
