@@ -132,7 +132,12 @@ gridPositions.forEach((position) => {
 	position.addEventListener('mouseup', (e) => handleDrop(e, position));
 });
 
-const handleDrop = (_, pos) => {
+/**
+ * @type {object} _
+ * @type {HTMLElement} pos
+ * @returns {void}
+ */
+function handleDrop(_, pos) {
 	if (!savedShipId) return;
 
 	const [row, col] = pos.id.split(',');
@@ -229,7 +234,11 @@ const websocketOnOpen = (ws) => {
 
 };
 
-const websocketOnMessage = (event) => {
+/**
+ * @param {Event} event
+ * @returns {void}
+ */
+function websocketOnMessage(event) {
 	let ev;
 	try {
 		ev = JSON.parse(event.data);
@@ -244,17 +253,16 @@ const websocketOnMessage = (event) => {
 		if (ev.instruction === 'joinGame') handleJoinGame(ev.playerId);
 		if (ev.instruction === 'playerDisconnect') handleLeaveGame(ev.playerId);
 
-		if (ev.instruction === 'newHost') handleNewHost(ev.playerId);
-
 		if (ev.instruction === 'playerReady') handlePlayerReady(ev.playerId);
 		if (ev.instruction === 'playerUnready') handlePlayerUnready(ev.playerId);
 
 		if (ev.instruction === 'gameReady') readyButtonToPlayButton();
 		if (ev.instruction === 'gameUnready') readyButtonOriginalState();
 
+		if (ev.instruction === 'getHost') handleGetHost(ev.hostId);
+
 		if (ev.instruction === 'startGame') handleGameStart();
-		if (ev.instruction === 'placeBoat')
-			handlePlaceBoat(ev.boatName, ev.row, ev.col, ev.vertical);
+		if (ev.instruction === 'placeBoat') handlePlaceBoat(ev.boatName.name, ev.row, ev.col, ev.vertical);
 	}
 };
 
@@ -272,7 +280,12 @@ const isPlayerHere = (id) => players.some((p) => p.id === id);
 
 const $currentPlayers = document.getElementById('current-players');
 
-const handleJoinGame = (joiningPlayerId, newHost) => {
+
+/**
+ * @param {string} joiningPlayerId
+ * @returns {void}
+ */
+function handleJoinGame(joiningPlayerId) {
 	if (isPlayerHere(joiningPlayerId)) return;
 
 	const player = {
@@ -292,42 +305,86 @@ const handleJoinGame = (joiningPlayerId, newHost) => {
 
 	showSuccess(`Player ${joiningPlayerId} has joined the game!`);
 
+	if (playerId === joiningPlayerId) {
+		const getBoatsMsg = JSON.stringify({
+			type: 'instruction',
+			instruction: 'getBoats',
+			playerId: joiningPlayerId,
+		});
+		websocket.send(getBoatsMsg);
+	}
+
 	const readyMsg = JSON.stringify({
 		type: 'instruction',
-		instruction: 'getReadyPlayers',
-		gameId,
+		instruction: 'getReadyStatus',
+		playerId: joiningPlayerId,
 	});
 	websocket.send(readyMsg);
+
+	const hostMsg = JSON.stringify({
+		type: 'instruction',
+		instruction: 'getHost',
+		gameId,
+	});
+	websocket.send(hostMsg);
 };
 
-const handleNewHost = (newHost) => {
+/**
+ * @param {string} hostId
+ * @returns {void}
+ */
+function handleGetHost(hostId) {
+	console.log(hostId);
 	for (const player of players)
-		if (player.id !== newHost) player.$element.innerText = player.id;
+		if (player.id !== hostId) player.$element.innerText = player.id;
 		else player.$element.innerText = '👑 ' + player.id;
 };
 
-const handleLeaveGame = (disconnectingPlayerId) => {
+/**
+ * @param {string} disconnectingPlayerId
+ * @returns {void}
+ */
+function handleLeaveGame(disconnectingPlayerId) {
 	const player = players.find((x) => x.id === disconnectingPlayerId);
 	player.$playerParentElement.remove();
 	players.splice(players.indexOf(player), 1);
 	showError(`Player ${disconnectingPlayerId} has left the game`);
+
+	const hostMsg = JSON.stringify({
+		type: 'instruction',
+		instruction: 'getHost',
+		gameId,
+	});
+	websocket.send(hostMsg);
 };
 
 const $readyButton = document.getElementById('ready-button');
 
-const handlePlayerReady = (readyPlayerId) => {
-	if (!isPlayerReady && readyPlayerId === playerId) {
+/**
+ * @param {string} readyPlayerId
+ * @returns {void}
+ */
+function handlePlayerReady(readyPlayerId) {
+	if (readyPlayerId === playerId && !isPlayerReady) {
 		isPlayerReady = true;
 		$readyButton.innerText = 'Unready';
 	}
+
 	players.find((x) => x.id === readyPlayerId).$readyElement.innerText = '✅';
 };
 
-const handleGameReady = () => {
+/**
+ * @returns {void}
+ */
+function handleGameReady() {
 	readyButtonToPlayButton();
 };
 
-const handlePlayerUnready = (readyPlayerId) => {
+/**
+ * @param {string} readyPlayerId
+ * @returns {void}
+ */
+function handlePlayerUnready(readyPlayerId) {
 	if (readyPlayerId === playerId) {
 		isPlayerReady = false;
 		$readyButton.innerText = 'Ready';
@@ -335,20 +392,32 @@ const handlePlayerUnready = (readyPlayerId) => {
 	players.find((x) => x.id === readyPlayerId).$readyElement.innerText = '❌';
 };
 
-const handleGameUnready = () => {
+/**
+ * @returns {void}
+ */
+function handleGameUnready() {
 	readyButtonOriginalState();
 };
 
-const handleGameStart = () =>
-	(window.location.href = `./game.html?playerId=${playerId}&gameId=${gameId}`);
+/**
+ * @returns {void}
+ */
+function handleGameStart() {
+	window.location.href = `./game.html?playerId=${playerId}&gameId=${gameId}`;
+}
 
-const handlePlaceBoat = (boatName, row, col, vertical) => {
+/**
+ * @type {string} boatName
+ * @type {string} row
+ * @type {string} col
+ * @type {boolean} vertical
+ * @returns {void}
+ */
+function handlePlaceBoat(boatName, row, col, vertical) {
 	savedShipId = boatName;
 	isRotated = vertical;
 	handleDrop(undefined, document.getElementById(`${row},${col}`));
 };
-
-
 
 const startGameListener = () => {
 	const startMsg = JSON.stringify({

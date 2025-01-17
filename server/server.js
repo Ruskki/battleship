@@ -79,9 +79,8 @@ function handleJoinGame(ws, { playerId, gameId }) {
 		sendPlayerJoin(newPlayer.websocket, player.id, game.id); // Hey new, old is here
 	}
 
-	// If game can begin, notify the host
-	if (game.canStart()) sendGameReady(game.getHost().websocket);
-	else if (!game.started) sendGameUnready(game.getHost().websocket);
+	if (game.canStart())
+		sendGameReady(game.getHost().websocket);
 
 	sendSuccess(ws, `Player ${playerId} joined game ${gameId}`);
 };
@@ -120,6 +119,20 @@ function handleGetReadyPlayers(ws, { gameId }) {
 };
 
 /**
+ * @param {WebSocket} ws
+ * @param {object} ev
+ * @param {string} ev.playerId
+ * @returns {void}
+ */
+function handleGetReadyStatus(ws, { playerId }) {
+	const player = GAME_LIST.getPlayer(playerId);
+	if (!player) return sendError(ws, `Player ${playerId} not found`);
+
+	if (player.ready) return sendPlayerReady(ws, playerId);
+	sendPlayerUnready(ws, playerId);
+};
+
+/**
  * @param { WebSocket} ws
  * @param {string} playerId
  * @returns {void}
@@ -149,7 +162,7 @@ function handlePlayerReady(ws, { playerId }) {
 	for (const p of game.getOnlinePlayers())
 		sendPlayerReady(p.websocket, playerId);
 
-	if (game.canStart()) sendGameReady(game.players[0].websocket);
+	if (game.canStart()) sendGameReady(game.getHost().websocket);
 
 	sendSuccess(ws, `${playerId} has readied up`);
 };
@@ -290,6 +303,14 @@ function sendJoinTourney(ws, playerId, tourneyId) { sendInstruction(ws, 'joinTou
 
 /**
  * @param {WebSocket} ws
+ * @param {string} playerId
+ * @param {string} tourneyId
+ * @returns {void}
+ */
+function sendLeaveTourney(ws, playerId, tourneyId) { sendInstruction(ws, 'leaveTourney', { playerId, tourneyId }); }
+
+/**
+ * @param {WebSocket} ws
  * @param {object} ev
  * @param {string} ev.playerId
  * @returns {void}
@@ -355,8 +376,24 @@ function handleStartTourney(ws, { playerId, tourneyId }) {
 	const startPlayer = tourney.findPlayer(playerId);
 	if (!startPlayer) return sendError(ws, `Player ${playerId} not found in ${tourneyId}`);
 
+	if (tourney.playersInGames.length > 0)
+		return sendError(ws, 'Some players are still in games');
+
 	tourney.start();
 };
+
+/**
+ * @param {WebSocket} ws
+ * @param {object} ev
+ * @param {object} ev.gameId
+ * @returns {void}
+ */
+function handleGetHost(ws, { gameId }) {
+	const game = GAME_LIST.getGame(gameId);
+	if (!game) return sendError(ws, `No game ${gameId} found`);
+
+	sendGetHost(ws, game.getHost().id);
+}
 
 class InstructionHandler {
 	#instructions = {
@@ -372,6 +409,9 @@ class InstructionHandler {
 		'getReadyPlayers': {
 			handle: handleGetReadyPlayers,
 		},
+		'getReadyStatus': {
+			handle: handleGetReadyStatus,
+		},
 		'playerReady': {
 			handle: handlePlayerReady,
 		},
@@ -383,6 +423,9 @@ class InstructionHandler {
 		},
 		'getTurnOf': {
 			handle: handleGetTurnOf
+		},
+		'getHost': {
+			handle: handleGetHost
 		},
 		'attackPosition': {
 			handle: handleAttackPosition
@@ -494,9 +537,30 @@ class Tourney {
 	#playerList = [];
 	get players() { return this.#playerList; }
 
+	/** @type {{ player: Player, game: Game }[]} */
+	#playersInGames = [];
+	get playersInGames() { return this.#playersInGames; }
+
 	/**
 	 * @param {string} id
-	 * @returns {Player | undefined}
+	 * @returns {void}
+	 */
+	playerWin(id) {
+		const p = this.#playersInGames.splice(this.#playersInGames.findIndex(p => p.player.id === id), 1).at(0);
+		this.#playerList.push(p.player);
+	}
+
+	/**
+	 * @param {string} id
+	 * @returns {void}
+	 */
+	playerLose(id) {
+		this.#playersInGames.splice(this.#playersInGames.findIndex(p => p.player.id === id), 1);
+	}
+
+	/**
+	 * @param {string} id
+	 * @returns {Player}
 	 */
 	findPlayer(id) {
 		return this.#playerList.find(p => p.id === id);
@@ -559,12 +623,13 @@ class Tourney {
 		while (this.players.length > 0) {
 			const [playerOne, playerTwo] = this.#playerList.splice(0, 2);
 			if (playerOne && playerTwo) {
-				const game = GAME_LIST.createTourneyGame(`${this.id}-${playerOne.id}-${playerTwo.id}`);
+				const game = GAME_LIST.createTourneyGame(`${this.id}-${playerOne.id}-${playerTwo.id}`, this);
 				game.addPlayer(playerOne);
 				game.addPlayer(playerTwo);
-				for (const player of game.players)
+				for (const player of game.players) {
 					sendPlayerJoin(player.websocket, player.id, game.id);
-				game.startGame();
+					this.#playersInGames.push({ player, game });
+				}
 			}
 			else {
 				console.log('NOT ENOUGH PLAYERS');
@@ -691,10 +756,11 @@ class GameList {
 
 	/**
 	 * @param {string} id
+	 * @param {Tourney} tourney
 	 * @returns {Game}
 	 */
-	createTourneyGame(id) {
-		const game = new Game(id);
+	createTourneyGame(id, tourney) {
+		const game = new Game(id, tourney);
 		this.#gameList[game.id] = game;
 		return game;
 	};
@@ -731,9 +797,11 @@ const GAME_LIST = new GameList();
 class Game {
 	/**
 	 * @param {string} id
+	 * @param {Tourney} tourney
 	 */
-	constructor(id) {
+	constructor(id, tourney = undefined) {
 		this.#id = id;
+		this.#tourney = tourney;
 	}
 
 	/** @type {string} */
@@ -743,6 +811,10 @@ class Game {
 	/** @type {Player[]} */
 	#players = [];
 	get players() { return this.#players; }
+
+	/** @type {Tourney} */
+	#tourney;
+	get tourney() { return this.#tourney; }
 
 	/**
 	 * @param {string} id
@@ -822,7 +894,8 @@ class Game {
 
 		if (this.#selfDestroyTimer) {
 			clearTimeout(this.#selfDestroyTimer);
-			this.selfDestroyTimer = undefined;
+			this.#selfDestroyTimer = undefined;
+			console.log(`World Saved ${this.id}`);
 		}
 
 		this.players.push(player);
@@ -843,7 +916,8 @@ class Game {
 
 		if (this.#selfDestroyTimer) {
 			clearTimeout(this.#selfDestroyTimer);
-			this.selfDestroyTimer = undefined;
+			this.#selfDestroyTimer = undefined;
+			console.log(`World Saved ${this.id}`);
 		}
 
 		const newPlayer = new Player(id, ws);
@@ -862,9 +936,10 @@ class Game {
 		player.reconnect(newWebsocket);
 		GAME_LIST.registerWebsocket(newWebsocket, this);
 
-		if (this.#selfDestroyTimer !== undefined) {
+		if (this.#selfDestroyTimer) {
 			clearTimeout(this.#selfDestroyTimer);
-			this.selfDestroyTimer = undefined;
+			this.#selfDestroyTimer = undefined;
+			console.log(`World Saved ${this.id}`);
 		}
 
 		return player;
@@ -882,10 +957,13 @@ class Game {
 
 		if (this.#playerIndex(id) === 0) this.players.push(this.players.shift());
 
-		if (!this.players.some((x) => x.websocket))
-			this.selfDestroyTimer = setTimeout(() => {
+		if (!this.players.some((x) => x.websocket)) {
+			this.#selfDestroyTimer = setTimeout(() => {
 				this.deleteGame();
 			}, 30000);
+			console.log(`Everyone's gone from ${this.id}, self destroying...`);
+		}
+
 	};
 
 	/**
@@ -904,7 +982,7 @@ class Game {
 
 		if (this.players.length > 0) return;
 
-		this.selfDestroyTimer = setTimeout(() => {
+		this.#selfDestroyTimer = setTimeout(() => {
 			this.deleteGame();
 		}, 5000);
 	};
@@ -998,8 +1076,17 @@ class Game {
 		if (!target.boats.some((/** @type {Boat} */ boat) => !boat.destroyed)) {
 			target.defeated = true;
 			if (this.players.filter((p) => !p.defeated).length === 1) {
-				for (const player of this.getOnlinePlayers())
-					sendPlayerWin(player.websocket, user.id);
+				if (this.tourney) {
+					this.tourney.playerWin(user.id);
+					user.reset();
+					sendJoinTourney(user.websocket, user.id, this.tourney.id);
+
+					this.tourney.playerLose(target.id);
+					sendLeaveTourney(target.websocket, target.id, this.tourney.id);
+				}
+				else
+					for (const player of this.getOnlinePlayers())
+						sendPlayerWin(player.websocket, user.id);
 				handleDeleteGame(this.getHost().websocket, { gameId: this.id, playerId: this.getHost().id });
 			}
 		}
@@ -1308,6 +1395,21 @@ class Player {
 		sendPointsUpdate(this.websocket, this.#points);
 	};
 
+	reset() {
+		this.#board = new Board(this);
+
+		this.ready = false;
+		this.defeated = false;
+
+		this.#boats = {
+			destroyer: new Boat('destroyer'),
+			submarine: new Boat('submarine'),
+			cruise: new Boat('cruise'),
+			battleship: new Boat('battleship'),
+			aircraft: new Boat('aircraft'),
+		};
+	}
+
 	/**
 	 * @param {string} id
 	 * @param {WebSocket} websocket
@@ -1476,17 +1578,12 @@ function sendPointsUpdate(ws, points) {
 
 /**
  * @param {WebSocket} ws
- * @param {string} playerId
+ * @param {string} hostId
  * @returns {void}
  */
-function sendNewHost(ws, playerId) {
-	const msg = JSON.stringify({
-		type: 'instruction',
-		instruction: 'newHost',
-		playerId,
-	});
-	ws.send(msg);
-};
+function sendGetHost(ws, hostId) {
+	sendInstruction(ws, 'getHost', { hostId });
+}
 
 /**
  * @param {WebSocket} ws
@@ -1542,10 +1639,8 @@ function handleLeaveGame(ws, { gameId, playerId }) {
 
 	game.removePlayer(playerId);
 
-	for (const player of game.getOnlinePlayers()) {
+	for (const player of game.getOnlinePlayers())
 		sendPlayerDisconnect(player.websocket, playerId);
-		sendNewHost(player.websocket, game.getHost().id);
-	}
 
 	sendSuccess(ws, `removed ${playerId} from game ${gameId}`);
 };
@@ -1581,19 +1676,8 @@ function handleDisconnectGame(ws, { gameId, playerId }) {
 	game.disconnectPlayer(playerId);
 
 	// Tell the players the player is being disconnected
-	for (const player of game.getOnlinePlayers()) {
+	for (const player of game.getOnlinePlayers())
 		sendPlayerDisconnect(player.websocket, playerId);
-		sendNewHost(player.websocket, game.getHost().id);
-	}
-
-	// If game hasn't started refresh the readyness
-	if (game.canStart()) {
-		const p = game.players[0];
-		if (p.websocket) sendGameReady(p.websocket);
-	} else {
-		const p = game.players[0];
-		if (p.websocket) sendGameUnready(p.websocket);
-	}
 
 	sendSuccess(ws, `disconnected ${playerId} from game ${gameId}`);
 };

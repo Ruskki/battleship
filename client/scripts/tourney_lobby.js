@@ -59,7 +59,7 @@ function handleLeaveTourney({ playerId }) {
  * @returns {void}
  */
 function handleJoinGame({ playerId, gameId }) {
-	window.location.href = `./game.html?playerId=${playerId}&gameId=${gameId}`;
+	window.location.href = `./fleet.html?playerId=${playerId}&gameId=${gameId}`;
 }
 
 websocket.addEventListener('open', () => {

@@ -29,6 +29,11 @@ const url = new URL(urlString);
 const gameId = url.searchParams.get('gameId');
 const playerId = url.searchParams.get('playerId');
 
+document.addEventListener('keydown', function(e) {
+	if (e.code === 'Enter')
+		Game.webAttackPlayer(playerId, selectedPlayer, selectedRow, selectedCol);
+});
+
 websocket.addEventListener('open', () => {
 	const msg = JSON.stringify({
 		type: 'instruction',
@@ -134,6 +139,26 @@ const handleAttackPosition = (playerId, row, col, success) => {
 	pos.destroy(success);
 };
 
+/**
+ * @param {object} ev
+ * @param {string} ev.playerId
+ * @param {string} ev.tourneyId
+ * @returns {void}
+ */
+function handleJoinTourney({ playerId, tourneyId }) {
+	window.location.href = `./tourney_lobby.html?playerId=${playerId}&tourneyId=${tourneyId}`;
+}
+
+/**
+ * @param {object} ev
+ * @param {string} ev.playerId
+ * @param {string} ev.tourneyId
+ * @returns {void}
+ */
+function handleLeaveTourney({ playerId, tourneyId }) {
+	window.location.href = '/index.html';
+}
+
 websocket.addEventListener('message', (event) => {
 	let ev;
 	try {
@@ -175,6 +200,8 @@ websocket.addEventListener('message', (event) => {
 			handleDisconnectGame(ev.playerId);
 		if (ev.instruction === 'placeBoat')
 			handlePlaceBoat(ev.boatName, ev.row, ev.col, ev.vertical);
+		if (ev.instruction === 'joinTourney') handleJoinTourney(ev);
+		if (ev.instruction === 'leaveTourney') handleLeaveTourney(ev);
 	}
 });
 
