@@ -408,6 +408,70 @@ function handleStartTourney(ws, { playerId, tourneyId }) {
 
 /**
  * @param {WebSocket} ws
+ * @param {object} ev
+ * @param {string} ev.userId
+ * @param {string} ev.targetId
+ * @returns {void}
+ */
+function handleUseSonar(ws, {userId, targetId}) {
+	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
+	if (!GAME_LIST.isPlayerInGame(userId))
+		return sendError(ws, `ERROR: ${userId} is not in a game`);
+
+	if (!isValidString(targetId)) return sendError(ws, 'ERROR: targetId is empty');
+	if (!GAME_LIST.isPlayerInGame(targetId))
+		return sendError(ws, `ERROR: ${targetId} is not in a game`);
+
+	const game = GAME_LIST.getPlayerGame(userId);
+	if (!game.getPlayer(targetId))
+		return sendError(ws, `${targetId} is not in the same game as ${userId}`);
+
+	game.sonar(userId, targetId);
+};
+
+/**
+ * @param {WebSocket} ws
+ * @param {object} ev
+ * @param {string} ev.userId
+ * @param {string} ev.targetId
+ * @returns {void}
+ */
+function handleUseAirplane(ws, {userId, targetId}) {
+	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
+	if (!GAME_LIST.isPlayerInGame(userId))
+		return sendError(ws, `ERROR: ${userId} is not in a game`);
+
+	if (!isValidString(targetId)) return sendError(ws, 'ERROR: targetId is empty');
+	if (!GAME_LIST.isPlayerInGame(targetId))
+		return sendError(ws, `ERROR: ${targetId} is not in a game`);
+
+	const game = GAME_LIST.getPlayerGame(userId);
+	if (!game.getPlayer(targetId))
+		return sendError(ws, `${targetId} is not in the same game as ${userId}`);
+
+	game.attackAirplane(userId, targetId);
+};
+
+/**
+ * @param {WebSocket} ws
+ * @param {object} ev
+ * @param {string} ev.userId
+ * @param {string} ev.row
+ * @param {string} ev.col
+ * @returns {void}
+ */
+function handleUseMine(ws, {userId, row, col}) {
+	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
+	if (!GAME_LIST.isPlayerInGame(userId))
+		return sendError(ws, `ERROR: ${userId} is not in a game`);
+
+	const game = GAME_LIST.getPlayerGame(userId);
+
+	game.mine(userId, row, col);
+};
+
+/**
+ * @param {WebSocket} ws
  * @returns {void}
  */
 function handlePowerActivateQuickFix(ws) {
@@ -590,6 +654,15 @@ class InstructionHandler {
 		},
 		placeBoat: {
 			handle: handlePlaceBoat,
+		},
+		'useSonar': {
+			handle: handleUseSonar
+		},
+		'useAttackAirplanes': {
+			handle: handleUseAirplane
+		},
+		'usePlantMine': {
+			handle: handleUseMine
 		},
 		powerShield: {
 			handle: handlePowerShield,
@@ -1342,6 +1415,74 @@ class Game {
 				});
 			}
 		}
+	}
+
+	/**
+	 * @param {string} idFrom
+	 * @param {string} idTo
+	 * @returns {void}
+	 */
+	sonar(idFrom, idTo) {
+		const user = this.getPlayer(idFrom);
+
+		if(user.points < 5)
+			return sendError(user.websocket, 'You dont have enought points for this powerup!');
+		if(user.getBoat('submarine').destroyed)
+			return sendError(user.websocket, 'Submarine has been destroyed!');
+
+		const target = this.getPlayer(idTo);
+		pickRandom(Object.values(target.board.positions).filter((x) => !x.destroyed,))?.makeVisible();
+
+		user.points = user.points - 5;
+	}
+
+	/**
+	 * @param {string} idFrom
+	 * @param {string} idTo
+	 * @returns {void}
+	 */
+	attackAirplane(idFrom, idTo) {
+		const user = this.getPlayer(idFrom);
+
+		if(user.points < 10)
+			return sendError(user.websocket, 'You dont have enought points for this powerup!');
+		if(user.getBoat('aircraft').destroyed)
+			return sendError(user.websocket, 'Aircraft has been destroyed!');
+
+		const target = this.getPlayer(idTo);
+
+		const validPositions = Object.values(target.board.positions).filter((x) => !x.destroyed,);
+
+		for (let _ = 0; _ < 5; _++) {
+			const pos = pickRandom(validPositions);
+			this.attackPlayer(idFrom, idTo, pos.row, pos.col);
+			validPositions.splice(validPositions.indexOf(pos), 1);
+			if (validPositions.length === 0) break;
+		}
+		user.points = user.points - 10;
+	}
+
+	/**
+	 * @param {string} idFrom
+	 * @param {string} row
+	 * @param {string} col
+	 * @returns {void}
+	 */
+	mine(idFrom, row, col) {
+		const user = this.getPlayer(idFrom);
+
+		if(user.points < 5)
+			return sendError(user.websocket, 'You dont have enought points for this powerup!');
+
+		const pos = user.board.getPosition(row, col);
+		if (pos.boatName !== undefined)
+			return sendError(user.websocket, 'There is a boat in this spot.');
+		if (pos.hasMine)
+			return sendError(user.websocket, 'Position already has mine.');
+
+		pos.plantMine();
+
+		user.points = user.points - 5;
 	}
 
 	/**

@@ -188,6 +188,8 @@ function handleLeaveTourney() {
 	window.location.href = '/index.html';
 }
 
+//start powerups?
+
 /**
  * @param {object} ev
  * @param {string} ev.row
@@ -598,6 +600,45 @@ class Game {
 		user.setPoints(user.points - 10);
 	};
 
+	static webSonar = (idFrom, idTo) => {
+		const user = this.players[idFrom];
+		const target = this.players[idTo];
+		
+		const msg = JSON.stringify({
+			type: 'gameInstruction',
+			instruction: 'useSonar',
+			userId: user.id,
+			targetId: target.id,
+		});
+		websocket.send(msg);
+	}
+	
+	static WebAttackAirplanes = (idFrom, idTo) => {
+		const user = this.players[idFrom];
+		const target = this.players[idTo];
+	
+		const msg = JSON.stringify({
+			type: 'gameInstruction',
+			instruction: 'useAttackAirplanes',
+			userId: user.id,
+			targetId: target.id,
+		});
+		websocket.send(msg);
+	}
+	
+	static webPlantMine = (idFrom, row, col) => {
+		const user = this.players[idFrom];
+	
+		const msg = JSON.stringify({
+			type: 'gameInstruction',
+			instruction: 'usePlantMine',
+			userId: user.id,
+			row,
+			col,
+		});
+		websocket.send(msg);
+	}
+	
 	static webShield(row, col) {
 		const msg = JSON.stringify({
 			type: 'instruction',
