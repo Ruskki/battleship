@@ -612,6 +612,26 @@ function sendPlaceShield(ws, row, col) {
  * @param {string} col
  * @returns {void}
  */
+function sendPlaceMine(ws, row, col) {
+	sendInstruction(ws, 'placeMine', { row, col });
+}
+
+/**
+ * @param {WebSocket} ws
+ * @param {string} row
+ * @param {string} col
+ * @returns {void}
+ */
+function sendRemoveMine(ws, row, col) {
+	sendInstruction(ws, 'removeMine', { row, col });
+}
+
+/**
+ * @param {WebSocket} ws
+ * @param {string} row
+ * @param {string} col
+ * @returns {void}
+ */
 function sendRemoveShield(ws, row, col) {
 	sendInstruction(ws, 'powerRemoveShield', { row, col });
 }
@@ -1408,22 +1428,31 @@ class Game {
 	 * @param {string} row
 	 * @param {string} col
 	 * @param {boolean} passTurn @desc Flip this flag in things like powerups
+	 * @param {boolean} checkForTurn @desc Literally just a hack so that i can use the mine
 	 * @returns {void}
 	 */
-	attackPlayer(idFrom, idTo, row, col, passTurn = true) {
+	attackPlayer(idFrom, idTo, row, col, passTurn = true, checkForTurn = true) {
 		const user = this.getPlayer(idFrom);
 		const target = this.getPlayer(idTo);
 
 		if (user === target)
 			return sendError(user.websocket, 'Can\'t attack own board!');
-		if (user !== this.turnOf)
+		if (checkForTurn && user !== this.turnOf)
 			return sendError(user.websocket, 'It\'s not your turn');
 
 		const pos = target.board.getPosition(row, col);
 
 		if (pos.hasMine()) {
-			pickRandom(user.board.getAdyacentPositions(row, col)).destroy();
-			target.points += 5;
+			// Get adyacent, non-destroyed positions
+			const positions = user.board.getAdyacentPositions(row, col).filter(pos => !pos.destroyed);
+			// If you get some, get a random one and attack that one
+			if (positions.length !== 0) {
+				/** @type {BoardPosition} */
+				const pos = pickRandom(positions);
+				this.attackPlayer(target.id, user.id, pos.row, pos.col, false, false);
+				pos.unMine();
+			}
+			sendRemoveMine(target.websocket, row, col);
 			if (passTurn) this.nextTurn();
 			return;
 		}
@@ -1568,8 +1597,11 @@ class Game {
 			return sendError(user.websocket, 'There is a boat in this spot.');
 		if (pos.hasMine())
 			return sendError(user.websocket, 'Position already has mine.');
+		if (pos.destroyed)
+			return sendError(user.websocket, 'Can\'t place a mine on a destroyed position');
 
 		pos.plantMine();
+		sendPlaceMine(user.websocket, pos.row, pos.col);
 
 		user.points -= 5;
 		this.nextTurn();
@@ -1772,7 +1804,8 @@ class Game {
 				sendActivateQuickFix(player.websocket); // Send if quickfix
 
 			for (const pos of player.board.positions)  {
-				if (pos.hasMine()) {} // sendPlaceMine 
+				if (pos.hasMine())
+					sendPlaceMine(player.websocket, pos.row, pos.col);
 				if (pos.hasShield())
 					sendPlaceShield(player.websocket, pos.row, pos.col);
 			}
@@ -1802,6 +1835,10 @@ class BoardPosition {
 	#hasMine = false;
 	hasMine() {
 		return this.#hasMine;
+	}
+
+	unMine() {
+		this.#hasMine = false;
 	}
 
 	/** @type {boolean} */

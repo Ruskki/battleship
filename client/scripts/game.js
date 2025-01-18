@@ -181,7 +181,33 @@ function handleLeaveTourney() {
 	window.location.href = '/index.html';
 }
 
-//start powerups?
+/**
+ * @param {object} ev
+ * @param {string} ev.row
+ * @param {string} ev.col
+ * @returns {void}
+ */
+function handlePlaceMine({ row, col }) {
+	const player = Game.getPlayer(playerId);
+	if (!player) return;
+	const pos = player.board.getPosition(row, col);
+	if (!pos) return;
+	pos.plantMine();
+}
+
+/**
+ * @param {object} ev
+ * @param {string} ev.row
+ * @param {string} ev.col
+ * @returns {void}
+ */
+function handleRemoveMine({ row, col }) {
+	const player = Game.getPlayer(playerId);
+	if (!player) return;
+	const pos = player.board.getPosition(row, col);
+	if (!pos) return;
+	pos.removeMine();
+}
 
 /**
  * @param {object} ev
@@ -320,6 +346,9 @@ websocket.addEventListener('message', (event) => {
 			handlePlaceBoat(ev.boatName, ev.row, ev.col, ev.vertical);
 		if (ev.instruction === 'joinTourney') handleJoinTourney(ev);
 		if (ev.instruction === 'leaveTourney') handleLeaveTourney(ev);
+
+		if (ev.instruction === 'placeMine') handlePlaceMine(ev);
+		if (ev.instruction === 'removeMine') handleRemoveMine(ev);
 
 		if (ev.instruction === 'powerPlaceShield') handlePowerPlaceShield(ev);
 		if (ev.instruction === 'powerRemoveShield') handlePowerRemoveShield(ev);
@@ -576,6 +605,9 @@ class BoardPosition {
 
 	/** @returns {void} */
 	plantMine() { this.#cell.setAttribute('data-mine', 'true'); };
+
+	/** @returns {void} */
+	removeMine() { this.#cell.removeAttribute('data-mine'); };
 
 	/** @returns {void} */
 	shield() { this.#cell.setAttribute('data-shield', 'true'); };
