@@ -3,12 +3,20 @@ const headCols = '123456789'.split('').concat('10');
 
 const $logMessagesEl = document.getElementById('log-messages');
 
-const showSuccess = (text) => {
+/**
+ * @param {string} text
+ * @returns {void}
+ */
+function showSuccess(text) {
 	$logMessagesEl.className = 'success-message';
 	$logMessagesEl.innerText = text;
 };
 
-const showError = (text) => {
+/**
+ * @param {string} text
+ * @returns {void}
+ */
+function showError(text) {
 	$logMessagesEl.className = 'error-message';
 	$logMessagesEl.innerText = text;
 };
@@ -72,7 +80,11 @@ document.body.addEventListener('mouseup', () => {
 	if (draggedElement) destroyDraggedElement();
 });
 
-const createDraggedElement = (from) => {
+ /**
+  * @param {HTMLElement} from
+  * @returns {void}
+  */
+function createDraggedElement (from)  {
 	if (draggedElement) return;
 
 	const clone = from.cloneNode(true);
@@ -83,12 +95,17 @@ const createDraggedElement = (from) => {
 	draggedElement = clone;
 };
 
-const moveDraggableElement = (e) => {
+ /**
+  * @param {MouseEvent} e
+  * @returns {void}
+  */
+ function moveDraggableElement  (e)  {
 	draggedElement.style.left = e.clientX + 'px';
 	draggedElement.style.top = e.clientY + 'px';
 };
 
-const destroyDraggedElement = () => {
+/** @returns {void} */
+function destroyDraggedElement ()  {
 	draggedElement.remove();
 	draggedElement = undefined;
 	document.body.style.cursor = 'default';
@@ -98,19 +115,26 @@ const ships = document.querySelectorAll('.source');
 let isRotated = false;
 let savedShipId = undefined;
 
-const rotateShips = () => {
+/** @returns {void} */
+function rotateShips ()  {
 	for (const ship of ships)
 		ship.style.transform = isRotated ? 'rotate(0deg)' : 'rotate(90deg)';
 	isRotated = !isRotated;
 };
 
-const handleDragStartShip = (shipId, $ship) => {
+/**
+ * @param {string} shipId
+ * @param {HTMLElement} $ship
+ * @returns {void}
+ */
+function handleDragStartShip (shipId, $ship)  {
 	if (isPlayerReady) return;
 	savedShipId = shipId;
 	createDraggedElement($ship);
 };
 
-const addDragListenerToShips = () => {
+/** @returns {void} */
+function addDragListenerToShips ()  {
 	for (const ship of ships) {
 		ship.addEventListener('dragstart', (e) =>
 			handleDragStartShip(e.target.id, ship),
@@ -184,7 +208,14 @@ function handleDrop(_, pos) {
 	showSuccess(`Placed ${shipId} in position ${positions[0].id}`);
 };
 
-const getCosecutivePositions = (row, col, size, vertical) => {
+/**
+ * @param {string} row
+ * @param {string} col
+ * @param {number} size
+ * @param {boolean} vertical
+ * @returns {void}
+ */
+function getCosecutivePositions (row, col, size, vertical)  {
 	const rows = headRows.slice(
 		headRows.indexOf(row),
 		headRows.indexOf(row) + size,
@@ -216,7 +247,11 @@ const playerId = url.searchParams.get('playerId');
 
 document.getElementById('room-id').innerText = gameId;
 
-const websocketOnOpen = (ws) => {
+/**
+ * @param {WebSocket} ws
+ * @returns {void}
+ */
+function websocketOnOpen (ws)  {
 	const joinMsg = JSON.stringify({
 		type: 'instruction',
 		instruction: 'joinGame',
@@ -266,8 +301,10 @@ function websocketOnMessage(event) {
 	}
 };
 
-const websocketOnClose = () =>
+/** @returns {void} */
+function websocketOnClose () {
 	showError('You\'ve been disconnected from the match! Check your internet connection');
+}
 
 const websocket = new WebSocket('ws://127.0.0.1:8000');
 websocket.addEventListener('open', _ => websocketOnOpen(websocket));
@@ -276,7 +313,13 @@ websocket.addEventListener('close', websocketOnClose);
 
 const players = [];
 
-const isPlayerHere = (id) => players.some((p) => p.id === id);
+/**
+ * @param {string} id
+ * @returns {void}
+ */
+function isPlayerHere (id) {
+	players.some((p) => p.id === id);
+}
 
 const $currentPlayers = document.getElementById('current-players');
 
@@ -419,7 +462,8 @@ function handlePlaceBoat(boatName, row, col, vertical) {
 	handleDrop(undefined, document.getElementById(`${row},${col}`));
 };
 
-const startGameListener = () => {
+/** @returns {void} */
+function startGameListener ()  {
 	const startMsg = JSON.stringify({
 		type: 'lobbyInstruction',
 		instruction: 'startGame',
@@ -429,7 +473,8 @@ const startGameListener = () => {
 	websocket.send(startMsg);
 };
 
-const readyUpListener = () => {
+/** @returns {void} */
+function readyUpListener () {
 	if (isPlayerReady) {
 		const msg = JSON.stringify({
 			type: 'lobbyInstruction',
@@ -465,7 +510,8 @@ const readyUpListener = () => {
 	websocket.send(readyMsg);
 };
 
-const readyButtonOriginalState = () => {
+/** @returns {void} */
+function readyButtonOriginalState  ()  {
 	$readyButton.className = 'ready-button';
 	$readyButton.innerText = isPlayerReady ? 'Unready' : 'Ready';
 
@@ -473,7 +519,8 @@ const readyButtonOriginalState = () => {
 	$readyButton.removeEventListener('click', startGameListener);
 };
 
-const readyButtonToPlayButton = () => {
+/** @returns {void} */
+function readyButtonToPlayButton ()  {
 	console.log($readyButton);
 	$readyButton.className = 'play-button';
 	$readyButton.innerText = 'Start Game';

@@ -5,7 +5,8 @@ const websocket = new WebSocket('ws://127.0.0.1:8000');
 
 const onlineIndicator = document.getElementById('online-indicator');
 
-const creteGameButton = () => {
+/** @returns {void} */
+function creteGameButton ()  {
 	const msg = JSON.stringify({
 		type: 'lobbyInstruction',
 		instruction: 'createGame',
@@ -17,7 +18,8 @@ document
 	.getElementById('create-game-button')
 	.addEventListener('click', creteGameButton);
 
-const joinGameButton = () => {
+/** @returns {void} */
+function joinGameButton ()  {
 	if (!websocket.OPEN) return;
 	const msg = JSON.stringify({
 		type: 'instruction',
@@ -35,12 +37,17 @@ document
 const feedbackMessages = document.getElementById('feedback-messages');
 let feedbackTimeout = undefined;
 
-const clearFeedbackTimeout = () => {
+/** @returns {void} */
+function clearFeedbackTimeout ()  {
 	clearTimeout(feedbackTimeout);
 	feedbackTimeout = undefined;
 };
 
-const showError = (text) => {
+/**
+ * @param {string} text
+ * @returns {void}
+ */
+function showError (text) {
 	feedbackMessages.className = 'error-message';
 	feedbackMessages.innerText = text;
 	if (feedbackTimeout) clearFeedbackTimeout(feedbackTimeout);

@@ -15,7 +15,7 @@ function pickRandom(array) {
 function sendInstruction(ws, instruction, data) {
 	console.log(`SEND: ${instruction}, data: ${JSON.stringify(data)}`);
 	const msg = JSON.stringify({
-		type: "instruction",
+		type: 'instruction',
 		instruction,
 		...data,
 	});
@@ -28,7 +28,7 @@ function sendInstruction(ws, instruction, data) {
  * @returns {void}
  */
 function sendCreateGame(ws, gameId) {
-	sendInstruction(ws, "createGame", { gameId });
+	sendInstruction(ws, 'createGame', { gameId });
 }
 
 /**
@@ -47,7 +47,7 @@ function handleCreateGame(ws) {
  * @returns {void}
  */
 function sendPlayerJoin(ws, playerId, gameId) {
-	sendInstruction(ws, "joinGame", { playerId, gameId });
+	sendInstruction(ws, 'joinGame', { playerId, gameId });
 }
 
 /**
@@ -58,8 +58,8 @@ function sendPlayerJoin(ws, playerId, gameId) {
  * @returns {void}
  */
 function handleJoinGame(ws, { playerId, gameId }) {
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
-	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
 
 	const game = GAME_LIST.getGame(gameId);
 	if (!game) return sendError(ws, `no game ${gameId} found`);
@@ -147,7 +147,7 @@ function handleGetReadyStatus(ws, { playerId }) {
  * @returns {void}
  */
 function sendPlayerReady(ws, playerId) {
-	sendInstruction(ws, "playerReady", { playerId });
+	sendInstruction(ws, 'playerReady', { playerId });
 }
 
 /**
@@ -157,7 +157,7 @@ function sendPlayerReady(ws, playerId) {
  * @returns {void}
  */
 function handlePlayerReady(ws, { playerId }) {
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
 	if (!GAME_LIST.getPlayerGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
@@ -182,7 +182,7 @@ function handlePlayerReady(ws, { playerId }) {
  * @returns {void}
  */
 function sendPlayerUnready(ws, playerId) {
-	sendInstruction(ws, "playerUnready", { playerId });
+	sendInstruction(ws, 'playerUnready', { playerId });
 }
 
 /**
@@ -192,7 +192,7 @@ function sendPlayerUnready(ws, playerId) {
  * @returns {void}
  */
 function handlePlayerUnready(ws, { playerId }) {
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
 	if (!GAME_LIST.isPlayerInGame(playerId))
 		return sendError(ws, `Player ${playerId} not in a game`);
 
@@ -217,7 +217,7 @@ function handlePlayerUnready(ws, { playerId }) {
  * @returns {void}
  */
 function sendGameReady(ws) {
-	sendInstruction(ws, "gameReady");
+	sendInstruction(ws, 'gameReady');
 }
 
 /**
@@ -225,7 +225,7 @@ function sendGameReady(ws) {
  * @returns {void}
  */
 function sendGameUnready(ws) {
-	sendInstruction(ws, "gameUnready");
+	sendInstruction(ws, 'gameUnready');
 }
 
 /**
@@ -235,7 +235,7 @@ function sendGameUnready(ws) {
  * @returns {void}
  */
 function sendTurnOfPlayer(ws, playerId, turnNumber) {
-	sendInstruction(ws, "turnOfPlayer", { playerId, turnNumber });
+	sendInstruction(ws, 'turnOfPlayer', { playerId, turnNumber });
 }
 
 /**
@@ -254,7 +254,7 @@ function handleGetTurnOf(ws, { gameId }) {
  * @returns {void}
  */
 function sendStartGame(ws) {
-	sendInstruction(ws, "startGame");
+	sendInstruction(ws, 'startGame');
 }
 
 /**
@@ -265,8 +265,8 @@ function sendStartGame(ws) {
  * @returns {void}
  */
 function handleStartGame(ws, { gameId, playerId }) {
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
-	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
 	if (!GAME_LIST.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
@@ -295,12 +295,12 @@ function handleStartGame(ws, { gameId, playerId }) {
  * @returns {void}
  */
 function handleAttackPosition(ws, { userId, targetId, row, col }) {
-	if (!isValidString(userId)) return sendError(ws, "ERROR: userId is empty");
+	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
 	if (!GAME_LIST.isPlayerInGame(userId))
 		return sendError(ws, `ERROR: ${userId} is not in a game`);
 
 	if (!isValidString(targetId))
-		return sendError(ws, "ERROR: targetId is empty");
+		return sendError(ws, 'ERROR: targetId is empty');
 	if (!GAME_LIST.isPlayerInGame(targetId))
 		return sendError(ws, `ERROR: ${targetId} is not in a game`);
 
@@ -318,7 +318,7 @@ function handleAttackPosition(ws, { userId, targetId, row, col }) {
  * @returns {void}
  */
 function sendJoinTourney(ws, playerId, tourneyId) {
-	sendInstruction(ws, "joinTourney", { playerId, tourneyId });
+	sendInstruction(ws, 'joinTourney', { playerId, tourneyId });
 }
 
 /**
@@ -328,7 +328,7 @@ function sendJoinTourney(ws, playerId, tourneyId) {
  * @returns {void}
  */
 function sendLeaveTourney(ws, playerId, tourneyId) {
-	sendInstruction(ws, "leaveTourney", { playerId, tourneyId });
+	sendInstruction(ws, 'leaveTourney', { playerId, tourneyId });
 }
 
 /**
@@ -401,7 +401,7 @@ function handleStartTourney(ws, { playerId, tourneyId }) {
 		return sendError(ws, `Player ${playerId} not found in ${tourneyId}`);
 
 	if (tourney.playersInGames.length > 0)
-		return sendError(ws, "Some players are still in games");
+		return sendError(ws, 'Some players are still in games');
 
 	tourney.start();
 }
@@ -412,9 +412,9 @@ function handleStartTourney(ws, { playerId, tourneyId }) {
  */
 function handlePowerActivateQuickFix(ws) {
 	const game = GAME_LIST.getWebsocketGame(ws);
-	if (!game) return sendError(ws, "Websocket not in a game :(");
+	if (!game) return sendError(ws, 'Websocket not in a game :(');
 	const player = GAME_LIST.getWebsocketPlayer(ws);
-	if (!player) return sendError(ws, "Websocket is not assigned to a player");
+	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
 	if (!game.getPlayer(player.id))
 		return sendError(ws, `${player.id} not in ${game.id}`);
 	game.activateQuickFix(player.id);
@@ -429,9 +429,9 @@ function handlePowerActivateQuickFix(ws) {
  */
 function handleUseQuickFix(ws, { row, col }) {
 	const game = GAME_LIST.getWebsocketGame(ws);
-	if (!game) return sendError(ws, "Websocket not in a game :(");
+	if (!game) return sendError(ws, 'Websocket not in a game :(');
 	const player = GAME_LIST.getWebsocketPlayer(ws);
-	if (!player) return sendError(ws, "Websocket is not assigned to a player");
+	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
 	if (!game.getPlayer(player.id))
 		return sendError(ws, `${player.id} not in ${game.id}`);
 	game.useQuickFix(player.id, row, col);
@@ -443,9 +443,9 @@ function handleUseQuickFix(ws, { row, col }) {
  */
 function handlePowerEMP(ws) {
 	const game = GAME_LIST.getWebsocketGame(ws);
-	if (!game) return sendError(ws, "Websocket not in a game :(");
+	if (!game) return sendError(ws, 'Websocket not in a game :(');
 	const player = GAME_LIST.getWebsocketPlayer(ws);
-	if (!player) return sendError(ws, "Websocket is not assigned to a player");
+	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
 	if (!game.getPlayer(player.id))
 		return sendError(ws, `${player.id} not in ${game.id}`);
 	game.useEMP(player.id);
@@ -460,9 +460,9 @@ function handlePowerEMP(ws) {
  */
 function handlePowerShield(ws, { row, col }) {
 	const game = GAME_LIST.getWebsocketGame(ws);
-	if (!game) return sendError(ws, "Websocket not in a game :(");
+	if (!game) return sendError(ws, 'Websocket not in a game :(');
 	const player = GAME_LIST.getWebsocketPlayer(ws);
-	if (!player) return sendError(ws, "Websocket is not assigned to a player");
+	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
 	if (!game.getPlayer(player.id))
 		return sendError(ws, `${player.id} not in ${game.id}`);
 	game.usePowerShield(player.id, row, col);
@@ -488,7 +488,7 @@ function handleGetHost(ws, { gameId }) {
  * @returns {void}
  */
 function sendPlaceShield(ws, row, col) {
-	sendInstruction(ws, "powerPlaceShield", { row, col });
+	sendInstruction(ws, 'powerPlaceShield', { row, col });
 }
 
 /**
@@ -498,7 +498,7 @@ function sendPlaceShield(ws, row, col) {
  * @returns {void}
  */
 function sendRemoveShield(ws, row, col) {
-	sendInstruction(ws, "powerRemoveShield", { row, col });
+	sendInstruction(ws, 'powerRemoveShield', { row, col });
 }
 
 /**
@@ -506,7 +506,7 @@ function sendRemoveShield(ws, row, col) {
  * @returns {void}
  */
 function sendActivatePowerups(ws) {
-	sendInstruction(ws, "activatePowerups");
+	sendInstruction(ws, 'activatePowerups');
 }
 
 /**
@@ -514,7 +514,7 @@ function sendActivatePowerups(ws) {
  * @returns {void}
  */
 function sendDeactivatePowerups(ws) {
-	sendInstruction(ws, "deactivatePowerups");
+	sendInstruction(ws, 'deactivatePowerups');
 }
 
 /**
@@ -522,7 +522,7 @@ function sendDeactivatePowerups(ws) {
  * @returns {void}
  */
 function sendActivateQuickFix(ws) {
-	sendInstruction(ws, "activateQuickFix");
+	sendInstruction(ws, 'activateQuickFix');
 }
 
 /**
@@ -530,7 +530,7 @@ function sendActivateQuickFix(ws) {
  * @returns {void}
  */
 function sendDeactivateQuickFix(ws) {
-	sendInstruction(ws, "deactivateQuickFix");
+	sendInstruction(ws, 'deactivateQuickFix');
 }
 
 /**
@@ -541,7 +541,7 @@ function sendDeactivateQuickFix(ws) {
  * @returns {void}
  */
 function sendHealPosition(ws, playerId, row, col) {
-	sendInstruction(ws, "healPosition", { playerId, row, col });
+	sendInstruction(ws, 'healPosition', { playerId, row, col });
 }
 
 class InstructionHandler {
@@ -623,23 +623,23 @@ const INSTRUCTION_HANDLER = new InstructionHandler();
 
 const BoatEnum = {
 	destroyer: {
-		name: "destroyer",
+		name: 'destroyer',
 		size: 2,
 	},
 	submarine: {
-		name: "submarine",
+		name: 'submarine',
 		size: 3,
 	},
 	cruise: {
-		name: "cruise",
+		name: 'cruise',
 		size: 3,
 	},
 	battleship: {
-		name: "battleship",
+		name: 'battleship',
 		size: 4,
 	},
 	aircraft: {
-		name: "aircraft",
+		name: 'aircraft',
 		size: 5,
 	},
 };
@@ -649,7 +649,7 @@ const BoatEnum = {
  * @returns {boolean}
  */
 function isValidString(str) {
-	return !!(str ?? "").length;
+	return !!(str ?? '').length;
 }
 
 class TourneyList {
@@ -829,11 +829,11 @@ class Tourney {
 				}
 
 				if (this.players.length === 0 && this.playersInGames.length === 2) {
-					console.log("LAST GAME");
+					console.log('LAST GAME');
 					this.#lastGame = true;
 				}
 			} else {
-				console.log("NOT ENOUGH PLAYERS");
+				console.log('NOT ENOUGH PLAYERS');
 				break;
 			}
 		}
@@ -1287,9 +1287,9 @@ class Game {
 		const target = this.getPlayer(idTo);
 
 		if (user === target)
-			return sendError(user.websocket, "Can't attack own board!");
+			return sendError(user.websocket, 'Can\'t attack own board!');
 		if (user !== this.turnOf)
-			return sendError(user.websocket, "It's not your turn");
+			return sendError(user.websocket, 'It\'s not your turn');
 
 		const pos = target.board.getPosition(row, col);
 
@@ -1301,14 +1301,14 @@ class Game {
 		}
 
 		if (pos.hasShield()) {
-			sendSuccess(user.websocket, "Your attack was blocked");
-			sendSuccess(target.websocket, "You blocked an attack");
+			sendSuccess(user.websocket, 'Your attack was blocked');
+			sendSuccess(target.websocket, 'You blocked an attack');
 			this.nextTurn();
 			return;
 		}
 
 		if (pos.destroyed) {
-			sendError(user.websocket, "This position is already destroyed!");
+			sendError(user.websocket, 'This position is already destroyed!');
 			return;
 		}
 
@@ -1354,12 +1354,12 @@ class Game {
 		const player = this.getPlayer(id);
 		if (!player) return;
 		if (player.points < 15)
-			return sendError(player.websocket, "You don't have enough points to use the Shield :(");
+			return sendError(player.websocket, 'You don\'t have enough points to use the Shield :(');
 
 		if (player.onQuickFix)
-			return sendError(player.websocket, "Finish using quickfix mode first!");
+			return sendError(player.websocket, 'Finish using quickfix mode first!');
 		if (player.disabled)
-			return sendError(player.websocket, "You're being disabled by an EMP attack!");
+			return sendError(player.websocket, 'You\'re being disabled by an EMP attack!');
 
 		if (!player.board.getPosition(row, col))
 			return sendError(
@@ -1383,17 +1383,17 @@ class Game {
 		const player = this.getPlayer(id);
 		if (!player) return;
 		if (player.points < 10)
-			return sendError(player.websocket, "You don't have enough points to use the EMP :(");
+			return sendError(player.websocket, 'You don\'t have enough points to use the EMP :(');
 
 		if (player.onQuickFix)
-			return sendError(player.websocket, "You're already using quick fix!");
+			return sendError(player.websocket, 'You\'re already using quick fix!');
 		if (player.disabled)
-			return sendError(player.websocket, "You're being disabled by an EMP attack!");
+			return sendError(player.websocket, 'You\'re being disabled by an EMP attack!');
 
 		// Look for boats that haven't been destroyed or healed yet
 		const boats = player.boats.filter(boat => !boat.destroyed && !boat.wasHealed);
 		if (boats.length === 0)
-			return sendError(player.websocket, "All boats are either destroyed or already healed!");
+			return sendError(player.websocket, 'All boats are either destroyed or already healed!');
 
 		player.onQuickFix = true;
 
@@ -1410,12 +1410,12 @@ class Game {
 		const player = this.getPlayer(id);
 		if (!player) return;
 		if (player.points < 10)
-			return sendError(player.websocket, "You don't have enough points to use the EMP :(");
+			return sendError(player.websocket, 'You don\'t have enough points to use the EMP :(');
 
 		if (!player.onQuickFix)
-			return sendError(player.websocket, "You're not currently using QuickFix!");
+			return sendError(player.websocket, 'You\'re not currently using QuickFix!');
 		if (player.disabled)
-			return sendError(player.websocket, "You're being disabled by an EMP attack!");
+			return sendError(player.websocket, 'You\'re being disabled by an EMP attack!');
 
 		const pos = player.board.getPosition(row, col);
 		if (!pos)
@@ -1458,19 +1458,19 @@ class Game {
 		if (player.points < 25)
 			return sendError(
 				player.websocket,
-				"You don't have enough points to use the EMP :(",
+				'You don\'t have enough points to use the EMP :(',
 			);
 
 		if (player.onQuickFix)
-			return sendError(player.websocket, "Finish using quickfix mode first!");
+			return sendError(player.websocket, 'Finish using quickfix mode first!');
 		if (player.disabled)
-			return sendError(player.websocket, "You're being disabled by an EMP attack!");
+			return sendError(player.websocket, 'You\'re being disabled by an EMP attack!');
 
 		for (const p of this.players.filter((x) => x !== player)) p.disable();
 
 		for (const p of this.getOnlinePlayers().filter((x) => x !== player))
 			sendDeactivatePowerups(p.websocket);
-		sendSuccess(player.websocket, "Everyone is disabled now :)");
+		sendSuccess(player.websocket, 'Everyone is disabled now :)');
 
 		player.points -= 25;
 	}
@@ -1582,9 +1582,9 @@ class BoardPosition {
 
 class Board {
 	/** @type {string[]} */
-	static #rows = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+	static #rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 	/** @type {string[]} */
-	static #cols = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+	static #cols = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
 	/** @type {{[key: string]: BoardPosition}} */
 	#positions = {};
@@ -1750,9 +1750,9 @@ class Player {
 			: this.board.getSliceHorizontal(row, col, boatEnum.size);
 
 		if (positions.length !== boatEnum.size)
-			return sendError(this.websocket, "boat too big");
+			return sendError(this.websocket, 'boat too big');
 		if (positions.some((pos) => pos.boatName !== undefined))
-			return sendError(this.websocket, "boat in the way");
+			return sendError(this.websocket, 'boat in the way');
 
 		const boat = this.getBoat(boatEnum.name);
 		if (boat.placed)
@@ -1843,7 +1843,7 @@ class Player {
 		return this.#healingBoat;
 	}
 	set healingBoat(val) {
-		if (this.#healingBoat && val) console.warn("WARNING: Reassigning healing boat when NOT undefined");
+		if (this.#healingBoat && val) console.warn('WARNING: Reassigning healing boat when NOT undefined');
 		this.#healingBoat = val;
 	}
 
@@ -1872,11 +1872,11 @@ class Player {
 		this.defeated = false;
 
 		this.#boats = {
-			destroyer: new Boat("destroyer"),
-			submarine: new Boat("submarine"),
-			cruise: new Boat("cruise"),
-			battleship: new Boat("battleship"),
-			aircraft: new Boat("aircraft"),
+			destroyer: new Boat('destroyer'),
+			submarine: new Boat('submarine'),
+			cruise: new Boat('cruise'),
+			battleship: new Boat('battleship'),
+			aircraft: new Boat('aircraft'),
 		};
 	}
 
@@ -1893,11 +1893,11 @@ class Player {
 		this.defeated = false;
 
 		this.#boats = {
-			destroyer: new Boat("destroyer"),
-			submarine: new Boat("submarine"),
-			cruise: new Boat("cruise"),
-			battleship: new Boat("battleship"),
-			aircraft: new Boat("aircraft"),
+			destroyer: new Boat('destroyer'),
+			submarine: new Boat('submarine'),
+			cruise: new Boat('cruise'),
+			battleship: new Boat('battleship'),
+			aircraft: new Boat('aircraft'),
 		};
 	}
 }
@@ -1911,7 +1911,7 @@ class Player {
  * @returns {void}
  */
 function sendPlaceBoat(ws, boatName, row, col, vertical) {
-	sendInstruction(ws, "placeBoat", { boatName, vertical, row, col });
+	sendInstruction(ws, 'placeBoat', { boatName, vertical, row, col });
 }
 
 /**
@@ -1954,8 +1954,8 @@ function handlePlaceBoat(ws, { playerId, boatName, row, col, vertical }) {
  */
 function sendDestroyPosition(ws, playerId, row, col, success) {
 	const msg = JSON.stringify({
-		type: "gameInstruction",
-		instruction: "destroyPosition",
+		type: 'gameInstruction',
+		instruction: 'destroyPosition',
 		playerId,
 		row,
 		col,
@@ -1990,8 +1990,8 @@ function sendRevealPosition(
 	isDestroyed,
 ) {
 	const msg = JSON.stringify({
-		type: "gameInstruction",
-		instruction: "revealPosition",
+		type: 'gameInstruction',
+		instruction: 'revealPosition',
 		playerId,
 		boatName,
 		slot,
@@ -2014,7 +2014,7 @@ function sendRevealPosition(
  * @returns {void}
  */
 function sendAttack(ws, playerId, row, col, success) {
-	sendInstruction(ws, "attack", { playerId, row, col, success });
+	sendInstruction(ws, 'attack', { playerId, row, col, success });
 }
 
 /**
@@ -2023,7 +2023,7 @@ function sendAttack(ws, playerId, row, col, success) {
  * @returns {void}
  */
 function sendPlayerWin(ws, playerId) {
-	sendInstruction(ws, "playerWin", { playerId });
+	sendInstruction(ws, 'playerWin', { playerId });
 }
 
 /**
@@ -2033,8 +2033,8 @@ function sendPlayerWin(ws, playerId) {
  */
 function sendPointsUpdate(ws, points) {
 	const msg = JSON.stringify({
-		type: "gameInstruction",
-		instruction: "pointsUpdate",
+		type: 'gameInstruction',
+		instruction: 'pointsUpdate',
 		points,
 	});
 	ws.send(msg);
@@ -2046,7 +2046,7 @@ function sendPointsUpdate(ws, points) {
  * @returns {void}
  */
 function sendGetHost(ws, hostId) {
-	sendInstruction(ws, "getHost", { hostId });
+	sendInstruction(ws, 'getHost', { hostId });
 }
 
 /**
@@ -2058,7 +2058,7 @@ function sendSuccess(ws, text) {
 	console.log(`SUCCESS: ${text}`);
 	ws.send(
 		JSON.stringify({
-			type: "success",
+			type: 'success',
 			text,
 		}),
 	);
@@ -2073,7 +2073,7 @@ function sendError(ws, text) {
 	console.log(`ERROR: ${text}`);
 	ws.send(
 		JSON.stringify({
-			type: "error",
+			type: 'error',
 			text,
 		}),
 	);
@@ -2088,8 +2088,8 @@ function sendError(ws, text) {
  */
 function handleLeaveGame(ws, { gameId, playerId }) {
 	// Validate playerId & gameId
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
-	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
 
 	// Check if player is in a game
 	if (!GAME_LIST.isPlayerInGame(playerId))
@@ -2115,7 +2115,7 @@ function handleLeaveGame(ws, { gameId, playerId }) {
  * @returns {void}
  */
 function sendPlayerDisconnect(ws, playerId) {
-	sendInstruction(ws, "playerDisconnect", { playerId });
+	sendInstruction(ws, 'playerDisconnect', { playerId });
 }
 
 /**
@@ -2126,8 +2126,8 @@ function sendPlayerDisconnect(ws, playerId) {
  * @returns {void}
  */
 function handleDisconnectGame(ws, { gameId, playerId }) {
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
-	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
 	if (!GAME_LIST.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
 
@@ -2154,8 +2154,8 @@ function handleDisconnectGame(ws, { gameId, playerId }) {
  * @returns {void}
  */
 function handleDeleteGame(ws, { gameId, playerId }) {
-	if (!isValidString(playerId)) return sendError(ws, "playerId is empty");
-	if (!isValidString(gameId)) return sendError(ws, "gameId is empty");
+	if (!isValidString(playerId)) return sendError(ws, 'playerId is empty');
+	if (!isValidString(gameId)) return sendError(ws, 'gameId is empty');
 
 	if (!GAME_LIST.isPlayerInGame(playerId))
 		return sendError(ws, `player ${playerId} not in a game`);
@@ -2184,7 +2184,7 @@ function handleWebsocketDisconnect(ws) {
 
 	if (!GAME_LIST.isWebsocketInGame(ws))
 		return console.log(
-			"INFO: a websocket disconnected without being in a game",
+			'INFO: a websocket disconnected without being in a game',
 		);
 
 	const game = GAME_LIST.getWebsocketGame(ws);
@@ -2193,7 +2193,7 @@ function handleWebsocketDisconnect(ws) {
 			return handleDisconnectGame(ws, { gameId: game.id, playerId: player.id });
 }
 
-const BASE_PATH = "./client";
+const BASE_PATH = './client';
 
 /**
  * @param {Request} req
@@ -2208,57 +2208,57 @@ async function reqHandler(req) {
 	} catch (e) {
 		// @ts-ignore
 		if (e instanceof Deno.errors.NotFound) {
-			filePath = "./client/index.html";
+			filePath = './client/index.html';
 			// @ts-ignore
 			fileSize = (await Deno.stat(filePath)).size;
 		} else return new Response(null, { status: 500 });
 	}
-	if (filePath === "./client/") {
-		filePath = "./client/index.html";
+	if (filePath === './client/') {
+		filePath = './client/index.html';
 		// @ts-ignore
 		fileSize = (await Deno.stat(filePath)).size;
 	}
 	// @ts-ignore
 	const body = (await Deno.open(filePath)).readable;
 	let fileType;
-	if (filePath.endsWith("html")) fileType = "text/html";
-	if (filePath.endsWith("css")) fileType = "text/css";
-	if (filePath.endsWith("js")) fileType = "text/javascript";
-	if (filePath.endsWith("png")) fileType = "image/png";
+	if (filePath.endsWith('html')) fileType = 'text/html';
+	if (filePath.endsWith('css')) fileType = 'text/css';
+	if (filePath.endsWith('js')) fileType = 'text/javascript';
+	if (filePath.endsWith('png')) fileType = 'image/png';
 	return new Response(body, {
 		headers: {
-			"content-length": fileSize.toString(),
-			"content-type": fileType || "application/octet-stream",
+			'content-length': fileSize.toString(),
+			'content-type': fileType || 'application/octet-stream',
 		},
 	});
 }
 
 // @ts-ignore
 Deno.serve(
-	{ port: "8000", hostname: "127.0.0.1" },
+	{ port: '8000', hostname: '127.0.0.1' },
 	(/** @type {Request} */ req) => {
-		if (req.headers.get("upgrade") !== "websocket") return reqHandler(req);
+		if (req.headers.get('upgrade') !== 'websocket') return reqHandler(req);
 
 		/** @type { {socket: WebSocket, response: Response} } */
 		// @ts-ignore
 		const { socket, response } = Deno.upgradeWebSocket(req);
 
-		socket.addEventListener("open", (_) => {
-			console.log("CONNECTION: A new client connected!");
+		socket.addEventListener('open', (_) => {
+			console.log('CONNECTION: A new client connected!');
 		});
 
-		socket.addEventListener("message", (event) => {
+		socket.addEventListener('message', (event) => {
 			let ev;
 			try {
 				ev = JSON.parse(event.data);
 			} catch {
-				return console.log("data not valid jsondata:" + event.data);
+				return console.log('data not valid jsondata:' + event.data);
 			}
 
 			return INSTRUCTION_HANDLER.handleInstruction(socket, ev);
 		});
 
-		socket.addEventListener("close", () => handleWebsocketDisconnect(socket));
+		socket.addEventListener('close', () => handleWebsocketDisconnect(socket));
 
 		return response;
 	},

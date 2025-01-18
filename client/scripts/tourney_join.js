@@ -1,6 +1,12 @@
 const websocket = new WebSocket('ws://127.0.0.1:8000');
 
-const handleJoinGame = ({ playerId, tourneyId }) => {
+/**
+ * @param {object} ev
+ * @param {script} ev.playerId
+ * @param {script} ev.tourneyId
+ * @returns {void}
+ */
+function handleJoinGame ({ playerId, tourneyId })  {
 	window.location.href = `./tourney_lobby.html?playerId=${playerId}&tourneyId=${tourneyId}`;
 };
 
