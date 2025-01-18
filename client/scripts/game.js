@@ -65,7 +65,7 @@ const powerupBtns = [
 
 /** @returns {void} */
 function handlePlayerWinplayerId() {
-	const player = Game.players[playerId];
+	const player = Game.getPlayer(playerId);
 	if (!player) return;
 	window.location.href = `./winner.html?winnerId=${playerId}`;
 }
@@ -77,7 +77,7 @@ function handlePlayerWinplayerId() {
  * @returns {void}
  */
 function handleDestroyPosition(playerId, row, col) {
-	const player = Game.players[playerId];
+	const player = Game.getPlayer(playerId);
 	if (!player) return;
 	player.board.getPosition(row, col).destroy();
 }
@@ -104,27 +104,19 @@ function handleUpdatePoints(newPoints) {
  * @returns {void}
  */
 function handleJoinGame(pId) {
-	const player = Game.players[pId];
+	const player = Game.getPlayer(pId);
 	if (player) {
 		player.connected = true;
 		player.$playerName.innerText = pId;
 	}
 
-	if (pId === playerId) {
-		const boatMsg = JSON.stringify({
-			type: 'instruction',
-			instruction: 'getBoats',
-			playerId,
-		});
-		websocket.send(boatMsg);
-
-		const turnMsg = JSON.stringify({
-			type: 'instruction',
-			instruction: 'getTurnOf',
-			gameId,
-		});
-		websocket.send(turnMsg);
-	}
+	const msg = JSON.stringify({
+		type: 'instruction',
+		instruction: 'refreshBoard',
+		playerId,
+		otherId: pId,
+	});
+	websocket.send(msg);
 
 	showSuccess(`${pId} has connected!`);
 	Game.addPlayer(pId);
@@ -135,7 +127,7 @@ function handleJoinGame(pId) {
  * @returns {void}
  */
 function handleDisconnectGame(playerId) {
-	const player = Game.players[playerId];
+	const player = Game.getPlayer(playerId);
 	if (!player) return;
 
 	player.connected = false;
@@ -151,7 +143,8 @@ function handleDisconnectGame(playerId) {
  * @returns {void}
  */
 function handlePlaceBoat(boatName, row, col, vertical) {
-	Object.values(Game.players)[0].placeBoat(Boats[boatName], row, col, vertical);
+	const player = Game.getPlayer(playerId);
+	player.placeBoat(Boats[boatName], row, col, vertical);
 }
 
 /**
@@ -162,7 +155,7 @@ function handlePlaceBoat(boatName, row, col, vertical) {
  * @returns {void}
  */
 function handleAttackPosition(playerId, row, col, success) {
-	const player = Game.players[playerId];
+	const player = Game.getPlayer(playerId);
 	if (!player) return;
 
 	const pos = player.board.getPosition(row, col);
@@ -197,7 +190,7 @@ function handleLeaveTourney() {
  * @returns {void}
  */
 function handlePowerPlaceShield({ row, col }) {
-	const player = Game.players[playerId];
+	const player = Game.getPlayer(playerId);
 	if (!player) return;
 	const pos = player.board.getPosition(row, col);
 	if (!pos) return;
@@ -211,7 +204,7 @@ function handlePowerPlaceShield({ row, col }) {
  * @returns {void}
  */
 function handlePowerRemoveShield({ row, col }) {
-	const player = Game.players[playerId];
+	const player = Game.getPlayer(playerId);
 	if (!player) return;
 	const pos = player.board.getPosition(row, col);
 	if (!pos) return;
@@ -259,11 +252,26 @@ function handleDeactivateQuickFix() {
  * @returns {void}
  */
 function handleHealPosition({ playerId, row, col }) {
-	const player = Game.players[playerId];
+	const player = Game.getPlayer(playerId);
 	if (!player) return;
 	const pos = player.board.getPosition(row, col);
 	if (!pos) return;
 	pos.heal();
+}
+
+/**
+ * @param {object} ev
+ * @param {string} ev.playerId
+ * @param {string} ev.row
+ * @param {string} ev.col
+ * @returns {void}
+ */
+function handleRevealPosition({ playerId, row, col }) {
+	const player = Game.getPlayer(playerId);
+	if (!player) return;
+	const pos = player.board.getPosition(row, col);
+	if (!pos) return;
+	pos.reveal();
 }
 
 /**
@@ -322,6 +330,8 @@ websocket.addEventListener('message', (event) => {
 		if (ev.instruction === 'activateQuickFix') handleActivateQuickFix(ev);
 		if (ev.instruction === 'deactivateQuickFix') handleDeactivateQuickFix(ev);
 		if (ev.instruction === 'healPosition') handleHealPosition(ev);
+
+		if (ev.instruction === 'revealPosition') handleRevealPosition(ev);
 	}
 });
 
@@ -387,15 +397,15 @@ function healButtonListener() {
 attackBtn.addEventListener('click', attackButtonListener);
 
 sonarBtn.addEventListener('click', () => {
-	Game.sonar(0, Game.slotFromId(selectedPlayer));
+	Game.webSonar(playerId, selectedPlayer);
 });
 
 airplanesBtn.addEventListener('click', () => {
-	Game.attackAirplanes(0, Game.slotFromId(selectedPlayer));
+	Game.webAttackAirplanes(playerId, selectedPlayer);
 });
 
 mineBtn.addEventListener('click', () => {
-	Game.plantMine(0, selectedRow, selectedCol);
+	Game.webPlantMine(playerId, selectedRow, selectedCol);
 });
 
 shieldBtn.addEventListener('click', () => {
@@ -403,12 +413,7 @@ shieldBtn.addEventListener('click', () => {
 });
 
 missileBtn.addEventListener('click', () => {
-	Game.cruiseMissile(
-		0,
-		Game.slotFromId(selectedPlayer),
-		selectedRow,
-		selectedCol,
-	);
+	Game.webCruiseMissile(playerId, selectedPlayer, selectedRow, selectedCol);
 });
 
 quickfixBtn.addEventListener('click', () => {
@@ -420,46 +425,34 @@ empBtn.addEventListener('click', () => {
 });
 
 class Game {
-	static players = {};
+	/** @type {{[key: string]: Player}} */
+	static #players = {};
+	static get players() {
+		return Object.values(this.#players);
+	}
 
-	static getPlayers = () => Object.values(Game.players);
+	/**
+	 * @param {string} id
+	 * @returns {Player}
+	 */
+	static getPlayer(id) {
+		return Game.#players[id];
+	}
 
-	static addPlayer = (id) => {
-		if (this.players[id]) return;
-		this.players[id] = new Player(
-			id,
-			document.getElementById(`player-${this.getPlayers().length + 1}`),
-			this.players.length === 0,
-		);
-		return this.players[id];
+	/**
+	 * @param {string} id
+	 * @returns {void}
+	 */
+	static addPlayer(id) {
+		if (this.getPlayer(id)) return;
+		const $div = document.getElementById(`player-${Game.players.length + 1}`);
+		this.#players[id] = new Player(id, $div);
+		return this.#players[id];
 	};
 
-	static attackPlayer = (slotFrom, slotTo, row, col) => {
-		const user = this.players[slotFrom];
-		const target = this.players[slotTo];
-
-		const pos = target.board.getPosition(row, col);
-
-		if (pos.hasMine) {
-			pickRandom(user.board.getAdyacentsPositions(row, col)).destroy();
-			target.setPoints(target.points + 5);
-			return;
-		}
-
-		if (pos.shielded) {
-			console.log('Bloqueado');
-			return;
-		}
-
-		pos.destroy();
-		if (pos.boat === undefined) return console.log('Miss!');
-
-		user.setPoints(user.points + 5);
-	};
-
-	static webAttackPlayer = (idFrom, idTo, row, col) => {
-		const user = this.players[idFrom];
-		const target = this.players[idTo];
+	static webAttackPlayer(idFrom, idTo, row, col) {
+		const user = this.#players[idFrom];
+		const target = this.#players[idTo];
 
 		const msg = JSON.stringify({
 			type: 'instruction',
@@ -472,137 +465,9 @@ class Game {
 		websocket.send(msg);
 	};
 
-	static sonar = (slotFrom, slotTo) => {
-		const user = this.players[slotFrom];
-		if (user.points < 5) return console.log('User does not have enough points');
-		if (user.boats[Boats.submarine.name].isDestroyed())
-			return console.log('Cannot use sonar, submarine is destroyed');
-
-		const target = this.players[slotTo];
-
-		pickRandom(
-			Object.values(target.boats)
-				.map((x) => x.positions)
-				.flat()
-				.filter((x) => !x.visible),
-		)?.makeVisible();
-
-		user.setPoints(user.points - 5);
-	};
-
-	static attackAirplanes = (slotFrom, slotTo) => {
-		const user = this.players[slotFrom];
-		if (user.points < 10)
-			return console.log('User does not have enough points');
-		if (user.boats[Boats.aircraft.name].isDestroyed())
-			return console.log('Cannot use attack airplanes, aircraft is destroyed');
-		const target = this.players[slotTo];
-
-		const validPositions = Object.values(target.board.positions).filter(
-			(x) => !x.destroyed,
-		);
-		for (let _ = 0; _ < 5; _++) {
-			const pos = pickRandom(validPositions);
-			this.attackPlayer(slotFrom, slotTo, pos.row, pos.col);
-			validPositions.splice(validPositions.indexOf(pos), 1);
-			if (validPositions.length === 0) break;
-		}
-
-		user.setPoints(user.points - 10);
-	};
-
-	static plantMine = (slotFrom, row, col) => {
-		const user = this.players[slotFrom];
-		if (user.points < 5) return console.log('User does not have enough points');
-
-		const pos = user.board.getPosition(row, col);
-		if (pos.boat !== undefined)
-			return console.log('Cannot plant mine where boat is');
-		if (pos.hasMine) return console.log('Position already has mine');
-		pos.plantMine();
-
-		pos.setPoints(user.points - 5);
-	};
-
-	static shieldPositions = (slotFrom, row, col) => {
-		const user = this.players[slotFrom];
-		if (user.points < 15)
-			return console.log('User does not have enough points');
-
-		user.board.getArea(row, col).forEach((x) => {
-			x.shield();
-		});
-
-		user.setPoints(user.points - 15);
-	};
-
-	static cruiseMissile = (slotFrom, slotTo, row, col) => {
-		const user = this.players[slotFrom];
-		if (user.points < 15)
-			return console.log('User does not have enough points');
-
-		const target = this.players[slotTo];
-		target.board.getArea(row, col).forEach((x) => {
-			Game.attackPlayer(slotFrom, slotTo, x.row, x.col);
-		});
-
-		user.setPoints(user.points - 15);
-	};
-
-	static quickFix = (slotFrom, rowOne, colOne, rowTwo, colTwo) => {
-		const user = this.players[slotFrom];
-		if (user.points < 10)
-			return console.log('User does not have enough points');
-
-		const posOne = user.board.getPosition(rowOne, colOne);
-		const posTwo = user.board.getPosition(rowTwo, colTwo);
-
-		let oneHealed = false;
-		let twoHealed = false;
-
-		if (posOne.boat === undefined)
-			console.log(`${rowOne},${colOne} does not have a boat`);
-		else if (user.boats[posOne.boat].wasHealed)
-			console.log(
-				`Unable to heal ${posOne.boat} because it was already healed`,
-			);
-		else if (user.boats[posOne.boat].isDestroyed())
-			console.log(
-				`The boat ${posOne.boat} from ${user.name} is already fully destroyed`,
-			);
-		else if (!posOne.destroyed)
-			console.log(`${rowOne},${colOne} is not destroyed`);
-		else {
-			posOne.heal();
-			oneHealed = true;
-		}
-
-		if (posTwo.boat === undefined)
-			console.log(`${rowTwo},${colTwo} does not have a boat`);
-		else if (user.boats[posTwo.boat].wasHealed)
-			console.log(
-				`Unable to heal ${posTwo.boat} because it was already healed`,
-			);
-		else if (user.boats[posTwo.boat].isDestroyed())
-			console.log(
-				`The boat ${posTwo.boat} from ${user.name} is already fully destroyed`,
-			);
-		else if (!posTwo.destroyed)
-			console.log(`${rowTwo},${colTwo} is not destroyed`);
-		else {
-			posTwo.heal();
-			twoHealed = true;
-		}
-
-		if (oneHealed) user.boats[posOne.boat].wasHealed = true;
-		if (twoHealed) user.boats[posTwo.boat].wasHealed = true;
-
-		user.setPoints(user.points - 10);
-	};
-
-	static webSonar = (idFrom, idTo) => {
-		const user = this.players[idFrom];
-		const target = this.players[idTo];
+	static webSonar(idFrom, idTo) {
+		const user = this.#players[idFrom];
+		const target = this.#players[idTo];
 		
 		const msg = JSON.stringify({
 			type: 'gameInstruction',
@@ -611,11 +476,11 @@ class Game {
 			targetId: target.id,
 		});
 		websocket.send(msg);
-	}
-	
-	static WebAttackAirplanes = (idFrom, idTo) => {
-		const user = this.players[idFrom];
-		const target = this.players[idTo];
+	};
+
+	static webAttackAirplanes(idFrom, idTo) {
+		const user = this.#players[idFrom];
+		const target = this.#players[idTo];
 	
 		const msg = JSON.stringify({
 			type: 'gameInstruction',
@@ -624,20 +489,20 @@ class Game {
 			targetId: target.id,
 		});
 		websocket.send(msg);
-	}
-	
-	static webPlantMine = (idFrom, row, col) => {
-		const user = this.players[idFrom];
+	};
+
+	static webPlantMine(idFrom, row, col) {
+		const user = this.#players[idFrom];
 	
 		const msg = JSON.stringify({
-			type: 'gameInstruction',
+			type: 'instruction',
 			instruction: 'usePlantMine',
 			userId: user.id,
 			row,
 			col,
 		});
 		websocket.send(msg);
-	}
+	};
 	
 	static webShield(row, col) {
 		const msg = JSON.stringify({
@@ -648,6 +513,21 @@ class Game {
 		});
 		websocket.send(msg);
 	}
+
+	static webCruiseMissile(idFrom, idTo, row, col) {
+		const user = this.#players[idFrom];
+		const target = this.#players[idTo];
+
+		const msg = JSON.stringify({
+			type: 'instruction',
+			instruction: 'cruiseMissile',
+			userId: user.id,
+			targetId: target.id,
+			row,
+			col,
+		});
+		websocket.send(msg);
+	};
 
 	static webActivateQuickFix() {
 		const msg = JSON.stringify({
@@ -674,86 +554,49 @@ class Game {
 		});
 		websocket.send(msg);
 	}
-
-	constructor() {
-		this.players = {
-			0: undefined,
-			1: undefined,
-			2: undefined,
-			3: undefined,
-		};
-	}
 }
 
 class BoardPosition {
-	placeBoat = (boatName, slot, vertical) => {
-		this.boat = boatName;
-		this.vertical = vertical;
-		this.boatSlot = slot;
-	};
+	/** @type {HTMLElement} */
+	#cell;
 
-	plantMine = () => {
-		this.hasMine = true;
-	};
-
-	shield = () => {
-		this.shielded = true;
-		this.cell.setAttribute('data-shield', 'true');
-	};
-
-	unshield = () => {
-		this.shielded = false;
-		this.cell.removeAttribute('data-shield');
-	};
-
-	destroy = (success = true) => {
-		if (success) this.cell.setAttribute('data-destroyed', 'true');
-		else this.cell.setAttribute('data-miss', 'true');
-		this.destroyed = true;
-	};
-
-	heal = () => {
-		this.cell.removeAttribute('data-destroyed');
-		this.destroyed = false;
-	};
-
-	makeVisible = () => {
-		this.visible = true;
-		const dir = this.vertical ? 'v' : 'h';
-		if (this.boat)
-			this.cell.setAttribute(
-				'data-boat',
-				`${this.boat}-${dir}${this.boatSlot}`,
-			);
-		if (this.hasMine) this.cell.setAttribute('data-mine', 'true');
-		if (this.shielded) this.cell.setAttribute('data-shield', 'true');
-	};
-
-	constructor(cell, row, col, owner) {
-		this.cell = cell;
-		this.row = row;
-		this.col = col;
-		this.owner = owner;
-		this.visible = owner.mainPlayer;
-		this.shielded = false;
-		this.hasMine = false;
-
-		this.boat = undefined;
-		this.destroyed = undefined;
-		this.vertical = undefined;
-		this.boatSlot = undefined;
+	constructor(cell) {
+		this.#cell = cell;
 	}
-}
 
-class Boat {
-	positions = [];
+	/**
+	 * @param {string} boatName
+	 * @param {number} slot
+	 * @param {boolean} vertical
+	 * @returns {void}
+	 */
+	placeBoat(boatName, slot, vertical) {
+		this.#cell.setAttribute('data-boat', `${boatName}-${vertical ? 'v' : 'h'}${slot}`);
+	};
 
-	getSize = () => this.positions.length;
-	isDestroyed = () => !this.positions.some((pos) => !pos.destroyed);
+	/** @returns {void} */
+	plantMine() { this.#cell.setAttribute('data-mine', 'true'); };
 
-	reveal = () => this.positions.forEach((x) => x.makeVisible());
-	destroy = () => this.positions.forEach((x) => x.destroy());
-	wasHealed = false;
+	/** @returns {void} */
+	shield() { this.#cell.setAttribute('data-shield', 'true'); };
+
+	/** @returns {void} */
+	unshield() { this.#cell.removeAttribute('data-shield'); };
+
+	/** @returns {void} */
+	heal() { this.#cell.removeAttribute('data-destroyed'); };
+
+	/** @returns {void} */
+	reveal() { this.#cell.setAttribute('data-revealed', true); };
+
+	/**
+	 * @param {boolean} success
+	 * @returns {void}
+	 */
+	destroy(success = true) {
+		if (success) this.#cell.setAttribute('data-destroyed', 'true');
+		else this.#cell.setAttribute('data-miss', 'true');
+	};
 }
 
 class Board {
@@ -763,40 +606,6 @@ class Board {
 	positions = {}; // Filled with '1,A' and such
 
 	getPosition = (row, col) => this.positions[`${row},${col}`];
-
-	getArea = (row, col) => {
-		const minRow = Math.max(0, Board.rows.indexOf(row) - 1);
-		const maxRow = Math.min(Board.rows.length, Board.rows.indexOf(row) + 2);
-		const minCol = Math.max(0, Board.cols.indexOf(col) - 1);
-		const maxCol = Math.min(Board.cols.length, Board.cols.indexOf(col) + 2);
-
-		return Board.rows
-			.slice(minRow, maxRow)
-			.split('')
-			.map((r) =>
-				Board.cols.slice(minCol, maxCol).map((c) => this.getPosition(r, c)),
-			)
-			.flat(); // Transforms from 3 arrays of 3 to 1 array of 9
-	};
-
-	getAdyacentsPositions = (row, col) => {
-		const minRow = Math.max(0, Board.rows.indexOf(row) - 1);
-		const maxRow = Math.min(Board.cols.length, Board.rows.indexOf(row) + 2);
-		const minCol = Math.max(0, Board.cols.indexOf(col) - 1);
-		const maxCol = Math.min(Board.cols.length, Board.cols.indexOf(col) + 2);
-
-		return Board.rows
-			.slice(minRow, maxRow)
-			.split('')
-			.map((r) =>
-				Board.cols.slice(minCol, maxCol).map((c) => {
-					if (r === row && c === col) return;
-					return this.getPosition(r, c);
-				}),
-			)
-			.flat() // Transforms from 3 arrays of 3 to 1 array of 9
-			.filter((x) => x); // This last step filters the undefined out
-	};
 
 	getSliceHorizontal = (row, col, size) =>
 		Board.cols
@@ -836,12 +645,7 @@ class Board {
 					document.getElementById('target-player').innerText = this.owner.id;
 				});
 
-				this.positions[`${row},${col}`] = new BoardPosition(
-					cell,
-					row,
-					col,
-					this.owner,
-				);
+				this.positions[`${row},${col}`] = new BoardPosition(cell);
 		}
 
 		$board.appendChild(cell);
@@ -879,15 +683,6 @@ class Player {
 		positions.forEach((pos, idx) =>
 			pos.placeBoat(boatEnum.name, idx + 1, vertical),
 		);
-		positions.forEach((pos) => pos.makeVisible());
-
-		this.boats[boatEnum.name].positions = positions;
-	};
-
-	setPoints = (points) => {
-		if (!this.mainPlayer) return;
-		this.points = points;
-		$pointsEl.innerHTML = this.points;
 	};
 
 	constructor(id, $divContainer) {
@@ -898,15 +693,6 @@ class Player {
 		$divContainer.appendChild(this.$playerName);
 
 		this.board = new Board($divContainer, this);
-		this.points = 999999999;
 		this.connected = true;
-
-		this.boats = {
-			destroyer: new Boat(),
-			submarine: new Boat(),
-			cruise: new Boat(),
-			battleship: new Boat(),
-			aircraft: new Boat(),
-		};
 	}
 }

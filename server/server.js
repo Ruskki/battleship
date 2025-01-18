@@ -108,7 +108,7 @@ function handleGetBoats(ws, { playerId }) {
 	))
 		sendPlaceBoat(
 			ws,
-			boat,
+			boat.name,
 			boat.positions[0].row,
 			boat.positions[0].col,
 			boat.positions[0].vertical,
@@ -199,15 +199,16 @@ function handlePlayerUnready(ws, { playerId }) {
 	const game = GAME_LIST.getPlayerGame(playerId);
 	const player = game.getPlayer(playerId);
 
-	player.boats.forEach((/** @type {Boat} */ boat) => {
-		boat.positions.forEach((pos) => pos.removeBoat());
+	player.boats.forEach(boat => {
+		boat.positions.forEach(pos => pos.removeBoat());
+		boat.positions = [];
 	});
 
 	player.ready = false;
 
-	for (const player of game.players)
-		sendPlayerUnready(player.websocket, playerId);
-	if (!game.canStart()) sendGameUnready(game.getHost().websocket);
+	for (const p of game.getOnlinePlayers())
+		sendPlayerUnready(p.websocket, playerId);
+	sendGameUnready(game.getHost().websocket);
 
 	sendSuccess(ws, `${playerId} has unreadied`);
 }
@@ -518,6 +519,30 @@ function handlePowerEMP(ws) {
 /**
  * @param {WebSocket} ws
  * @param {object} ev
+ * @param {string} ev.playerId
+ * @param {string} ev.otherId
+ * @returns {void}
+ */
+function handleRefreshBoard(ws, { playerId, otherId }) {
+	if (!isValidString(playerId)) return sendError(ws, 'ERROR: playerId is empty');
+	if (!GAME_LIST.isPlayerInGame(playerId))
+		return sendError(ws, `ERROR: ${playerId} is not in a game`);
+
+	if (!isValidString(otherId))
+		return sendError(ws, 'ERROR: otherId is empty');
+	if (!GAME_LIST.isPlayerInGame(otherId))
+		return sendError(ws, `ERROR: ${otherId} is not in a game`);
+
+	const game = GAME_LIST.getPlayerGame(playerId);
+	if (!game.getPlayer(otherId))
+		return sendError(ws, `${otherId} is not in the same game as ${playerId}`);
+
+	game.refreshBoardOf(playerId, otherId);
+}
+
+/**
+ * @param {WebSocket} ws
+ * @param {object} ev
  * @param {string} ev.row
  * @param {string} ev.col
  * @returns {void}
@@ -530,6 +555,32 @@ function handlePowerShield(ws, { row, col }) {
 	if (!game.getPlayer(player.id))
 		return sendError(ws, `${player.id} not in ${game.id}`);
 	game.usePowerShield(player.id, row, col);
+}
+
+/**
+ * @param {WebSocket} ws
+ * @param {object} ev
+ * @param {string} ev.userId
+ * @param {string} ev.targetId
+ * @param {string} ev.row
+ * @param {string} ev.col
+ * @returns {void}
+ */
+function handleCruiseMissile(ws, { userId, targetId, row, col }) {
+	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
+	if (!GAME_LIST.isPlayerInGame(userId))
+		return sendError(ws, `ERROR: ${userId} is not in a game`);
+
+	if (!isValidString(targetId))
+		return sendError(ws, 'ERROR: targetId is empty');
+	if (!GAME_LIST.isPlayerInGame(targetId))
+		return sendError(ws, `ERROR: ${targetId} is not in a game`);
+
+	const game = GAME_LIST.getPlayerGame(userId);
+	if (!game.getPlayer(targetId))
+		return sendError(ws, `${targetId} is not in the same game as ${userId}`);
+
+	game.cruiseMissile(userId, targetId, row, col);
 }
 
 /**
@@ -655,17 +706,20 @@ class InstructionHandler {
 		placeBoat: {
 			handle: handlePlaceBoat,
 		},
-		'useSonar': {
+		useSonar: {
 			handle: handleUseSonar
 		},
-		'useAttackAirplanes': {
+		useAttackAirplanes: {
 			handle: handleUseAirplane
 		},
-		'usePlantMine': {
+		usePlantMine: {
 			handle: handleUseMine
 		},
 		powerShield: {
 			handle: handlePowerShield,
+		},
+		cruiseMissile: {
+			handle: handleCruiseMissile,
 		},
 		powerActivateQuickFix: {
 			handle: handlePowerActivateQuickFix,
@@ -675,6 +729,9 @@ class InstructionHandler {
 		},
 		powerEMP: {
 			handle: handlePowerEMP,
+		},
+		refreshBoard: {
+			handle: handleRefreshBoard,
 		},
 	};
 
@@ -972,10 +1029,7 @@ class GameList {
 	 * @returns {void}
 	 */
 	removeWebsocket(ws) {
-		this.#websockets.splice(
-			this.#websockets.findIndex((x) => x.socket === ws),
-			1,
-		);
+		this.#websockets.splice(this.#websockets.findIndex((x) => x.socket === ws), 1);
 	}
 
 	/** @type {{[key: string]: Game}} */
@@ -1353,9 +1407,10 @@ class Game {
 	 * @param {string} idTo
 	 * @param {string} row
 	 * @param {string} col
+	 * @param {boolean} passTurn @desc Flip this flag in things like powerups
 	 * @returns {void}
 	 */
-	attackPlayer(idFrom, idTo, row, col) {
+	attackPlayer(idFrom, idTo, row, col, passTurn = true) {
 		const user = this.getPlayer(idFrom);
 		const target = this.getPlayer(idTo);
 
@@ -1366,17 +1421,17 @@ class Game {
 
 		const pos = target.board.getPosition(row, col);
 
-		if (pos.hasMine) {
+		if (pos.hasMine()) {
 			pickRandom(user.board.getAdyacentPositions(row, col)).destroy();
 			target.points += 5;
-			this.nextTurn();
+			if (passTurn) this.nextTurn();
 			return;
 		}
 
 		if (pos.hasShield()) {
 			sendSuccess(user.websocket, 'Your attack was blocked');
 			sendSuccess(target.websocket, 'You blocked an attack');
-			this.nextTurn();
+			if (passTurn) this.nextTurn();
 			return;
 		}
 
@@ -1386,7 +1441,7 @@ class Game {
 		}
 
 		this.#destroyPosition(target.id, pos.row, pos.col);
-		this.nextTurn();
+		if (passTurn) this.nextTurn();
 
 		if (pos.boatName === undefined) return;
 
@@ -1424,16 +1479,33 @@ class Game {
 	 */
 	sonar(idFrom, idTo) {
 		const user = this.getPlayer(idFrom);
+		const target = this.getPlayer(idTo);
 
 		if(user.points < 5)
 			return sendError(user.websocket, 'You dont have enought points for this powerup!');
 		if(user.getBoat('submarine').destroyed)
 			return sendError(user.websocket, 'Submarine has been destroyed!');
 
-		const target = this.getPlayer(idTo);
-		pickRandom(Object.values(target.board.positions).filter((x) => !x.destroyed,))?.makeVisible();
+		if (user === target)
+			return sendError(user.websocket, 'Can\'t target own board!');
+		if (user !== this.turnOf)
+			return sendError(user.websocket, 'It\'s not your turn');
+		if (user.onQuickFix)
+			return sendError(user.websocket, 'Finish using quickfix mode first!');
+		if (user.disabled)
+			return sendError(user.websocket, 'You\'re being disabled by an EMP attack!');
 
-		user.points = user.points - 5;
+		const boat = pickRandom(target.boats.filter(x => !x.destroyed));
+
+		/** @type {BoardPosition} */
+		const pos = pickRandom(boat.positions.filter((/** @type {BoardPosition} */ x) => !x.destroyed));
+		
+		pos.reveal();
+
+		sendRevealPosition(user.websocket, target.id, pos.row, pos.col);
+
+		user.points -= 5;
+		this.nextTurn();
 	}
 
 	/**
@@ -1443,23 +1515,33 @@ class Game {
 	 */
 	attackAirplane(idFrom, idTo) {
 		const user = this.getPlayer(idFrom);
+		const target = this.getPlayer(idTo);
 
 		if(user.points < 10)
 			return sendError(user.websocket, 'You dont have enought points for this powerup!');
 		if(user.getBoat('aircraft').destroyed)
 			return sendError(user.websocket, 'Aircraft has been destroyed!');
 
-		const target = this.getPlayer(idTo);
+		if (user === target)
+			return sendError(user.websocket, 'Can\'t target own board!');
+		if (user !== this.turnOf)
+			return sendError(user.websocket, 'It\'s not your turn');
+		if (user.onQuickFix)
+			return sendError(user.websocket, 'Finish using quickfix mode first!');
+		if (user.disabled)
+			return sendError(user.websocket, 'You\'re being disabled by an EMP attack!');
 
 		const validPositions = Object.values(target.board.positions).filter((x) => !x.destroyed,);
 
 		for (let _ = 0; _ < 5; _++) {
 			const pos = pickRandom(validPositions);
-			this.attackPlayer(idFrom, idTo, pos.row, pos.col);
+			this.attackPlayer(idFrom, idTo, pos.row, pos.col, false);
 			validPositions.splice(validPositions.indexOf(pos), 1);
 			if (validPositions.length === 0) break;
 		}
-		user.points = user.points - 10;
+
+		user.points -= 10;
+		this.nextTurn();
 	}
 
 	/**
@@ -1474,15 +1556,23 @@ class Game {
 		if(user.points < 5)
 			return sendError(user.websocket, 'You dont have enought points for this powerup!');
 
+		if (user !== this.turnOf)
+			return sendError(user.websocket, 'It\'s not your turn');
+		if (user.onQuickFix)
+			return sendError(user.websocket, 'Finish using quickfix mode first!');
+		if (user.disabled)
+			return sendError(user.websocket, 'You\'re being disabled by an EMP attack!');
+
 		const pos = user.board.getPosition(row, col);
 		if (pos.boatName !== undefined)
 			return sendError(user.websocket, 'There is a boat in this spot.');
-		if (pos.hasMine)
+		if (pos.hasMine())
 			return sendError(user.websocket, 'Position already has mine.');
 
 		pos.plantMine();
 
-		user.points = user.points - 5;
+		user.points -= 5;
+		this.nextTurn();
 	}
 
 	/**
@@ -1497,6 +1587,8 @@ class Game {
 		if (player.points < 15)
 			return sendError(player.websocket, 'You don\'t have enough points to use the Shield :(');
 
+		if (player !== this.turnOf)
+			return sendError(player.websocket, 'It\'s not your turn');
 		if (player.onQuickFix)
 			return sendError(player.websocket, 'Finish using quickfix mode first!');
 		if (player.disabled)
@@ -1514,6 +1606,39 @@ class Game {
 		}
 
 		player.points -= 15;
+		this.nextTurn();
+	}
+
+	/**
+	 * @param {string} idFrom
+	 * @param {string} idTo
+	 * @param {string} row
+	 * @param {string} col
+	 * @returns {void}
+	 */
+	cruiseMissile(idFrom, idTo, row, col) {
+		const user = this.getPlayer(idFrom);
+		const target = this.getPlayer(idTo);
+
+		if (user.points < 15)
+			return sendError(user.websocket, 'You don\'t have enough points to use the Cruise Missile :(');
+
+		if (user === target)
+			return sendError(user.websocket, 'Can\'t attack own board!');
+		if (user !== this.turnOf)
+			return sendError(user.websocket, 'It\'s not your turn');
+		if (user.onQuickFix)
+			return sendError(user.websocket, 'Finish using quickfix mode first!');
+		if (user.disabled)
+			return sendError(user.websocket, 'You\'re being disabled by an EMP attack!');
+
+		const positions = target.board.getArea(row, col);
+
+		for (const pos of positions)
+			this.attackPlayer(idFrom, idTo, pos.row, pos.col, false);
+
+		user.points -= 15;
+		this.nextTurn();
 	}
 
 	/**
@@ -1526,6 +1651,8 @@ class Game {
 		if (player.points < 10)
 			return sendError(player.websocket, 'You don\'t have enough points to use the EMP :(');
 
+		if (player !== this.turnOf)
+			return sendError(player.websocket, 'It\'s not your turn');
 		if (player.onQuickFix)
 			return sendError(player.websocket, 'You\'re already using quick fix!');
 		if (player.disabled)
@@ -1539,6 +1666,9 @@ class Game {
 		player.onQuickFix = true;
 
 		sendActivateQuickFix(player.websocket);
+
+		player.points -= 10;
+		this.nextTurn();
 	}
 
 	/**
@@ -1553,6 +1683,8 @@ class Game {
 		if (player.points < 10)
 			return sendError(player.websocket, 'You don\'t have enough points to use the EMP :(');
 
+		if (player !== this.turnOf)
+			return sendError(player.websocket, 'It\'s not your turn');
 		if (!player.onQuickFix)
 			return sendError(player.websocket, 'You\'re not currently using QuickFix!');
 		if (player.disabled)
@@ -1602,6 +1734,8 @@ class Game {
 				'You don\'t have enough points to use the EMP :(',
 			);
 
+		if (player !== this.turnOf)
+			return sendError(player.websocket, 'It\'s not your turn');
 		if (player.onQuickFix)
 			return sendError(player.websocket, 'Finish using quickfix mode first!');
 		if (player.disabled)
@@ -1614,6 +1748,40 @@ class Game {
 		sendSuccess(player.websocket, 'Everyone is disabled now :)');
 
 		player.points -= 25;
+		this.nextTurn();
+	}
+
+	/**
+	 * @param {string} idFrom @desc Who wants to refresh
+	 * @param {string} idBoard @desc Board from who
+	 * @returns {void}
+	 */
+	refreshBoardOf(idFrom, idBoard) {
+		const player = this.getPlayer(idFrom);
+		if (!player) return;
+
+		const target = this.getPlayer(idBoard);
+		if (!player) return;
+
+		// If player wants their own board
+		if (player === target) {
+			handleGetBoats(player.websocket, { playerId: idFrom }); // Send boats
+			if (player.disabled)
+				sendDeactivatePowerups(player.websocket); // Send if disabled
+			if (player.onQuickFix)
+				sendActivateQuickFix(player.websocket); // Send if quickfix
+
+			for (const pos of player.board.positions)  {
+				if (pos.hasMine()) {} // sendPlaceMine 
+				if (pos.hasShield())
+					sendPlaceShield(player.websocket, pos.row, pos.col);
+			}
+		} else 
+			for (const pos of target.board.positions.filter(x => x.revealed))
+				sendRevealPosition(player.websocket, target.id, pos.row, pos.col);
+
+		for (const pos of target.board.positions.filter(x => x.destroyed))
+			sendAttack(player.websocket, target.id, pos.row, pos.col, !!pos.boatName);
 	}
 }
 
@@ -1632,7 +1800,7 @@ class BoardPosition {
 
 	/** @type {boolean} */
 	#hasMine = false;
-	get hasMine() {
+	hasMine() {
 		return this.#hasMine;
 	}
 
@@ -1908,11 +2076,6 @@ class Player {
 		);
 	}
 
-	refreshBoard() {
-		// TODO: Make a function that sends information about all modified slots
-		// This includes ships, destroyed slots, etc
-	}
-
 	/** @returns {boolean} */
 	canReady() {
 		return !this.boats.some((b) => !b.placed);
@@ -2045,7 +2208,7 @@ class Player {
 
 /**
  * @param {WebSocket} ws
- * @param {Boat} boatName
+ * @param {string} boatName
  * @param {string} row
  * @param {string} col
  * @param {boolean} vertical
@@ -2090,60 +2253,10 @@ function handlePlaceBoat(ws, { playerId, boatName, row, col, vertical }) {
  * @param {string} playerId
  * @param {string} row
  * @param {string} col
- * @param {boolean} success
  * @returns {void}
  */
-function sendDestroyPosition(ws, playerId, row, col, success) {
-	const msg = JSON.stringify({
-		type: 'gameInstruction',
-		instruction: 'destroyPosition',
-		playerId,
-		row,
-		col,
-		success,
-	});
-	ws.send(msg);
-}
-
-/**
- * @param {WebSocket} ws
- * @param {string} playerId
- * @param {string} boatName
- * @param {number} slot
- * @param {string} row
- * @param {string} col
- * @param {boolean} vertical
- * @param {boolean} hasMine
- * @param {boolean} hasShield
- * @param {boolean} isDestroyed
- * @returns {void}
- */
-function sendRevealPosition(
-	ws,
-	playerId,
-	boatName,
-	slot,
-	row,
-	col,
-	vertical,
-	hasMine,
-	hasShield,
-	isDestroyed,
-) {
-	const msg = JSON.stringify({
-		type: 'gameInstruction',
-		instruction: 'revealPosition',
-		playerId,
-		boatName,
-		slot,
-		row,
-		col,
-		vertical,
-		hasMine,
-		hasShield,
-		isDestroyed,
-	});
-	ws.send(msg);
+function sendRevealPosition(ws, playerId, row, col) {
+	sendInstruction(ws, 'revealPosition', { playerId, row, col });
 }
 
 /**
@@ -2173,12 +2286,7 @@ function sendPlayerWin(ws, playerId) {
  * @returns {void}
  */
 function sendPointsUpdate(ws, points) {
-	const msg = JSON.stringify({
-		type: 'gameInstruction',
-		instruction: 'pointsUpdate',
-		points,
-	});
-	ws.send(msg);
+	sendInstruction(ws, 'pointsUpdate', { points });
 }
 
 /**
@@ -2324,9 +2432,7 @@ function handleWebsocketDisconnect(ws) {
 				});
 
 	if (!GAME_LIST.isWebsocketInGame(ws))
-		return console.log(
-			'INFO: a websocket disconnected without being in a game',
-		);
+		return console.log('INFO: a websocket disconnected without being in a game');
 
 	const game = GAME_LIST.getWebsocketGame(ws);
 	for (const player of game.getOnlinePlayers())
@@ -2374,9 +2480,11 @@ async function reqHandler(req) {
 	});
 }
 
+const bindTo = '0.0.0.0';
+
 // @ts-ignore
 Deno.serve(
-	{ port: '8000', hostname: '127.0.0.1' },
+	{ port: '8000', hostname: bindTo },
 	(/** @type {Request} */ req) => {
 		if (req.headers.get('upgrade') !== 'websocket') return reqHandler(req);
 
