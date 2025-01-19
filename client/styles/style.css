@@ -7,6 +7,7 @@
 @import url("./main-page.css");
 @import url("./online.css");
 @import url("./helper-classes.css");
+@import url("./leaderboard.css");
 
 * {
 	color: white;

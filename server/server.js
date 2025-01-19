@@ -415,7 +415,7 @@ function handleStartTourney(ws, { playerId, tourneyId }) {
  * @param {string} ev.targetId
  * @returns {void}
  */
-function handleUseSonar(ws, {userId, targetId}) {
+function handleUseSonar(ws, { userId, targetId }) {
 	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
 	if (!GAME_LIST.isPlayerInGame(userId))
 		return sendError(ws, `ERROR: ${userId} is not in a game`);
@@ -438,7 +438,7 @@ function handleUseSonar(ws, {userId, targetId}) {
  * @param {string} ev.targetId
  * @returns {void}
  */
-function handleUseAirplane(ws, {userId, targetId}) {
+function handleUseAirplane(ws, { userId, targetId }) {
 	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
 	if (!GAME_LIST.isPlayerInGame(userId))
 		return sendError(ws, `ERROR: ${userId} is not in a game`);
@@ -462,7 +462,7 @@ function handleUseAirplane(ws, {userId, targetId}) {
  * @param {string} ev.col
  * @returns {void}
  */
-function handleUseMine(ws, {userId, row, col}) {
+function handleUseMine(ws, { userId, row, col }) {
 	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
 	if (!GAME_LIST.isPlayerInGame(userId))
 		return sendError(ws, `ERROR: ${userId} is not in a game`);
@@ -682,6 +682,17 @@ function sendHealPosition(ws, playerId, row, col) {
 	sendInstruction(ws, 'healPosition', { playerId, row, col });
 }
 
+/**
+ * @param {WebSocket} ws
+ * @returns {void}
+ */
+function handleGetLeaderboards(ws) {
+	sendInstruction(
+		ws,
+		'getLeaderboards',
+		{ leaderboards: TOURNEY_LIST.getLeaderboards() });
+}
+
 class InstructionHandler {
 	#instructions = {
 		createGame: handleCreateGame,
@@ -708,6 +719,7 @@ class InstructionHandler {
 		powerUseQuickFix: handleUseQuickFix,
 		powerEMP: handlePowerEMP,
 		refreshBoard: handleRefreshBoard,
+		getLeaderboards: handleGetLeaderboards,
 	};
 
 	/**
@@ -766,6 +778,12 @@ class TourneyList {
 
 	/** @type {{[key: string]: number}} */
 	#medals = {};
+	getLeaderboards() {
+		return Object.keys(this.#medals).map((key) =>
+			[key, this.#medals[key]]
+			// @ts-ignore
+		).sort((f, s) => s[1] - f[1]);
+	}
 
 	/**
 	 * @param {string} playerId
@@ -1201,8 +1219,8 @@ class Game {
 				this.turnOf.websocket,
 				this.turnOf.cruiseMissileCooldown,
 				this.turnOf.empAttackCooldown);
-		if (this.turnOf.cruiseMissileCooldown) this.turnOf.cruiseMissileCooldown --;
-		if (this.turnOf.empAttackCooldown) this.turnOf.empAttackCooldown --;
+		if (this.turnOf.cruiseMissileCooldown) this.turnOf.cruiseMissileCooldown--;
+		if (this.turnOf.empAttackCooldown) this.turnOf.empAttackCooldown--;
 
 		let idx = (this.#playerIndex(this.turnOf.id) + 1) % this.players.length;
 
@@ -1531,9 +1549,9 @@ class Game {
 		const user = this.getPlayer(idFrom);
 		const target = this.getPlayer(idTo);
 
-		if(user.points < 5)
+		if (user.points < 5)
 			return sendError(user.websocket, 'You dont have enought points for this powerup!');
-		if(user.getBoat('submarine').destroyed)
+		if (user.getBoat('submarine').destroyed)
 			return sendError(user.websocket, 'Submarine has been destroyed!');
 
 		if (user === target)
@@ -1549,7 +1567,7 @@ class Game {
 
 		/** @type {BoardPosition} */
 		const pos = pickRandom(boat.positions.filter((/** @type {BoardPosition} */ x) => !x.destroyed));
-		
+
 		pos.reveal();
 
 		sendRevealPosition(user.websocket, target.id, pos.row, pos.col);
@@ -1567,9 +1585,9 @@ class Game {
 		const user = this.getPlayer(idFrom);
 		const target = this.getPlayer(idTo);
 
-		if(user.points < 10)
+		if (user.points < 10)
 			return sendError(user.websocket, 'You dont have enought points for this powerup!');
-		if(user.getBoat('aircraft').destroyed)
+		if (user.getBoat('aircraft').destroyed)
 			return sendError(user.websocket, 'Aircraft has been destroyed!');
 
 		if (user === target)
@@ -1603,7 +1621,7 @@ class Game {
 	mine(idFrom, row, col) {
 		const user = this.getPlayer(idFrom);
 
-		if(user.points < 5)
+		if (user.points < 5)
 			return sendError(user.websocket, 'You dont have enought points for this powerup!');
 
 		if (user !== this.turnOf)
@@ -1830,7 +1848,7 @@ class Game {
 			if (player.onQuickFix)
 				sendActivateQuickFix(player.websocket); // Send if quickfix
 
-			for (const pos of player.board.positions)  {
+			for (const pos of player.board.positions) {
 				if (pos.hasMine())
 					sendPlaceMine(player.websocket, pos.row, pos.col);
 				if (pos.hasShield())
@@ -1843,7 +1861,7 @@ class Game {
 			player.points = player.points;
 
 			sendTurnOfPlayer(player.websocket, this.turnOf.id, this.turnNumber);
-		} else 
+		} else
 			for (const pos of target.board.positions.filter(x => x.revealed))
 				sendRevealPosition(player.websocket, target.id, pos.row, pos.col);
 
