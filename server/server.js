@@ -638,10 +638,12 @@ function sendRemoveShield(ws, row, col) {
 
 /**
  * @param {WebSocket} ws
+ * @param {number} cruiseCooldown
+ * @param {number} empCooldown
  * @returns {void}
  */
-function sendActivatePowerups(ws) {
-	sendInstruction(ws, 'activatePowerups');
+function sendActivatePowerups(ws, cruiseCooldown, empCooldown) {
+	sendInstruction(ws, 'activatePowerups', { cruiseCooldown, empCooldown });
 }
 
 /**
@@ -681,78 +683,30 @@ function sendHealPosition(ws, playerId, row, col) {
 
 class InstructionHandler {
 	#instructions = {
-		createGame: {
-			handle: handleCreateGame,
-		},
-		joinGame: {
-			handle: handleJoinGame,
-		},
-		getBoats: {
-			handle: handleGetBoats,
-		},
-		getReadyPlayers: {
-			handle: handleGetReadyPlayers,
-		},
-		getReadyStatus: {
-			handle: handleGetReadyStatus,
-		},
-		playerReady: {
-			handle: handlePlayerReady,
-		},
-		playerUnready: {
-			handle: handlePlayerUnready,
-		},
-		startGame: {
-			handle: handleStartGame,
-		},
-		getTurnOf: {
-			handle: handleGetTurnOf,
-		},
-		getHost: {
-			handle: handleGetHost,
-		},
-		attackPosition: {
-			handle: handleAttackPosition,
-		},
-		createTourney: {
-			handle: handleCreateTourney,
-		},
-		joinTourney: {
-			handle: handleJoinTourney,
-		},
-		startTourney: {
-			handle: handleStartTourney,
-		},
-		placeBoat: {
-			handle: handlePlaceBoat,
-		},
-		useSonar: {
-			handle: handleUseSonar
-		},
-		useAttackAirplanes: {
-			handle: handleUseAirplane
-		},
-		usePlantMine: {
-			handle: handleUseMine
-		},
-		powerShield: {
-			handle: handlePowerShield,
-		},
-		cruiseMissile: {
-			handle: handleCruiseMissile,
-		},
-		powerActivateQuickFix: {
-			handle: handlePowerActivateQuickFix,
-		},
-		powerUseQuickFix: {
-			handle: handleUseQuickFix,
-		},
-		powerEMP: {
-			handle: handlePowerEMP,
-		},
-		refreshBoard: {
-			handle: handleRefreshBoard,
-		},
+		createGame: handleCreateGame,
+		joinGame: handleJoinGame,
+		getBoats: handleGetBoats,
+		getReadyPlayers: handleGetReadyPlayers,
+		getReadyStatus: handleGetReadyStatus,
+		playerReady: handlePlayerReady,
+		playerUnready: handlePlayerUnready,
+		startGame: handleStartGame,
+		getTurnOf: handleGetTurnOf,
+		getHost: handleGetHost,
+		attackPosition: handleAttackPosition,
+		createTourney: handleCreateTourney,
+		joinTourney: handleJoinTourney,
+		startTourney: handleStartTourney,
+		placeBoat: handlePlaceBoat,
+		useSonar: handleUseSonar,
+		useAttackAirplanes: handleUseAirplane,
+		usePlantMine: handleUseMine,
+		powerShield: handlePowerShield,
+		cruiseMissile: handleCruiseMissile,
+		powerActivateQuickFix: handlePowerActivateQuickFix,
+		powerUseQuickFix: handleUseQuickFix,
+		powerEMP: handlePowerEMP,
+		refreshBoard: handleRefreshBoard,
 	};
 
 	/**
@@ -765,7 +719,7 @@ class InstructionHandler {
 		if (!instruction)
 			return sendError(ws, `Instruction ${ev.instruction} not found`);
 		console.log(`HANDLE: ${ev.instruction} data: ${JSON.stringify(ev)}`);
-		instruction.handle(ws, ev);
+		instruction(ws, ev);
 	};
 }
 
@@ -1032,7 +986,7 @@ class GameList {
 	getWebsocketPlayer(ws) {
 		return this.#websockets
 			.find((x) => x.socket === ws)
-			.game.players.find((x) => x.websocket === ws);
+			?.game.players.find((x) => x.websocket === ws);
 	}
 
 	/**
@@ -1225,15 +1179,20 @@ class Game {
 				sendRemoveShield(this.turnOf.websocket, pos.row, pos.col);
 		}
 
-		for (const player of this.players.filter((p) => p.disabled)) {
-			player.disabledCountdown();
-			if (!player.disabled && player.isOnline())
-				sendActivatePowerups(player.websocket);
-		}
+		// Countdown important stuff
+		this.turnOf.disabledCountdown();
+		if (!this.turnOf.disabled && this.turnOf.isOnline())
+			sendActivatePowerups(
+				this.turnOf.websocket,
+				this.turnOf.cruiseMissileCooldown,
+				this.turnOf.empAttackCooldown);
+		if (this.turnOf.cruiseMissileCooldown) this.turnOf.cruiseMissileCooldown --;
+		if (this.turnOf.empAttackCooldown) this.turnOf.empAttackCooldown --;
 
 		let idx = (this.#playerIndex(this.turnOf.id) + 1) % this.players.length;
-		// Skip turn of offline players
-		while (this.players[idx].websocket === undefined)
+
+		// Skip turn of offline and defeated players
+		while (this.players[idx].websocket === undefined || this.players[idx].defeated)
 			idx = (idx + 1) % this.players.length;
 		this.#turnOf = this.players[idx];
 
@@ -1370,6 +1329,7 @@ class Game {
 		const player = this.getPlayer(id);
 		GAME_LIST.removeWebsocket(player.websocket);
 		GAME_LIST.deregisterPlayer(player.id);
+		player.disconnect();
 
 		this.players.splice(this.#playerIndex(id), 1);
 
@@ -1458,7 +1418,7 @@ class Game {
 		}
 
 		if (pos.hasShield()) {
-			sendSuccess(user.websocket, 'Your attack was blocked');
+			sendError(user.websocket, 'Your attack was blocked');
 			sendSuccess(target.websocket, 'You blocked an attack');
 			if (passTurn) this.nextTurn();
 			return;
@@ -1621,6 +1581,8 @@ class Game {
 
 		if (player !== this.turnOf)
 			return sendError(player.websocket, 'It\'s not your turn');
+		if (player.alreadyShielded())
+			return sendError(player.websocket, 'You already used the shield this match!');
 		if (player.onQuickFix)
 			return sendError(player.websocket, 'Finish using quickfix mode first!');
 		if (player.disabled)
@@ -1638,6 +1600,7 @@ class Game {
 		}
 
 		player.points -= 15;
+		player.useShield();
 		this.nextTurn();
 	}
 
@@ -1654,6 +1617,8 @@ class Game {
 
 		if (user.points < 15)
 			return sendError(user.websocket, 'You don\'t have enough points to use the Cruise Missile :(');
+		if (user.cruiseMissileCooldown > 0)
+			return sendError(user.websocket, `You have to wait ${user.empAttackCooldown} turns before using it again!`);
 
 		if (user === target)
 			return sendError(user.websocket, 'Can\'t attack own board!');
@@ -1670,6 +1635,7 @@ class Game {
 			this.attackPlayer(idFrom, idTo, pos.row, pos.col, false);
 
 		user.points -= 15;
+		user.cruiseMissileCooldownReset();
 		this.nextTurn();
 	}
 
@@ -1761,10 +1727,9 @@ class Game {
 		const player = this.getPlayer(id);
 		if (!player) return;
 		if (player.points < 25)
-			return sendError(
-				player.websocket,
-				'You don\'t have enough points to use the EMP :(',
-			);
+			return sendError(player.websocket, 'You don\'t have enough points to use the EMP :(');
+		if (player.empAttackCooldown > 0)
+			return sendError(player.websocket, `You have to wait ${player.empAttackCooldown} turns before using it again!`);
 
 		if (player !== this.turnOf)
 			return sendError(player.websocket, 'It\'s not your turn');
@@ -1780,6 +1745,7 @@ class Game {
 		sendSuccess(player.websocket, 'Everyone is disabled now :)');
 
 		player.points -= 25;
+		player.empAttackCooldownReset();
 		this.nextTurn();
 	}
 
@@ -1809,12 +1775,20 @@ class Game {
 				if (pos.hasShield())
 					sendPlaceShield(player.websocket, pos.row, pos.col);
 			}
+
+			// This sends the update to the player
+			player.cruiseMissileCooldown = player.cruiseMissileCooldown;
+			player.empAttackCooldown = player.empAttackCooldown;
+			player.points = player.points;
+
+			sendTurnOfPlayer(player.websocket, this.turnOf.id, this.turnNumber);
 		} else 
 			for (const pos of target.board.positions.filter(x => x.revealed))
 				sendRevealPosition(player.websocket, target.id, pos.row, pos.col);
 
 		for (const pos of target.board.positions.filter(x => x.destroyed))
 			sendAttack(player.websocket, target.id, pos.row, pos.col, !!pos.boatName);
+
 	}
 }
 
@@ -2199,11 +2173,56 @@ class Player {
 	get disabled() {
 		return this.#disabled > 0;
 	}
+	/** @returns {void} */
 	disable() {
 		this.#disabled = 3;
 	}
+	/** @returns {void} */
 	disabledCountdown() {
 		this.#disabled--;
+	}
+
+	/** @type {number} */
+	#cruiseMissileCooldown = 0;
+	get cruiseMissileCooldown() {
+		return this.#cruiseMissileCooldown;
+	}
+	set cruiseMissileCooldown(val) {
+		this.#cruiseMissileCooldown = val;
+		sendInstruction(this.#websocket, 'cruiseCooldown', {
+			cooldown: this.#cruiseMissileCooldown
+		});
+	}
+	/** @returns {void} */
+	cruiseMissileCooldownReset() {
+		this.cruiseMissileCooldown = 5;
+	}
+
+	/** @type {number} */
+	#empAttackCooldown = 0;
+	get empAttackCooldown() {
+		return this.#empAttackCooldown;
+	}
+	set empAttackCooldown(val) {
+		this.#empAttackCooldown = val;
+		sendInstruction(this.#websocket, 'empCooldown', {
+			cooldown: this.#empAttackCooldown
+		});
+	}
+	/** @returns {void} */
+	empAttackCooldownReset() {
+		this.empAttackCooldown = 10;
+	}
+
+	/** @type {boolean} */
+	#usedShield = false;
+	/** @returns {void} */
+	useShield() {
+		this.#usedShield = true;
+	}
+	/** @returns {boolean} */
+	alreadyShielded() {
+		return this.#usedShield;
 	}
 
 	reset() {
@@ -2460,6 +2479,10 @@ function handleDeleteGame(ws, { gameId, playerId }) {
  * @returns {void}
  */
 function handleWebsocketDisconnect(ws) {
+	console.log('A PLAYER IS DISCONNECTING');
+	const player = GAME_LIST.getWebsocketPlayer(ws);
+	if (player) console.log(player.id);
+
 	for (const tourney of TOURNEY_LIST.tourneys)
 		for (const player of tourney.getOnlinePlayers())
 			if (player.websocket === ws)
