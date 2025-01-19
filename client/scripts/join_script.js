@@ -1,58 +1,79 @@
+document
+	.getElementById('create-game-button')
+	.addEventListener('click', createGameButton);
+
+document
+	.getElementById('join-button')
+	.addEventListener('click', joinGameButton);
+
 const $playerIdInput = document.getElementById('player-id');
+
 const $gameIdInput = document.getElementById('game-id');
+
+let feedbackTimeout;
+
+const $feedbackMessages = document.getElementById('feedback-messages');
 
 const websocket = new WebSocket('ws://127.0.0.1:8000');
 
 const onlineIndicator = document.getElementById('online-indicator');
 
 /** @returns {void} */
-function creteGameButton ()  {
-	const msg = JSON.stringify({
-		type: 'lobbyInstruction',
-		instruction: 'createGame',
-	});
-	websocket.send(msg);
-};
+function getPlayerId() { return $playerIdInput.value.trim(); }
 
-document
-	.getElementById('create-game-button')
-	.addEventListener('click', creteGameButton);
-
-/** @returns {void} */
-function joinGameButton ()  {
-	if (!websocket.OPEN) return;
-	const msg = JSON.stringify({
-		type: 'instruction',
-		instruction: 'joinGame',
-		gameId: $gameIdInput.value,
-		playerId: $playerIdInput.value,
-	});
-	websocket.send(msg);
-};
-
-document
-	.getElementById('join-button')
-	.addEventListener('click', joinGameButton);
-
-const feedbackMessages = document.getElementById('feedback-messages');
-let feedbackTimeout = undefined;
-
-/** @returns {void} */
-function clearFeedbackTimeout ()  {
-	clearTimeout(feedbackTimeout);
-	feedbackTimeout = undefined;
-};
+/** @returns {boolean} */
+function canConnect() { return websocket.OPEN && getPlayerId(); }
 
 /**
  * @param {string} text
  * @returns {void}
  */
-function showError (text) {
-	feedbackMessages.className = 'error-message';
-	feedbackMessages.innerText = text;
+function showError(text) {
+	$feedbackMessages.className = 'error-message';
+	$feedbackMessages.innerText = text;
 	if (feedbackTimeout) clearFeedbackTimeout(feedbackTimeout);
-	feedbackTimeout = setTimeout(() => (feedbackMessages.innerText = ''), 3000);
+	feedbackTimeout = setTimeout(() => ($feedbackMessages.innerText = ''), 3000);
 };
+
+/**
+ * @param {WebSocket} ws
+ * @param {string} instruction
+ * @param {any} data
+ * @returns {void}
+ */
+function sendInstruction(ws, instruction, data) {
+	if (!ws) return;
+	const msg = JSON.stringify({
+		type: 'instruction',
+		instruction,
+		...data,
+	});
+	ws.send(msg);
+}
+
+/** @returns {void} */
+function createGameButton() {
+	if (!canConnect())
+		return showError('You must enter a name first');
+	sendInstruction(websocket, 'createGame');
+};
+
+/** @returns {void} */
+function joinGameButton() {
+	if (!canConnect())
+		return showError('You must enter a name first');
+	sendInstruction(websocket, 'joinGame', {
+		gameId: $gameIdInput.value,
+		playerId: getPlayerId()
+	});
+};
+
+/** @returns {void} */
+function clearFeedbackTimeout() {
+	clearTimeout(feedbackTimeout);
+	feedbackTimeout = undefined;
+};
+
 
 websocket.addEventListener('open', () => {
 	onlineIndicator.className = 'indicator-online';
@@ -66,17 +87,12 @@ websocket.addEventListener('close', () => {
 
 websocket.addEventListener('message', (event) => {
 	let ev;
-	try {
-		ev = JSON.parse(event.data);
-	} catch (e) {
-		console.error(e);
-		return;
-	}
+	try { ev = JSON.parse(event.data); }
+	catch (e) { console.error(e); return; }
 
-	console.log(ev);
 	if (ev.type === 'error') showError(ev.text);
 	if (ev.instruction === 'createGame')
-		window.location.href = `./fleet.html?playerId=${$playerIdInput.value}&gameId=${ev.gameId}`;
+		return window.location.href = `./fleet.html?playerId=${getPlayerId()}&gameId=${ev.gameId}`;
 	if (ev.instruction === 'joinGame')
-		window.location.href = `./fleet.html?playerId=${$playerIdInput.value}&gameId=${ev.gameId}`;
+		return window.location.href = `./fleet.html?playerId=${getPlayerId()}&gameId=${ev.gameId}`;
 });
