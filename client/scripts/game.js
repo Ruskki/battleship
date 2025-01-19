@@ -63,10 +63,13 @@ const powerupBtns = [
 	empBtn,
 ];
 
-/** @returns {void} */
-function handlePlayerWin() {
-	const player = Game.getPlayer(playerId);
-	if (!player) return;
+
+/**
+ * @param {object} ev
+ * @param {string} ev.playerId
+ * @returns {void}
+ */
+function handlePlayerWin({ playerId }) {
 	window.location.href = `./winner.html?winnerId=${playerId}`;
 }
 
@@ -356,7 +359,7 @@ websocket.addEventListener('message', (event) => {
 	if (ev.type === 'error') return showError(ev.text);
 
 	if (ev.type === 'instruction') {
-		if (ev.instruction === 'playerWin') handlePlayerWin(ev.playerId);
+		if (ev.instruction === 'playerWin') handlePlayerWin(ev);
 		if (ev.instruction === 'destroyPosition')
 			handleDestroyPosition(ev.playerId, ev.row, ev.col);
 		if (ev.instruction === 'turnOfPlayer') handleTurnOfPlayer(ev);
