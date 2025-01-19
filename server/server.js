@@ -781,7 +781,7 @@ class TourneyList {
 	getLeaderboards() {
 		return Object.keys(this.#medals).map((key) =>
 			[key, this.#medals[key]]
-			// @ts-ignore
+		// @ts-ignore
 		).sort((f, s) => s[1] - f[1]);
 	}
 
