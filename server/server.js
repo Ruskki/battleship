@@ -13,6 +13,7 @@ function pickRandom(array) {
  * @returns {void}
  */
 function sendInstruction(ws, instruction, data) {
+	if (ws === undefined) return;
 	console.log(`SEND: ${instruction}, data: ${JSON.stringify(data)}`);
 	const msg = JSON.stringify({
 		type: 'instruction',
@@ -931,15 +932,20 @@ class Tourney {
 					sendPlayerJoin(player.websocket, player.id, game.id);
 					this.#playersInGames.push({ player, game });
 				}
-
-				if (this.players.length === 0 && this.playersInGames.length === 2) {
-					console.log('LAST GAME');
-					this.#lastGame = true;
-				}
 			} else {
-				console.log('NOT ENOUGH PLAYERS');
-				break;
+				const game = GAME_LIST.createTourneyGame(
+					`${this.id}-${playerOne.id}-bot`,
+					this,
+				);
+
+				game.addPlayer(playerOne);
+				for (const player of game.players)
+					sendPlayerJoin(player.websocket, player.id, game.id);
+				this.#playersInGames.push({ player: playerOne, game });
 			}
+
+			if (this.players.length === 0 && this.playersInGames.length < 3)
+				this.#lastGame = true;
 		}
 	}
 
@@ -976,7 +982,7 @@ class GameList {
 	 * @returns {Game}
 	 */
 	getWebsocketGame(ws) {
-		return this.#websockets.find((x) => x.socket === ws).game;
+		return this.#websockets.find((x) => x.socket === ws)?.game;
 	}
 
 	/**
@@ -1153,7 +1159,7 @@ class Game {
 
 	/** @returns {Player[]} */
 	getOnlinePlayers() {
-		return this.players.filter((x) => x.websocket ?? undefined !== undefined);
+		return this.players.filter((x) => x.isBot || x.websocket);
 	}
 
 	/**
@@ -1170,7 +1176,16 @@ class Game {
 		return this.#turnOf;
 	}
 
-	nextTurn = () => {
+	/** @type {number} */
+	#turnTimer;
+	setTurnTimer() {
+		clearTimeout(this.#turnTimer);
+		this.#turnTimer = setTimeout(() => {
+			this.nextTurn();
+		}, 60000);
+	}
+
+	nextTurn() {
 		this.turnNumber += 1;
 
 		for (const pos of this.turnOf.board.getShieldPositions()) {
@@ -1191,13 +1206,33 @@ class Game {
 
 		let idx = (this.#playerIndex(this.turnOf.id) + 1) % this.players.length;
 
-		// Skip turn of offline and defeated players
-		while (this.players[idx].websocket === undefined || this.players[idx].defeated)
+		if (!this.turnOf.isBot) {
+
+		}
+
+		// Skip defeated players
+		while (this.players[idx].defeated)
 			idx = (idx + 1) % this.players.length;
+
 		this.#turnOf = this.players[idx];
 
 		for (const player of this.getOnlinePlayers())
 			sendTurnOfPlayer(player.websocket, this.turnOf.id, this.turnNumber);
+
+		if (this.turnOf.isBot) {
+			const players = this.players.filter(p => p !== this.turnOf);
+			/** @type {Player} */
+			const target = pickRandom(players);
+
+			const positions = target.board.positions.filter(pos => !pos.destroyed);
+
+			/** @type {BoardPosition} */
+			const pos = pickRandom(positions);
+
+			this.attackPlayer(this.turnOf.id, target.id, pos.row, pos.col);
+		}
+
+		this.setTurnTimer();
 	};
 
 	turnNumber = 0;
@@ -1211,7 +1246,7 @@ class Game {
 	canStart() {
 		return (
 			!this.#started &&
-			this.getOnlinePlayers().length > 1 &&
+			this.getOnlinePlayers().length > 0 &&
 			this.getOnlinePlayers().every((p) => p.ready)
 		);
 	}
@@ -1254,6 +1289,26 @@ class Game {
 		this.players.push(player);
 		GAME_LIST.registerWebsocket(player.websocket, this);
 		GAME_LIST.registerPlayer(player.id, this);
+	}
+
+	/** @returns {void} */
+	addBot() {
+		const bot = new Player(`bot-${this.id}`, undefined, true);
+		this.players.push(bot);
+
+		let row, col, vertical;
+		for (const boat of Object.values(BoatEnum)) {
+			// @ts-ignore
+			while (!bot.canPlaceBoat(boat, row, col, vertical)) {
+				row = pickRandom(Board.rows);
+				col = pickRandom(Board.cols);
+				vertical = !!Math.floor(Math.random() * 2);
+			}
+			// @ts-ignore
+			bot.placeBoat(boat, row, col, vertical);
+		}
+
+		GAME_LIST.registerPlayer(bot.id, this);
 	}
 
 	/**
@@ -1348,6 +1403,7 @@ class Game {
 			delete this.players[idx];
 		});
 
+		clearTimeout(this.#turnTimer);
 		GAME_LIST.removeGame(this.id);
 	}
 
@@ -1365,6 +1421,11 @@ class Game {
 		this.#players = this.getOnlinePlayers();
 
 		this.#turnOf = this.players[0];
+
+		if (this.players.length === 1)
+			this.addBot();
+
+		this.setTurnTimer();
 	}
 
 	/**
@@ -1902,9 +1963,9 @@ class BoardPosition {
 
 class Board {
 	/** @type {string[]} */
-	static #rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+	static rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 	/** @type {string[]} */
-	static #cols = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+	static cols = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
 	/** @type {{[key: string]: BoardPosition}} */
 	#positions = {};
@@ -1928,8 +1989,8 @@ class Board {
 	 * @returns {BoardPosition[]}
 	 */
 	getSliceHorizontal(row, col, size) {
-		return Board.#cols
-			.slice(Board.#cols.indexOf(col), Board.#cols.indexOf(col) + size)
+		return Board.cols
+			.slice(Board.cols.indexOf(col), Board.cols.indexOf(col) + size)
 			.map((x) => this.getPosition(row, x));
 	}
 
@@ -1940,8 +2001,8 @@ class Board {
 	 * @returns {BoardPosition[]}
 	 */
 	getSliceVertical(row, col, size) {
-		return Board.#rows
-			.slice(Board.#rows.indexOf(row), Board.#rows.indexOf(row) + size)
+		return Board.rows
+			.slice(Board.rows.indexOf(row), Board.rows.indexOf(row) + size)
 			.map((x) => this.getPosition(x, col));
 	}
 
@@ -1951,15 +2012,15 @@ class Board {
 	 * @returns {BoardPosition[]}
 	 */
 	getArea(row, col) {
-		const minRow = Math.max(0, Board.#rows.indexOf(row) - 1);
-		const maxRow = Math.min(Board.#rows.length, Board.#rows.indexOf(row) + 2);
-		const minCol = Math.max(0, Board.#cols.indexOf(col) - 1);
-		const maxCol = Math.min(Board.#cols.length, Board.#cols.indexOf(col) + 2);
+		const minRow = Math.max(0, Board.rows.indexOf(row) - 1);
+		const maxRow = Math.min(Board.rows.length, Board.rows.indexOf(row) + 2);
+		const minCol = Math.max(0, Board.cols.indexOf(col) - 1);
+		const maxCol = Math.min(Board.cols.length, Board.cols.indexOf(col) + 2);
 
-		return Board.#rows
+		return Board.rows
 			.slice(minRow, maxRow)
 			.map((r) =>
-				Board.#cols.slice(minCol, maxCol).map((c) => this.getPosition(r, c)),
+				Board.cols.slice(minCol, maxCol).map((c) => this.getPosition(r, c)),
 			)
 			.flat(); // Transforms from 3 arrays of 3 to 1 array of 9
 	}
@@ -1970,15 +2031,15 @@ class Board {
 	 * @returns {BoardPosition[]}
 	 */
 	getAdyacentPositions(row, col) {
-		const minRow = Math.max(0, Board.#rows.indexOf(row) - 1);
-		const maxRow = Math.min(Board.#cols.length, Board.#rows.indexOf(row) + 2);
-		const minCol = Math.max(0, Board.#cols.indexOf(col) - 1);
-		const maxCol = Math.min(Board.#cols.length, Board.#cols.indexOf(col) + 2);
+		const minRow = Math.max(0, Board.rows.indexOf(row) - 1);
+		const maxRow = Math.min(Board.cols.length, Board.rows.indexOf(row) + 2);
+		const minCol = Math.max(0, Board.cols.indexOf(col) - 1);
+		const maxCol = Math.min(Board.cols.length, Board.cols.indexOf(col) + 2);
 
-		return Board.#rows
+		return Board.rows
 			.slice(minRow, maxRow)
 			.map((r) =>
-				Board.#cols.slice(minCol, maxCol).map((c) => {
+				Board.cols.slice(minCol, maxCol).map((c) => {
 					if (r === row && c === col) return;
 					return this.getPosition(r, c);
 				}),
@@ -1993,8 +2054,8 @@ class Board {
 
 	/** @returns {void} */
 	#createBoard() {
-		for (const r of Board.#rows)
-			for (const c of Board.#cols)
+		for (const r of Board.rows)
+			for (const c of Board.cols)
 				this.#positions[`${r},${c}`] = new BoardPosition(r, c, this.owner);
 	}
 
@@ -2062,6 +2123,25 @@ class Player {
 	 * @param {string} row
 	 * @param {string} col
 	 * @param {boolean} vertical
+	 * @returns {boolean}
+	 */
+	canPlaceBoat(boatEnum, row, col, vertical) {
+		if (!row || !col || !vertical) return false;
+		const positions = vertical
+			? this.board.getSliceVertical(row, col, boatEnum.size)
+			: this.board.getSliceHorizontal(row, col, boatEnum.size);
+
+		console.log(positions);
+
+		return !(positions.length !== boatEnum.size ||
+			positions.some((pos) => pos.boatName !== undefined));
+	}
+
+	/**
+	 * @param {BoatEnum} boatEnum
+	 * @param {string} row
+	 * @param {string} col
+	 * @param {boolean} vertical
 	 * @returns {void}
 	 */
 	placeBoat(boatEnum, row, col, vertical) {
@@ -2099,7 +2179,7 @@ class Player {
 
 	/** @returns {boolean} */
 	isOnline() {
-		return !!this.websocket;
+		return this.#isBot || !!this.websocket;
 	}
 
 	/** @type {string} */
@@ -2112,6 +2192,12 @@ class Player {
 	#websocket;
 	get websocket() {
 		return this.#websocket;
+	}
+
+	/** @type {boolean} */
+	#isBot;
+	get isBot() {
+		return this.#isBot;
 	}
 
 	/**
@@ -2243,10 +2329,12 @@ class Player {
 	/**
 	 * @param {string} id
 	 * @param {WebSocket} websocket
+	 * @param {boolean} isBot
 	 */
-	constructor(id, websocket) {
+	constructor(id, websocket, isBot = false) {
 		this.#id = id;
 		this.#websocket = websocket;
+		this.#isBot = isBot;
 		this.#board = new Board(this);
 
 		this.ready = false;
@@ -2360,6 +2448,7 @@ function sendGetHost(ws, hostId) {
  * @returns {void}
  */
 function sendSuccess(ws, text) {
+	if (ws === undefined) return;
 	console.log(`SUCCESS: ${text}`);
 	ws.send(
 		JSON.stringify({
@@ -2375,6 +2464,7 @@ function sendSuccess(ws, text) {
  * @returns {void}
  */
 function sendError(ws, text) {
+	if (ws === undefined) return;
 	console.log(`ERROR: ${text}`);
 	ws.send(
 		JSON.stringify({
