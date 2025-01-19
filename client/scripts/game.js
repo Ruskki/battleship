@@ -64,7 +64,7 @@ const powerupBtns = [
 ];
 
 /** @returns {void} */
-function handlePlayerWinplayerId() {
+function handlePlayerWin() {
 	const player = Game.getPlayer(playerId);
 	if (!player) return;
 	window.location.href = `./winner.html?winnerId=${playerId}`;
@@ -83,12 +83,14 @@ function handleDestroyPosition(playerId, row, col) {
 }
 
 /**
- * @param {string} turnOfId
+ * @param {object} ev
+ * @param {string} ev.playerId
+ * @param {number} ev.turnNumber
  * @returns {void}
  */
-function handleTurnOfPlayer(turnOfId) {
-	$turnOfPlayer.innerText = turnOfId;
-	showInformation(`It's the turn of ${turnOfId}`);
+function handleTurnOfPlayer({playerId, turnNumber}) {
+	$turnOfPlayer.innerText = playerId;
+	$turnNumber.innerText = turnNumber;
 }
 
 /**
@@ -249,7 +251,7 @@ function handleDeactivatePowerups() {
 	quickfixBtn.innerText = '[DISABLED] Quick Fix';
 	empBtn.innerText = '[DISABLED] EMP Attack';
 
-	for (const btn in powerupBtns) btn.classList.add('disabled');
+	for (const btn of powerupBtns) btn.classList.add('disabled');
 }
 
 /**
@@ -301,18 +303,43 @@ function handleRevealPosition({ playerId, row, col }) {
 }
 
 /**
+ * @param {object} ev
+ * @param {number} ev.cooldown
  * @returns {void}
  */
-function handleActivatePowerups() {
+function handleEmpCooldown({ cooldown }) {
+	if (empBtn.classList.contains('disabled')) return;
+	empBtn.innerText = `[${cooldown ? cooldown : 'Ready!'}] EMP Attack (25)`;
+}
+
+/**
+ * @param {object} ev
+ * @param {number} ev.cooldown
+ * @returns {void}
+ */
+function handleCruiseCooldown({ cooldown }) {
+	if (missileBtn.classList.contains('disabled')) return;
+	missileBtn.innerText = `[${cooldown ? cooldown : 'Ready!'}] Cruise Missile (15)`;
+}
+
+
+/**
+ * @param {object} ev
+ * @param {number} ev.cruiseCooldown
+ * @param {number} ev.empCooldown
+ * @returns {void}
+ */
+function handleActivatePowerups({ cruiseCooldown, empCooldown }) {
+	for (const btn of powerupBtns)
+		btn.classList.remove('disabled');
+
 	sonarBtn.innerText = 'Sonar (5)';
 	airplanesBtn.innerText = 'Attack Airplanes (10)';
 	mineBtn.innerText = 'Marine Mine (5)';
 	shieldBtn.innerText = 'Defensive Shield (15)';
-	missileBtn.innerText = 'Cruise Missile (15)';
 	quickfixBtn.innerText = 'Quick Fix (10)';
-	empBtn.innerText = 'EMP Attack (25)';
-
-	for (const btn in powerupBtns) btn.classList.remove('disabled');
+	handleCruiseCooldown({ cooldown: cruiseCooldown });
+	handleEmpCooldown({ cooldown: empCooldown });
 }
 
 websocket.addEventListener('message', (event) => {
@@ -328,13 +355,11 @@ websocket.addEventListener('message', (event) => {
 
 	if (ev.type === 'error') return showError(ev.text);
 
-	console.log(ev);
-
 	if (ev.type === 'instruction') {
 		if (ev.instruction === 'playerWin') handlePlayerWin(ev.playerId);
 		if (ev.instruction === 'destroyPosition')
 			handleDestroyPosition(ev.playerId, ev.row, ev.col);
-		if (ev.instruction === 'turnOfPlayer') handleTurnOfPlayer(ev.playerId);
+		if (ev.instruction === 'turnOfPlayer') handleTurnOfPlayer(ev);
 		if (ev.instruction === 'attack')
 			handleAttackPosition(ev.playerId, ev.row, ev.col, ev.success);
 		if (ev.instruction === 'pointsUpdate') handleUpdatePoints(ev.points);
@@ -361,6 +386,9 @@ websocket.addEventListener('message', (event) => {
 		if (ev.instruction === 'healPosition') handleHealPosition(ev);
 
 		if (ev.instruction === 'revealPosition') handleRevealPosition(ev);
+
+		if (ev.instruction === 'cruiseCooldown') handleCruiseCooldown(ev);
+		if (ev.instruction === 'empCooldown') handleEmpCooldown(ev);
 	}
 });
 
@@ -376,6 +404,7 @@ let selectedRow = 'A';
 let selectedCol = '1';
 let selectedPlayer = undefined;
 
+const $turnNumber = document.getElementById('turn-number');
 const $turnOfPlayer = document.getElementById('turn-of-player');
 const $pointsEl = document.getElementById('player-points');
 
