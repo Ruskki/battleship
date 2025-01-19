@@ -51,7 +51,7 @@ createTourneyBtnEl.addEventListener('click', () => {
 	websocket.send(msg);
 });
 
-const joinUsernameEl = document.getElementById('joinUsername');
+const joinUsernameEl = document.getElementById('createUsername');
 const joinTourneyNameEl = document.getElementById('joinTourneyName');
 const joinTourneyBtnEl = document.getElementById('joinTourneyBtn');
 

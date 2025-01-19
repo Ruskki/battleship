@@ -1,74 +1,68 @@
 <!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<html>
+    <meta name="description" content="battleship"/>
+    <meta name="keywords" content="battleship, game, html, css, javascript"/>
+    <meta name="author" content="Cristina Carnevali, Humberto Aleman & Jose Flores"/>
+    <meta name="robots" content="noindex,nofollow"/>
 
-<head>
-	<title> Tournament Mode </title>
-	<link rel="stylesheet" href="../styles/style.css">
-</head>
+    <link rel="icon" href="../images/favicon.png" type="image/png">
 
-<body>
-	<nav class="nav-bar">
-		<a href="../index.html" class="back-button"><</a>
-		<h1>Online</h1>
-		<span id="online-indicator">•</span>
-		<span id="feedback-messages"></span>
-	</nav>
+    <title> Tournament Mode </title>
 
+    <link rel="stylesheet" href="../styles/style.css">
+  </head>
 
-	<div>
-		<h1> Create a Tournament </h1>
-		<input placeholder="username" id="createUsername">
-		<!-- 
-		<button id="createTourneyBtn"> create </button>
-		-->
-	</div>
+	<body id="tournament-page">
+		<nav class="nav-bar">
+			<a href="../index.html" class="back-button"><</a>
+			<h1>Online</h1>
+			<span id="online-indicator">•</span>
+			<span id="feedback-messages"></span>
+		</nav>
 
-	<div>
-		<h1> Join a tourney </h1>
-		<input placeholder="username" id="joinUsername">
-		<input placeholder="Tourney Id" id="joinTourneyName">
-		<button id="joinTourneyBtn"> Register </button>
-	</div>
-	<script src="../scripts/tourney_join.js"></script>
-
-	<div class="flex-col flex-align name-container">
-		<div>
-			<h2>What should other players call you?</h2>
-		</div>
-		<div>
-			<input
+		<div class="flex-col flex-align name-container">
+			<div>
+				<h2>What should other players call you?</h2>
+			</div>
+			<div>
+				<input
 				id="createUsername"
 				placeholder="username"
 				class="user-form"
-			/>
+				/>
+			</div>
 		</div>
-	</div>
+		
+		<div class="flex-row online-options-container">
+			<div class="online-rooms-container">
+				<div class="flex-col flex-align">
+					<h2>Create a room</h2>
+					<img src="../images/create_game.png" />
+					<p>
+						Create a tournament and see who comes out on top!
+					</p>
+					<button id="createTourneyBtn" class="online-button">Create</button>
+					
 
-	<div class="flex-row online-options-container">
-		<div class="online-rooms-container">
-			<div class="flex-col flex-align">
-				<h2>Create a room</h2>
-				<img src="../images/create_game.png" />
-				<p>
-					Create a tournament and see who comes out on top!
-				</p>
-				<button id="createTourneyBtn">Create</button>
-				
+				</div>
+			</div>
+
+			<div class="online-rooms-container">
+				<div class="flex-col flex-align">
+					<h2>Join a tournament</h2>
+					<img src="../images/join_game.png" />
+					<p>Join a tournament and claim your title as number 1!</p>
+					<input id="joinTourneyName" placeholder="TournamentId" />
+					<button id="joinTourneyBtn" class="online-button">Join</button>
+				</div>
 			</div>
 		</div>
 
-		<div class="online-rooms-container">
-			<div class="flex-col flex-align">
-				<h2>Join a tournament</h2>
-				<img src="../images/join_game.png" />
-				<p>Join a tournament and claim your title as number 1!</p>
-				<input id="game-id" placeholder="Room Code" />
-				<button id="join-button" class="online-button">Join</button>
-			</div>
-		</div>
-	</div>
-
-</body>
+		<script src="../scripts/tourney_join.js"></script>
+	</body>
 
 </html>

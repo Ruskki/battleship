@@ -1,18 +1,34 @@
 <!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<html>
+    <meta name="description" content="battleship"/>
+    <meta name="keywords" content="battleship, game, html, css, javascript"/>
+    <meta name="author" content="Cristina Carnevali, Humberto Aleman & Jose Flores"/>
+    <meta name="robots" content="noindex,nofollow"/>
 
-<head>
-	<title> Tourney Mode </title>
-	<link rel="stylesheet" href="../styles/style.css">
-</head>
+    <link rel="icon" href="../images/favicon.png" type="image/png">
 
-<body>
-	<h1> Tourney Lobby - ID: <span id="tourneyId"></span> </h1>
-	<ul id="playerList">
-	</ul>
-	<button id="tourneyStartBtn"> start </button>
-	<script src="../scripts/tourney_lobby.js"></script>
-</body>
+    <title> Tournament Lobby </title>
+
+    <link rel="stylesheet" href="../styles/style.css">
+  </head>
+
+	<body id="tournament-page">
+		<nav class="nav-bar">
+			<a href="../index.html" class="back-button"><</a>
+			<h1>Tournament Lobby</h1>
+			<span id="online-indicator">•</span>
+			<span id="feedback-messages"></span>
+		</nav>
+		<h1> Tourney Lobby - ID: <span id="tourneyId"></span> </h1>
+		<ul id="playerList">
+		</ul>
+		<button id="tourneyStartBtn"> start </button>
+
+		<script src="../scripts/tourney_lobby.js"></script>
+	</body>
 
 </html>
