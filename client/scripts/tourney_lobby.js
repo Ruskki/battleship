@@ -2,7 +2,7 @@ const url = new URL(window.location.href);
 const playerId = url.searchParams.get('playerId');
 
 const tourneyId = url.searchParams.get('tourneyId');
-const tourneyIdEl = document.getElementById('tourneyId');
+const tourneyIdEl = document.getElementById('tourney-id');
 tourneyIdEl.innerText = tourneyId;
 
 const websocket = new WebSocket('ws://127.0.0.1:8000');
@@ -25,7 +25,7 @@ function showError(text) {
 	feedbackTimeout = setTimeout(() => ($feedbackMessages.innerText = ''), 3000);
 };
 
-const tourneyStartBtn = document.getElementById('tourneyStartBtn');
+const tourneyStartBtn = document.getElementById('tourney-start-btn');
 tourneyStartBtn.addEventListener('click', () => {
 	const msg = JSON.stringify({
 		type: 'instruction',
@@ -37,7 +37,7 @@ tourneyStartBtn.addEventListener('click', () => {
 	websocket.send(msg);
 });
 
-const playerListEl = document.getElementById('playerList');
+const playerListEl = document.getElementById('player-list');
 
 const players = {};
 

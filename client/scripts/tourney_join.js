@@ -53,8 +53,8 @@ websocket.addEventListener('close', () => {
 	onlineIndicator.innerHTML = '• Servers offline';
 });
 
-const createUsernameEl = document.getElementById('createUsername');
-const createTourneyBtnEl = document.getElementById('createTourneyBtn');
+const createUsernameEl = document.getElementById('create-username');
+const createTourneyBtnEl = document.getElementById('create-tourney-btn');
 
 createTourneyBtnEl.addEventListener('click', () => {
 	const playerId = createUsernameEl.value;
@@ -69,9 +69,9 @@ createTourneyBtnEl.addEventListener('click', () => {
 	websocket.send(msg);
 });
 
-const joinUsernameEl = document.getElementById('createUsername');
-const joinTourneyNameEl = document.getElementById('joinTourneyName');
-const joinTourneyBtnEl = document.getElementById('joinTourneyBtn');
+const joinUsernameEl = document.getElementById('create-username');
+const joinTourneyNameEl = document.getElementById('join-tourney-name');
+const joinTourneyBtnEl = document.getElementById('join-tourney-btn');
 
 joinTourneyBtnEl.addEventListener('click', () => {
 	const playerId = joinUsernameEl.value;
