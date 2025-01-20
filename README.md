@@ -7,9 +7,9 @@ Universidad Catolica Andres Bello
 
 ## Integrantes
 
-- Humberto Aleman 		30142718
-- Cristina Carnevali 	30395024
-- Jose Flores 				31317138
+- Humberto Aleman       30142718
+- Cristina Carnevali    30395024
+- Jose Flores           31317138
 
 ## Dependencias:
 
@@ -26,7 +26,7 @@ cd battleship
 Una vez ahi, correr el comando
 
 ```bash
-deno run --allow-read --allow-net ./server/server.js
+deno run release
 ```
 
 Esto correra una instancia del servidor de juego en la maquina local en el puerto 8000
@@ -35,37 +35,19 @@ Esto correra una instancia del servidor de juego en la maquina local en el puert
 
 Para conectarse con el servidor abra en su navegador `http://127.0.0.1:8000/index.html`
 
-Una vez ahi, se podra seleccionar la opcion "Play Online" para abrir el menu de juegos online
+Una vez ahi, se podra seleccionar la opcion "Play Online" para abrir el menu de juegos online o "Play Tournament Mode" para acceder al modo torneo
 
-Debe ingresar su nombre de usuario, el cual debe ser unico, en el campo superior, y se le presentan dos opciones
+### Jugar Online
 
-### Create a Room
+Ingrese su nombre de usuario y cree un cuarto o unase a uno ya creado con el codigo
 
-Esta opcion generara un cuarto con id randomizada y lo agregara como administrador del cuarto
-
-### Join a Room
-
-Debe ingresar el codigo de un cuarto valido en el campo denominado "Room Code", y si el codigo es valido, sera agregado como jugador a el cuarto especificado
-
-## Dentro del Cuarto
-
-Dentro del cuarto, se podran unir hasta cuatro jugadores con nombres distintos
-
-El jugador que tenga la corona es el administrador de la sala
-
-Una vez todos los jugadores hayan colocado sus barcos y presionen el boton de "Ready", al administrador se le colocara el boton verde y cambiara a "Start Game"
-
-Al presionar el boton "Start Game", todos los jugadores seran enviados a la pagina de juego, y el juego comenzara
-
-> ADVERTENCIA
-> El servidor solamente guardara los barcos colocados una vez el jugador presione el boton de "Ready", si el jugador presiona el boton "Unready" el servidor no guardara la posicion de sus barcos
+Si desea jugar solo contra un bot, coloque sus barcos e inicie el juego
 
 > ADVERTENCIA
 > Una sala en la que todos los usuarios se desconectaron sera permanentemente eliminada luego de 30 segundos de inactividad
 
-## Pagina de Juego
+### Modo Torneo
 
-Por los momentos, solo se encuentran funcionales estas acciones
+Ingrese su nombre de usuario y cree un lobby o unase a uno ya creado con el codigo
 
-- Presionar posicion: Marca la posicion como seleccionada
-- ATTACK: Destruye esa posicion
+El minimo de usuarios para comenzar un torneo es 3, el maximo es 16, si el numero de usuarios es impar, el ultimo jugara contra un BOT
