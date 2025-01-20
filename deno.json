@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "release": "deno run watch --allow-net --allow-read server/server.js"
+    "release": "deno run --allow-net --allow-read server/server.js"
     "dev": "deno run --watch --allow-net --allow-read server/server.js"
   },
   "imports": {
