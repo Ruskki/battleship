@@ -24,15 +24,76 @@ const Boats = {
 const websocket = new WebSocket('ws://127.0.0.1:8000');
 
 const urlString = window.location.href;
+
 const url = new URL(urlString);
 
 const gameId = url.searchParams.get('gameId');
+
 const playerId = url.searchParams.get('playerId');
 
 document.addEventListener('keydown', function(e) {
-	if (e.code === 'Enter')
-		Game.webAttackPlayer(playerId, selectedPlayer, selectedRow, selectedCol);
+	switch (e.code) {
+		case 'Enter':
+			Game.webAttackPlayer(
+				playerId,
+				selectedPlayer,
+				selectedRow,
+				selectedCol);
+			break;
+		case '1':
+			Game.webSonar(
+				playerId,
+				selectedPlayer);
+			break;
+		case '2':
+			Game.webAttackAirplanes(
+				playerId,
+				selectedPlayer);
+			break;
+		case '3':
+			Game.webPlantMine(
+				playerId,
+				selectedRow,
+				selectedCol);
+			break;
+		case '4':
+			Game.webShield(
+				playerId,
+				selectedRow,
+				selectedCol);
+			break;
+		case '5':
+			Game.webCruiseMissile(
+				playerId,
+				selectedPlayer,
+				selectedRow,
+				selectedCol);
+			break;
+		case '6':
+			Game.webActivateQuickFix();
+			break;
+		case '7':
+			Game.webEMP();
+			break;
+	}
 });
+
+
+/**
+ * @param {WebSocket} ws
+ * @param {string} instruction
+ * @param {any} data
+ * @returns {void}
+ */
+function sendInstruction(ws, instruction, data) {
+	if (!ws) return;
+	const msg = JSON.stringify({
+		type: 'instruction',
+		instruction,
+		...data,
+	});
+	ws.send(msg);
+}
 
 websocket.addEventListener('open', () => {
 	const msg = JSON.stringify({
@@ -91,7 +152,7 @@ function handleDestroyPosition(playerId, row, col) {
  * @param {number} ev.turnNumber
  * @returns {void}
  */
-function handleTurnOfPlayer({playerId, turnNumber}) {
+function handleTurnOfPlayer({ playerId, turnNumber }) {
 	$turnOfPlayer.innerText = playerId;
 	$turnNumber.innerText = turnNumber;
 }
@@ -458,15 +519,15 @@ function healButtonListener() {
 attackBtn.addEventListener('click', attackButtonListener);
 
 sonarBtn.addEventListener('click', () => {
-	Game.webSonar(playerId, selectedPlayer);
+	Game.webSonar(selectedPlayer);
 });
 
 airplanesBtn.addEventListener('click', () => {
-	Game.webAttackAirplanes(playerId, selectedPlayer);
+	Game.webAttackAirplanes(selectedPlayer);
 });
 
 mineBtn.addEventListener('click', () => {
-	Game.webPlantMine(playerId, selectedRow, selectedCol);
+	Game.webPlantMine(selectedRow, selectedCol);
 });
 
 shieldBtn.addEventListener('click', () => {
@@ -474,7 +535,7 @@ shieldBtn.addEventListener('click', () => {
 });
 
 missileBtn.addEventListener('click', () => {
-	Game.webCruiseMissile(playerId, selectedPlayer, selectedRow, selectedCol);
+	Game.webCruiseMissile(selectedPlayer, selectedRow, selectedCol);
 });
 
 quickfixBtn.addEventListener('click', () => {
@@ -512,108 +573,56 @@ class Game {
 	};
 
 	static webAttackPlayer(idFrom, idTo, row, col) {
-		const user = this.#players[idFrom];
-		const target = this.#players[idTo];
-
-		const msg = JSON.stringify({
-			type: 'instruction',
-			instruction: 'attackPosition',
-			userId: user.id,
-			targetId: target.id,
+		sendInstruction(websocket, 'attackPosition', {
+			userId: this.#players[idFrom]?.id,
+			targetId: this.#players[idTo]?.id,
 			row,
-			col,
+			col
 		});
-		websocket.send(msg);
 	};
 
-	static webSonar(idFrom, idTo) {
-		const user = this.#players[idFrom];
-		const target = this.#players[idTo];
-		
-		const msg = JSON.stringify({
-			type: 'gameInstruction',
-			instruction: 'useSonar',
-			userId: user.id,
-			targetId: target.id,
+	static webSonar(idTo) {
+		sendInstruction(websocket, 'useSonar', {
+			targetId: idTo
 		});
-		websocket.send(msg);
 	};
 
-	static webAttackAirplanes(idFrom, idTo) {
-		const user = this.#players[idFrom];
-		const target = this.#players[idTo];
-	
-		const msg = JSON.stringify({
-			type: 'gameInstruction',
-			instruction: 'useAttackAirplanes',
-			userId: user.id,
-			targetId: target.id,
+	static webAttackAirplanes(idTo) {
+		sendInstruction(websocket, 'useAttackAirplanes', {
+			targetId: idTo
 		});
-		websocket.send(msg);
 	};
 
-	static webPlantMine(idFrom, row, col) {
-		const user = this.#players[idFrom];
-	
-		const msg = JSON.stringify({
-			type: 'instruction',
-			instruction: 'usePlantMine',
-			userId: user.id,
-			row,
-			col,
+	static webPlantMine(row, col) {
+		sendInstruction(websocket, 'usePlantMine', {
+			row, col,
 		});
-		websocket.send(msg);
 	};
-	
+
 	static webShield(row, col) {
-		const msg = JSON.stringify({
-			type: 'instruction',
-			instruction: 'powerShield',
-			row,
-			col,
+		sendInstruction(websocket, 'powerShield', {
+			row, col,
 		});
-		websocket.send(msg);
 	}
 
-	static webCruiseMissile(idFrom, idTo, row, col) {
-		const user = this.#players[idFrom];
-		const target = this.#players[idTo];
-
-		const msg = JSON.stringify({
-			type: 'instruction',
-			instruction: 'cruiseMissile',
-			userId: user.id,
-			targetId: target.id,
-			row,
-			col,
+	static webCruiseMissile(idTo, row, col) {
+		sendInstruction(websocket, 'cruiseMissile', {
+			targetId: idTo, row, col,
 		});
-		websocket.send(msg);
 	};
 
 	static webActivateQuickFix() {
-		const msg = JSON.stringify({
-			type: 'instruction',
-			instruction: 'powerActivateQuickFix',
-		});
-		websocket.send(msg);
+		sendInstruction(websocket, 'powerActivateQuickFix',);
 	}
 
 	static webUseQuickFix(row, col) {
-		const msg = JSON.stringify({
-			type: 'instruction',
-			instruction: 'powerUseQuickFix',
-			row,
-			col,
+		sendInstruction(websocket, 'powerUseQuickFix', {
+			row, col,
 		});
-		websocket.send(msg);
 	}
 
 	static webEMP() {
-		const msg = JSON.stringify({
-			type: 'instruction',
-			instruction: 'powerEMP',
-		});
-		websocket.send(msg);
+		sendInstruction(websocket, 'powerEMP',);
 	}
 }
 
@@ -664,8 +673,10 @@ class BoardPosition {
 }
 
 class Board {
-	static rows = 'ABCDEFGHIJ';
-	static cols = '123456789'.split('').concat(['10']);
+	/** @type {string[]} */
+	static rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+	/** @type {string[]} */
+	static cols = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
 	positions = {}; // Filled with '1,A' and such
 
@@ -679,7 +690,6 @@ class Board {
 	getSliceVertical = (row, col, size) =>
 		Board.rows
 			.slice(Board.rows.indexOf(row), Board.rows.indexOf(row) + size)
-			.split('')
 			.map((x) => this.getPosition(x, col));
 
 	addCell = ($board, row, col) => {

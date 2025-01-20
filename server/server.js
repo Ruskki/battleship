@@ -287,31 +287,6 @@ function handleStartGame(ws, { gameId, playerId }) {
 	sendSuccess(ws, `${playerId} has started ${gameId}`);
 }
 
-/**
- * @param {WebSocket} ws
- * @param {object} ev
- * @param {string} ev.userId
- * @param {string} ev.targetId
- * @param {string} ev.row
- * @param {string} ev.col
- * @returns {void}
- */
-function handleAttackPosition(ws, { userId, targetId, row, col }) {
-	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
-	if (!GAME_LIST.isPlayerInGame(userId))
-		return sendError(ws, `ERROR: ${userId} is not in a game`);
-
-	if (!isValidString(targetId))
-		return sendError(ws, 'ERROR: targetId is empty');
-	if (!GAME_LIST.isPlayerInGame(targetId))
-		return sendError(ws, `ERROR: ${targetId} is not in a game`);
-
-	const game = GAME_LIST.getPlayerGame(userId);
-	if (!game.getPlayer(targetId))
-		return sendError(ws, `${targetId} is not in the same game as ${userId}`);
-
-	game.attackPlayer(userId, targetId, row, col);
-}
 
 /**
  * @param {WebSocket} ws
@@ -411,65 +386,62 @@ function handleStartTourney(ws, { playerId, tourneyId }) {
 /**
  * @param {WebSocket} ws
  * @param {object} ev
- * @param {string} ev.userId
  * @param {string} ev.targetId
- * @returns {void}
- */
-function handleUseSonar(ws, { userId, targetId }) {
-	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
-	if (!GAME_LIST.isPlayerInGame(userId))
-		return sendError(ws, `ERROR: ${userId} is not in a game`);
-
-	if (!isValidString(targetId)) return sendError(ws, 'ERROR: targetId is empty');
-	if (!GAME_LIST.isPlayerInGame(targetId))
-		return sendError(ws, `ERROR: ${targetId} is not in a game`);
-
-	const game = GAME_LIST.getPlayerGame(userId);
-	if (!game.getPlayer(targetId))
-		return sendError(ws, `${targetId} is not in the same game as ${userId}`);
-
-	game.sonar(userId, targetId);
-};
-
-/**
- * @param {WebSocket} ws
- * @param {object} ev
- * @param {string} ev.userId
- * @param {string} ev.targetId
- * @returns {void}
- */
-function handleUseAirplane(ws, { userId, targetId }) {
-	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
-	if (!GAME_LIST.isPlayerInGame(userId))
-		return sendError(ws, `ERROR: ${userId} is not in a game`);
-
-	if (!isValidString(targetId)) return sendError(ws, 'ERROR: targetId is empty');
-	if (!GAME_LIST.isPlayerInGame(targetId))
-		return sendError(ws, `ERROR: ${targetId} is not in a game`);
-
-	const game = GAME_LIST.getPlayerGame(userId);
-	if (!game.getPlayer(targetId))
-		return sendError(ws, `${targetId} is not in the same game as ${userId}`);
-
-	game.attackAirplane(userId, targetId);
-};
-
-/**
- * @param {WebSocket} ws
- * @param {object} ev
- * @param {string} ev.userId
  * @param {string} ev.row
  * @param {string} ev.col
  * @returns {void}
  */
-function handleUseMine(ws, { userId, row, col }) {
-	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
-	if (!GAME_LIST.isPlayerInGame(userId))
-		return sendError(ws, `ERROR: ${userId} is not in a game`);
+function handleAttackPosition(ws, { targetId, row, col }) {
+	const player = GAME_LIST.getWebsocketPlayer(ws);
+	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
+	const game = GAME_LIST.getPlayerGame(player.id);
+	const target = game.getPlayer(targetId);
+	if (!target) return sendError(ws, `Target ${targetId} not found in game ${game.id}`);
+	game.attackPlayer(player.id, target.id, row, col);
+}
 
-	const game = GAME_LIST.getPlayerGame(userId);
+/**
+ * @param {WebSocket} ws
+ * @param {object} ev
+ * @param {string} ev.targetId
+ * @returns {void}
+ */
+function handleUseSonar(ws, { targetId }) {
+	const player = GAME_LIST.getWebsocketPlayer(ws);
+	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
+	const game = GAME_LIST.getPlayerGame(player.id);
+	const target = game.getPlayer(targetId);
+	if (!target) return sendError(ws, `Target ${targetId} not found in game ${game.id}`);
+	game.sonar(player.id, target.id);
+};
 
-	game.mine(userId, row, col);
+/**
+ * @param {WebSocket} ws
+ * @param {object} ev
+ * @param {string} ev.targetId
+ * @returns {void}
+ */
+function handleUseAirplane(ws, { targetId }) {
+	const player = GAME_LIST.getWebsocketPlayer(ws);
+	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
+	const game = GAME_LIST.getPlayerGame(player.id);
+	const target = game.getPlayer(targetId);
+	if (!target) return sendError(ws, `Target ${targetId} not found in game ${game.id}`);
+	game.attackAirplane(player.id, target.id);
+};
+
+/**
+ * @param {WebSocket} ws
+ * @param {object} ev
+ * @param {string} ev.row
+ * @param {string} ev.col
+ * @returns {void}
+ */
+function handleUseMine(ws, { row, col }) {
+	const player = GAME_LIST.getWebsocketPlayer(ws);
+	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
+	const game = GAME_LIST.getPlayerGame(player.id);
+	game.mine(player.id, row, col);
 };
 
 /**
@@ -477,12 +449,9 @@ function handleUseMine(ws, { userId, row, col }) {
  * @returns {void}
  */
 function handlePowerActivateQuickFix(ws) {
-	const game = GAME_LIST.getWebsocketGame(ws);
-	if (!game) return sendError(ws, 'Websocket not in a game :(');
 	const player = GAME_LIST.getWebsocketPlayer(ws);
 	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
-	if (!game.getPlayer(player.id))
-		return sendError(ws, `${player.id} not in ${game.id}`);
+	const game = GAME_LIST.getPlayerGame(player.id);
 	game.activateQuickFix(player.id);
 }
 
@@ -494,12 +463,9 @@ function handlePowerActivateQuickFix(ws) {
  * @returns {void}
  */
 function handleUseQuickFix(ws, { row, col }) {
-	const game = GAME_LIST.getWebsocketGame(ws);
-	if (!game) return sendError(ws, 'Websocket not in a game :(');
 	const player = GAME_LIST.getWebsocketPlayer(ws);
 	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
-	if (!game.getPlayer(player.id))
-		return sendError(ws, `${player.id} not in ${game.id}`);
+	const game = GAME_LIST.getPlayerGame(player.id);
 	game.useQuickFix(player.id, row, col);
 }
 
@@ -508,12 +474,9 @@ function handleUseQuickFix(ws, { row, col }) {
  * @returns {void}
  */
 function handlePowerEMP(ws) {
-	const game = GAME_LIST.getWebsocketGame(ws);
-	if (!game) return sendError(ws, 'Websocket not in a game :(');
 	const player = GAME_LIST.getWebsocketPlayer(ws);
 	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
-	if (!game.getPlayer(player.id))
-		return sendError(ws, `${player.id} not in ${game.id}`);
+	const game = GAME_LIST.getPlayerGame(player.id);
 	game.useEMP(player.id);
 }
 
@@ -561,27 +524,18 @@ function handlePowerShield(ws, { row, col }) {
 /**
  * @param {WebSocket} ws
  * @param {object} ev
- * @param {string} ev.userId
  * @param {string} ev.targetId
  * @param {string} ev.row
  * @param {string} ev.col
  * @returns {void}
  */
-function handleCruiseMissile(ws, { userId, targetId, row, col }) {
-	if (!isValidString(userId)) return sendError(ws, 'ERROR: userId is empty');
-	if (!GAME_LIST.isPlayerInGame(userId))
-		return sendError(ws, `ERROR: ${userId} is not in a game`);
-
-	if (!isValidString(targetId))
-		return sendError(ws, 'ERROR: targetId is empty');
-	if (!GAME_LIST.isPlayerInGame(targetId))
-		return sendError(ws, `ERROR: ${targetId} is not in a game`);
-
-	const game = GAME_LIST.getPlayerGame(userId);
-	if (!game.getPlayer(targetId))
-		return sendError(ws, `${targetId} is not in the same game as ${userId}`);
-
-	game.cruiseMissile(userId, targetId, row, col);
+function handleCruiseMissile(ws, { targetId, row, col }) {
+	const player = GAME_LIST.getWebsocketPlayer(ws);
+	if (!player) return sendError(ws, 'Websocket is not assigned to a player');
+	const game = GAME_LIST.getPlayerGame(player.id);
+	const target = game.getPlayer(targetId);
+	if (!target) return sendError(ws, `Target ${targetId} not found in game ${game.id}`);
+	game.cruiseMissile(player.id, target.id, row, col);
 }
 
 /**
@@ -781,7 +735,7 @@ class TourneyList {
 	getLeaderboards() {
 		return Object.keys(this.#medals).map((key) =>
 			[key, this.#medals[key]]
-		// @ts-ignore
+			// @ts-ignore
 		).sort((f, s) => s[1] - f[1]);
 	}
 
@@ -1745,7 +1699,6 @@ class Game {
 		sendActivateQuickFix(player.websocket);
 
 		player.points -= 10;
-		this.nextTurn();
 	}
 
 	/**
@@ -1757,8 +1710,6 @@ class Game {
 	useQuickFix(id, row, col) {
 		const player = this.getPlayer(id);
 		if (!player) return;
-		if (player.points < 10)
-			return sendError(player.websocket, 'You don\'t have enough points to use the EMP :(');
 
 		if (player !== this.turnOf)
 			return sendError(player.websocket, 'It\'s not your turn');
@@ -1772,7 +1723,7 @@ class Game {
 			return sendError(player.websocket, `${row},${col} is not a valid position!`);
 
 		const boat = player.getBoat(pos.boatName);
-		if (pos.boatName === undefined)
+		if (!pos.boatName)
 			return sendError(player.websocket, `The position ${row},${col} doesn't have a boat!`);
 		if (boat.destroyed)
 			return sendError(player.websocket, `Cannot heal the ${boat.name} because it's completely destroyed!`);
@@ -1791,6 +1742,7 @@ class Game {
 		if (player.healingBoat || !boat.getDestroyedPositions().length) {
 			player.finishQuickfix();
 			sendDeactivateQuickFix(player.websocket);
+			this.nextTurn();
 		} else
 			player.healingBoat = boat;
 
@@ -2268,8 +2220,10 @@ class Player {
 
 	finishQuickfix() {
 		this.#onQuickFix = false;
-		this.#healingBoat.wasHealed = true;
-		this.#healingBoat = undefined;
+		if (this.#healingBoat) {
+			this.#healingBoat.wasHealed = true;
+			this.#healingBoat = undefined;
+		}
 	}
 
 	/** @type {number} */
@@ -2334,6 +2288,13 @@ class Player {
 
 		this.ready = false;
 		this.defeated = false;
+		this.finishQuickfix();
+		this.#usedShield = false;
+		this.#empAttackCooldown = 0;
+		this.#cruiseMissileCooldown = 0;
+		this.#disabled = 0;
+		this.#points = 0;
+		this.#onQuickFix = false;
 
 		this.#boats = {
 			destroyer: new Boat('destroyer'),

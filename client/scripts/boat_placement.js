@@ -1,5 +1,5 @@
-const headRows = 'ABCDEFGHIJ'.split('');
-const headCols = '123456789'.split('').concat('10');
+const headRows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+const headCols = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
 const $logMessagesEl = document.getElementById('log-messages');
 
