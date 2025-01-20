@@ -1123,7 +1123,7 @@ class Game {
 	 * @returns {Player}
 	 */
 	getPlayer(id) {
-		return this.players.find((p) => p.id === id);
+		return this.players.find((p) => p?.id === id);
 	}
 
 	/** @returns {Player[]} */
@@ -1426,6 +1426,8 @@ class Game {
 	 * @returns {void}
 	 */
 	attackPlayer(idFrom, idTo, row, col, passTurn = true, checkForTurn = true) {
+		if (this.#finished) return;
+
 		const user = this.getPlayer(idFrom);
 		const target = this.getPlayer(idTo);
 
