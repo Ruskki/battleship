@@ -1,5 +1,21 @@
 const websocket = new WebSocket('ws://127.0.0.1:8000');
 
+let feedbackTimeout;
+
+const $feedbackMessages = document.getElementById('feedback-messages');
+
+/**
+ * @param {string} text
+ * @returns {void}
+ */
+function showError(text) {
+	$feedbackMessages.className = 'error-message';
+	$feedbackMessages.innerText = text;
+	if (feedbackTimeout) clearFeedbackTimeout(feedbackTimeout);
+	feedbackTimeout = setTimeout(() => ($feedbackMessages.innerText = ''), 3000);
+};
+
+
 /**
  * @param {object} ev
  * @param {script} ev.playerId
@@ -10,9 +26,11 @@ function handleJoinGame ({ playerId, tourneyId })  {
 	window.location.href = `./tourney_lobby.html?playerId=${playerId}&tourneyId=${tourneyId}`;
 };
 
+const onlineIndicator = document.getElementById('online-indicator');
+
 websocket.addEventListener('open', () => {
-	// TODO: Change this to show in the html that we're connected
-	console.log('Hello, Websocket!');
+	onlineIndicator.className = 'indicator-online';
+	onlineIndicator.innerHTML = '•';
 });
 
 websocket.addEventListener('message', (event) => {
@@ -24,15 +42,15 @@ websocket.addEventListener('message', (event) => {
 	}
 
 	if (ev.type === 'error')
-		return console.error(ev.text);
+		return showError(ev.text);
 	if (ev.type === 'instruction')
 		if (ev.instruction === 'joinTourney')
 			return handleJoinGame(ev);
 });
 
 websocket.addEventListener('close', () => {
-	// TODO: Change this to show in the html that we're disconnected
-	console.log('Goodbye, Websocket!');
+	onlineIndicator.className = 'indicator-offline';
+	onlineIndicator.innerHTML = '• Servers offline';
 });
 
 const createUsernameEl = document.getElementById('createUsername');
