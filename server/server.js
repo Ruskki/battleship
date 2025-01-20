@@ -775,7 +775,7 @@ class TourneyList {
 }
 
 class Tourney {
-	static playerLimit = 4;
+	static playerLimit = 16;
 
 	/** @type {string} id */
 	#id;
