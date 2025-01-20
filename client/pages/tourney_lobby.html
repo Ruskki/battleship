@@ -24,10 +24,20 @@
 			<span id="feedback-messages"></span>
 			<a href="../index.html" class="nav-button">Main Menu</a>
 		</nav>
-		<h1> Tourney Lobby - ID: <span id="tourneyId"></span> </h1>
-		<ul id="playerList">
-		</ul>
-		<button id="tourneyStartBtn"> start </button>
+
+		<div class="flex-col flex-align tourney-lobby-container">
+			<div class="flex-col">
+				<h2> Tourney Lobby - ID: <span id="tourneyId"></span> </h2>
+				<button class="online-button" id="tourneyStartBtn"> start </button>
+			</div>
+			<div class="line"></div>
+			<h3>Players</h3>
+			<ul class="player-list" id="playerList">
+			</ul>
+
+		</div>
+
+
 
 		<script src="../scripts/tourney_lobby.js"></script>
 	</body>

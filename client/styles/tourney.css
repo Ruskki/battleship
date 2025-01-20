@@ -1,0 +1,27 @@
+.tourney-lobby-container{
+  display: flex;
+	flex-basis: 50%;
+	align-content: center;
+
+	background-color: rgba(31, 31, 209, 0.5);
+	margin: 20px;
+	padding: 10px;
+
+  min-height: 85vh;
+}
+
+.line{
+  background-color: rgb(31, 31, 209);
+  height: 5px;
+  width: 100%;
+}
+
+.player-list{
+  list-style-type:none;
+  padding:0px;
+}
+
+.player-list:nth-child(n){
+  padding:0px;
+  
+}

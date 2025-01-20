@@ -8,6 +8,7 @@
 @import url("./online.css");
 @import url("./helper-classes.css");
 @import url("./leaderboard.css");
+@import url("./tourney.css");
 
 * {
 	color: white;
