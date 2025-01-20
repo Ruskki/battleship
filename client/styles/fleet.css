@@ -21,6 +21,10 @@
 	margin-top: 20px;
 }
 
+.board-fleet{
+	margin-top: 0px;
+}
+
 .ready-button {
 	color: black;
 	border: none;
@@ -121,7 +125,7 @@
 
 .room-info {
 	width: 100%;
-	margin-top: 20px;
+
 	margin-left: 20px;
 	margin-right: 20px;
 
