@@ -763,6 +763,7 @@ class Player {
 		this.id = id;
 
 		this.$playerName = document.createElement('h2');
+		this.$playerName.classList.add('player-id-title')
 		this.$playerName.innerText = id;
 		$divContainer.appendChild(this.$playerName);
 

@@ -19,38 +19,39 @@
 
 		<link rel="stylesheet" href="../styles/style.css">
 	</head>
-	
-	<body id="game-page">
-		<h2>Game</h2>
-		<div class="log-container" id="log-messages"></div>
-		<section id="game">
-			<div class="game-boards">
-				<div>
-					<div class="game-board" id="player-1"></div>
-				</div>
-				<div>
-					<div class="game-board" id="player-2"></div>
-				</div>
-				<div>
-					<div class="game-board" id="player-3"></div>
-				</div>
-				<div>
-					<div class="game-board" id="player-4"></div>
-				</div>
-			</div>
 
+	<body id="game-page">
+		<nav class="nav-bar">
+			<a href="../index.html" class="back-button"><</a>
+			<h1>Game</h1>
+			<span id="online-indicator">•</span>
+			<span id="feedback-messages"></span>
+		</nav>
+		<div class="flex-row">
+			<div>
+				<div class="log-container" id="log-messages"></div>
+				<section id="game" class="boards-container">
+					<div class="game-boards">
+						<div>
+							<div class="game-board flex-col" id="player-1"></div>
+						</div>
+						<div>
+							<div class="game-board flex-col" id="player-2"></div>
+						</div>
+						<div>
+							<div class="game-board flex-col" id="player-3"></div>
+						</div>
+						<div>
+							<div class="game-board flex-col" id="player-4"></div>
+						</div>
+					</div>
+				</section>
+			</div>
 			<div class="game-power-ups" id="game-power-ups">
-				<div>
-					Power Points:
-					<span id="player-points">0</span>
-				</div>
-				<div>
-					Turn number:
-					<span id="turn-number">undefined</span>
-				</div>
-				<div>
-					Turn of:
-					<span id="turn-of-player">undefined</span>
+				<div class="flex-row game-info">
+					<div>Power Points: <span id="player-points">0</span></div>
+					<div>Turn number: <span id="turn-number">undefined</span></div>
+					<div>Turn of: <span id="turn-of-player">undefined</span></div>
 				</div>
 				<div class="targetted-information">
 					<span class="targetted-row">
@@ -68,12 +69,8 @@
 					</span>
 				</div>
 				<button class="power-up-button" id="attack-button">ATTACK</button>
-
-				<button
-					type="button"
-					id="sonar-button"
-					class="power-up-button"
-				>
+	
+				<button type="button" id="sonar-button" class="power-up-button">
 					Sonar (5)
 				</button>
 				<button
@@ -117,7 +114,7 @@
 					EMP Attack (25)
 				</button>
 			</div>
-		</section>
+		</div>
 	</body>
 	<script src="../scripts/game.js"></script>
 </html>
