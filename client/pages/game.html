@@ -28,25 +28,27 @@
 				<div class="log-container" id="log-messages"></div>
 				<section id="game" class="boards-container">
 					<div class="game-boards">
-						<div class="flex-justify">
-							<div class="game-board flex-align flex-col" id="player-1"></div>
+						<div>
+							<div class="game-board flex-col" id="player-1"></div>
 						</div>
 						<div>
-							<div class="game-board flex-align flex-col" id="player-2"></div>
+							<div class="game-board flex-col" id="player-2"></div>
 						</div>
 						<div>
-							<div class="game-board flex-align flex-col" id="player-3"></div>
+							<div class="game-board flex-col" id="player-3"></div>
 						</div>
 						<div>
-							<div class="game-board flex-align flex-col" id="player-4"></div>
+							<div class="game-board flex-col" id="player-4"></div>
 						</div>
 					</div>
 				</section>
 			</div>
 			<div class="game-power-ups" id="game-power-ups">
-				<div>Power Points: <span id="player-points">0</span></div>
-				<div>Turn number: <span id="turn-number">undefined</span></div>
-				<div>Turn of: <span id="turn-of-player">undefined</span></div>
+				<div class="flex-row game-info">
+					<div>Power Points: <span id="player-points">0</span></div>
+					<div>Turn number: <span id="turn-number">undefined</span></div>
+					<div>Turn of: <span id="turn-of-player">undefined</span></div>
+				</div>
 				<div class="targetted-information">
 					<span class="targetted-row">ROW <span id="target-row"></span></span>
 					<span class="targetted-col">COL <span id="target-col"></span></span>

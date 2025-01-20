@@ -14,23 +14,31 @@ input {
 
 .boards-container{
 	background-color: rgba(80, 80, 255, 0.5);
+
 	margin-left: 15px;
 	padding-right: 20px;
-	overflow: scroll;
 	padding-bottom: 20px;
 	margin-bottom: 15px;
+
+	overflow: scroll;
 }
 
 .game-boards {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	grid-template-rows: repeat(2, 1fr);
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: 1140px;
+	height: 790px;
+}
+
+.game-boards > *{
+	flex-basis: 50%;
 }
 
 .game-power-ups {
 	display: flex;
 	flex-direction: column;
-	flex-basis: 35%;
+
 
 	align-items: center;
 	justify-content: space-between;
@@ -45,18 +53,17 @@ input {
 	padding: 0 0 50px 0;
 
 	height: min-content;
+	width: 700px;
 }
 
-#game > *:nth-child(1) {
-	flex-basis: 70%;
-}
-
-#game > *:nth-child(2) {
-	flex-basis: 30%;
+.game-info{
+	padding: 10px;
+	gap: 20px;
 }
 
 .player-id-title {
 	margin-bottom: 0px;
+	align-self: center;
 }
 
 .power-up-button {
@@ -193,13 +200,21 @@ div[data-miss="true"]::after {
 }
 
 .targetted-row {
-	background: red;
+	font-size: 18px;
+	background: rgb(230, 42, 98);
 }
 
 .targetted-col {
-	background: green;
+	font-size: 18px;
+	background: rgb(220, 210, 64);
+	color: rgb(27, 24, 24);
+}
+
+#target-col{
+	color: rgb(27, 24, 24);
 }
 
 .targetted-player {
-	background: blue;
+	font-size: 18px;
+	background: rgb(33, 79, 217);
 }
