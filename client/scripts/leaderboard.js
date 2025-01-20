@@ -1,6 +1,6 @@
 const websocket = new WebSocket('ws://127.0.0.1:8000');
 
-const leaderboardTbody = document.getElementById('leaderboardTBody');
+const leaderboardTbody = document.getElementById('leaderboard-tbody');
 
 websocket.addEventListener('open', () => {
 	const msg = JSON.stringify({

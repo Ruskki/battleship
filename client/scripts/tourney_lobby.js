@@ -2,12 +2,30 @@ const url = new URL(window.location.href);
 const playerId = url.searchParams.get('playerId');
 
 const tourneyId = url.searchParams.get('tourneyId');
-const tourneyIdEl = document.getElementById('tourneyId');
+const tourneyIdEl = document.getElementById('tourney-id');
 tourneyIdEl.innerText = tourneyId;
 
 const websocket = new WebSocket('ws://127.0.0.1:8000');
 
-const tourneyStartBtn = document.getElementById('tourneyStartBtn');
+let feedbackTimeout;
+
+const $feedbackMessages = document.getElementById('feedback-messages');
+
+const onlineIndicator = document.getElementById('online-indicator');
+
+
+/**
+ * @param {string} text
+ * @returns {void}
+ */
+function showError(text) {
+	$feedbackMessages.className = 'error-message';
+	$feedbackMessages.innerText = text;
+	if (feedbackTimeout) clearFeedbackTimeout(feedbackTimeout);
+	feedbackTimeout = setTimeout(() => ($feedbackMessages.innerText = ''), 3000);
+};
+
+const tourneyStartBtn = document.getElementById('tourney-start-btn');
 tourneyStartBtn.addEventListener('click', () => {
 	const msg = JSON.stringify({
 		type: 'instruction',
@@ -19,7 +37,7 @@ tourneyStartBtn.addEventListener('click', () => {
 	websocket.send(msg);
 });
 
-const playerListEl = document.getElementById('playerList');
+const playerListEl = document.getElementById('player-list');
 
 const players = {};
 
@@ -63,8 +81,8 @@ function handleJoinGame({ playerId, gameId }) {
 }
 
 websocket.addEventListener('open', () => {
-	// TODO: Change this to show in the html that we're connected
-	console.log('Hello, Websocket!');
+	onlineIndicator.className = 'indicator-online';
+	onlineIndicator.innerHTML = '•';
 
 	const msg = JSON.stringify({
 		type: 'instruction',
@@ -84,7 +102,7 @@ websocket.addEventListener('message', (event) => {
 	}
 
 	if (ev.type === 'error')
-		return console.error(ev.text);
+		return showError(ev.text);
 	if (ev.type === 'instruction') {
 		if (ev.instruction === 'joinTourney') return handleJoinTourney(ev);
 		if (ev.instruction === 'joinGame') return handleJoinGame(ev);
@@ -93,6 +111,6 @@ websocket.addEventListener('message', (event) => {
 });
 
 websocket.addEventListener('close', () => {
-	// TODO: Change this to show in the html that we're disconnected
-	console.log('Goodbye, Websocket!');
+	onlineIndicator.className = 'indicator-offline';
+	onlineIndicator.innerHTML = '• Servers offline';
 });

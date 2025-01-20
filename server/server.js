@@ -380,6 +380,9 @@ function handleStartTourney(ws, { playerId, tourneyId }) {
 	if (tourney.playersInGames.length > 0)
 		return sendError(ws, 'Some players are still in games');
 
+	if (!tourney.started && tourney.players.length < 2)
+		return sendError(ws, 'You need at least 3 people to play a tournament');
+
 	tourney.start();
 }
 
@@ -803,12 +806,9 @@ class Tourney {
 	 * @returns {void}
 	 */
 	playerWin(id) {
-		const p = this.#playersInGames
-			.splice(
-				this.#playersInGames.findIndex((p) => p.player.id === id),
-				1,
-			)
-			.at(0);
+		const idxOfPlayer = this.#playersInGames.findIndex((p) => p.player.id === id);
+		if (idxOfPlayer === -1) return;
+		const [p] = this.#playersInGames.splice(idxOfPlayer, 1,);
 		this.#playerList.push(p.player);
 	}
 
@@ -879,7 +879,6 @@ class Tourney {
 
 		const player = new Player(playerId, ws);
 		this.#playerList.push(player);
-		console.log(this.#playerList.map((x) => x.id).length);
 		return player;
 	}
 
@@ -1116,6 +1115,9 @@ class Game {
 		return this.#tourney;
 	}
 
+	/** @type {boolean} */
+	#finished = false;
+
 	/**
 	 * @param {string} id
 	 * @returns {Player}
@@ -1139,7 +1141,7 @@ class Game {
 	 * @returns {number}
 	 */
 	#playerIndex(id) {
-		return this.players.findIndex((x) => x.id === id);
+		return this.players.findIndex((x) => x?.id === id);
 	}
 
 	/** @type {Player} */
@@ -1158,6 +1160,8 @@ class Game {
 	}
 
 	nextTurn() {
+		if (this.#finished) return;
+
 		this.turnNumber += 1;
 
 		for (const pos of this.turnOf.board.getShieldPositions()) {
@@ -1177,10 +1181,6 @@ class Game {
 		if (this.turnOf.empAttackCooldown) this.turnOf.empAttackCooldown--;
 
 		let idx = (this.#playerIndex(this.turnOf.id) + 1) % this.players.length;
-
-		if (!this.turnOf.isBot) {
-
-		}
 
 		// Skip defeated players
 		while (this.players[idx].defeated)
@@ -1377,6 +1377,7 @@ class Game {
 
 		clearTimeout(this.#turnTimer);
 		GAME_LIST.removeGame(this.id);
+		this.#finished = true;
 	}
 
 	/** @returns {boolean} */
@@ -1481,6 +1482,7 @@ class Game {
 					user.reset();
 					sendJoinTourney(user.websocket, user.id, this.tourney.id);
 
+					target.reset();
 					this.tourney.playerLose(target.id);
 					sendLeaveTourney(target.websocket, target.id, this.tourney.id);
 				} else
