@@ -1,8 +1,11 @@
 {
   "type": "module",
   "devDependencies": {
+    "@html-eslint/eslint-plugin": "^0.32.0",
+    "@html-eslint/parser": "^0.32.0",
     "eslint": "^9.18.0",
     "eslint-plugin-deno": "^0.0.1",
+    "eslint-plugin-html": "^8.1.2",
     "eslint-plugin-jsdoc": "^50.6.1"
   }
 }

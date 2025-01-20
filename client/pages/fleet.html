@@ -1,24 +1,29 @@
 <!DOCTYPE html>
 <html lang="en-US">
 	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-		<meta name="description" content="battleship" />
-		<meta name="keywords" content="battleship, game, html, css, javascript" />
-		<meta name="author" content="Cristina Carnevali" />
-		<meta name="robots" content="noindex,nofollow" />
+		<meta name="description" content="battleship">
+		<meta name="keywords" content="battleship, game, html, css, javascript">
+		<meta name="author" content="Cristina Carnevali">
+		<meta name="robots" content="noindex,nofollow">
 
-		<link rel="icon" href="../images/favicon.png" type="image/png" />
+		<link
+			rel="icon"
+			href="../images/favicon.png"
+			type="image/png"
+		>
 
 		<title>Battleship Fleet</title>
 
-		<link rel="stylesheet" href="../styles/style.css" />
+		<link rel="stylesheet" href="../styles/style.css">
 	</head>
 
 	<body id="fleet-page">
 		<nav class="nav-bar">
-			<a href="../index.html" class="back-button"><</a>
+			<a href="../index.html" class="back-button">
+				&lt;</a>
 			<h1 class="fleet-title">Place your fleet</h1>
 		</nav>
 		<div class="log-container" id="log-messages"></div>
@@ -38,124 +43,524 @@
 					<div class="board-header-vertical board-header-number">10</div>
 
 					<div class="board-header-horizontal board-header-letter">A</div>
-					<div class="board-position row-A col-1" id="A,1" boat="null"></div>
-					<div class="board-position row-A col-2" id="A,2" boat="null"></div>
-					<div class="board-position row-A col-3" id="A,3" boat="null"></div>
-					<div class="board-position row-A col-4" id="A,4" boat="null"></div>
-					<div class="board-position row-A col-5" id="A,5" boat="null"></div>
-					<div class="board-position row-A col-6" id="A,6" boat="null"></div>
-					<div class="board-position row-A col-7" id="A,7" boat="null"></div>
-					<div class="board-position row-A col-8" id="A,8" boat="null"></div>
-					<div class="board-position row-A col-9" id="A,9" boat="null"></div>
-					<div class="board-position row-A col-10" id="A,10" boat="null"></div>
+					<div
+						class="board-position row-A col-1"
+						id="a-1"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-A col-2"
+						id="a-2"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-A col-3"
+						id="a-3"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-A col-4"
+						id="a-4"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-A col-5"
+						id="a-5"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-A col-6"
+						id="a-6"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-A col-7"
+						id="a-7"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-A col-8"
+						id="a-8"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-A col-9"
+						id="a-9"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-A col-10"
+						id="a-10"
+						boat="null"
+					></div>
 
 					<div class="board-header-horizontal board-header-letter">B</div>
-					<div class="board-position row-B col-1" id="B,1" boat="null"></div>
-					<div class="board-position row-B col-2" id="B,2" boat="null"></div>
-					<div class="board-position row-B col-3" id="B,3" boat="null"></div>
-					<div class="board-position row-B col-4" id="B,4" boat="null"></div>
-					<div class="board-position row-B col-5" id="B,5" boat="null"></div>
-					<div class="board-position row-B col-6" id="B,6" boat="null"></div>
-					<div class="board-position row-B col-7" id="B,7" boat="null"></div>
-					<div class="board-position row-B col-8" id="B,8" boat="null"></div>
-					<div class="board-position row-B col-9" id="B,9" boat="null"></div>
-					<div class="board-position row-B col-10" id="B,10" boat="null"></div>
+					<div
+						class="board-position row-B col-1"
+						id="b-1"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-B col-2"
+						id="b-2"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-B col-3"
+						id="b-3"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-B col-4"
+						id="b-4"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-B col-5"
+						id="b-5"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-B col-6"
+						id="b-6"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-B col-7"
+						id="b-7"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-B col-8"
+						id="b-8"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-B col-9"
+						id="b-9"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-B col-10"
+						id="b-10"
+						boat="null"
+					></div>
 
 					<div class="board-header-horizontal board-header-letter">C</div>
-					<div class="board-position row-C col-1" id="C,1" boat="null"></div>
-					<div class="board-position row-C col-2" id="C,2" boat="null"></div>
-					<div class="board-position row-C col-3" id="C,3" boat="null"></div>
-					<div class="board-position row-C col-4" id="C,4" boat="null"></div>
-					<div class="board-position row-C col-5" id="C,5" boat="null"></div>
-					<div class="board-position row-C col-6" id="C,6" boat="null"></div>
-					<div class="board-position row-C col-7" id="C,7" boat="null"></div>
-					<div class="board-position row-C col-8" id="C,8" boat="null"></div>
-					<div class="board-position row-C col-9" id="C,9" boat="null"></div>
-					<div class="board-position row-C col-10" id="C,10" boat="null"></div>
+					<div
+						class="board-position row-C col-1"
+						id="c-1"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-C col-2"
+						id="c-2"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-C col-3"
+						id="c-3"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-C col-4"
+						id="c-4"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-C col-5"
+						id="c-5"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-C col-6"
+						id="c-6"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-C col-7"
+						id="c-7"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-C col-8"
+						id="c-8"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-C col-9"
+						id="c-9"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-C col-10"
+						id="c-10"
+						boat="null"
+					></div>
 
 					<div class="board-header-horizontal board-header-letter">D</div>
-					<div class="board-position row-D col-1" id="D,1" boat="null"></div>
-					<div class="board-position row-D col-2" id="D,2" boat="null"></div>
-					<div class="board-position row-D col-3" id="D,3" boat="null"></div>
-					<div class="board-position row-D col-4" id="D,4" boat="null"></div>
-					<div class="board-position row-D col-5" id="D,5" boat="null"></div>
-					<div class="board-position row-D col-6" id="D,6" boat="null"></div>
-					<div class="board-position row-D col-7" id="D,7" boat="null"></div>
-					<div class="board-position row-D col-8" id="D,8" boat="null"></div>
-					<div class="board-position row-D col-9" id="D,9" boat="null"></div>
-					<div class="board-position row-D col-10" id="D,10" boat="null"></div>
+					<div
+						class="board-position row-D col-1"
+						id="d-1"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-D col-2"
+						id="d-2"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-D col-3"
+						id="d-3"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-D col-4"
+						id="d-4"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-D col-5"
+						id="d-5"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-D col-6"
+						id="d-6"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-D col-7"
+						id="d-7"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-D col-8"
+						id="d-8"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-D col-9"
+						id="d-9"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-D col-10"
+						id="d-10"
+						boat="null"
+					></div>
 
 					<div class="board-header-horizontal board-header-letter">E</div>
-					<div class="board-position row-E col-1" id="E,1" boat="null"></div>
-					<div class="board-position row-E col-2" id="E,2" boat="null"></div>
-					<div class="board-position row-E col-3" id="E,3" boat="null"></div>
-					<div class="board-position row-E col-4" id="E,4" boat="null"></div>
-					<div class="board-position row-E col-5" id="E,5" boat="null"></div>
-					<div class="board-position row-E col-6" id="E,6" boat="null"></div>
-					<div class="board-position row-E col-7" id="E,7" boat="null"></div>
-					<div class="board-position row-E col-8" id="E,8" boat="null"></div>
-					<div class="board-position row-E col-9" id="E,9" boat="null"></div>
-					<div class="board-position row-E col-10" id="E,10" boat="null"></div>
+					<div
+						class="board-position row-E col-1"
+						id="e-1"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-E col-2"
+						id="e-2"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-E col-3"
+						id="e-3"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-E col-4"
+						id="e-4"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-E col-5"
+						id="e-5"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-E col-6"
+						id="e-6"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-E col-7"
+						id="e-7"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-E col-8"
+						id="e-8"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-E col-9"
+						id="e-9"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-E col-10"
+						id="e-10"
+						boat="null"
+					></div>
 
 					<div class="board-header-horizontal board-header-letter">F</div>
-					<div class="board-position row-F col-1" id="F,1" boat="null"></div>
-					<div class="board-position row-F col-2" id="F,2" boat="null"></div>
-					<div class="board-position row-F col-3" id="F,3" boat="null"></div>
-					<div class="board-position row-F col-4" id="F,4" boat="null"></div>
-					<div class="board-position row-F col-5" id="F,5" boat="null"></div>
-					<div class="board-position row-F col-6" id="F,6" boat="null"></div>
-					<div class="board-position row-F col-7" id="F,7" boat="null"></div>
-					<div class="board-position row-F col-8" id="F,8" boat="null"></div>
-					<div class="board-position row-F col-9" id="F,9" boat="null"></div>
-					<div class="board-position row-F col-10" id="F,10" boat="null"></div>
+					<div
+						class="board-position row-F col-1"
+						id="f-1"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-F col-2"
+						id="f-2"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-F col-3"
+						id="f-3"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-F col-4"
+						id="f-4"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-F col-5"
+						id="f-5"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-F col-6"
+						id="f-6"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-F col-7"
+						id="f-7"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-F col-8"
+						id="f-8"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-F col-9"
+						id="f-9"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-F col-10"
+						id="f-10"
+						boat="null"
+					></div>
 
 					<div class="board-header-horizontal board-header-letter">G</div>
-					<div class="board-position row-G col-1" id="G,1" boat="null"></div>
-					<div class="board-position row-G col-2" id="G,2" boat="null"></div>
-					<div class="board-position row-G col-3" id="G,3" boat="null"></div>
-					<div class="board-position row-G col-4" id="G,4" boat="null"></div>
-					<div class="board-position row-G col-5" id="G,5" boat="null"></div>
-					<div class="board-position row-G col-6" id="G,6" boat="null"></div>
-					<div class="board-position row-G col-7" id="G,7" boat="null"></div>
-					<div class="board-position row-G col-8" id="G,8" boat="null"></div>
-					<div class="board-position row-G col-9" id="G,9" boat="null"></div>
-					<div class="board-position row-G col-10" id="G,10" boat="null"></div>
+					<div
+						class="board-position row-G col-1"
+						id="g-1"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-G col-2"
+						id="g-2"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-G col-3"
+						id="g-3"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-G col-4"
+						id="g-4"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-G col-5"
+						id="g-5"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-G col-6"
+						id="g-6"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-G col-7"
+						id="g-7"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-G col-8"
+						id="g-8"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-G col-9"
+						id="g-9"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-G col-10"
+						id="g-10"
+						boat="null"
+					></div>
 
 					<div class="board-header-horizontal board-header-letter">H</div>
-					<div class="board-position row-H col-1" id="H,1" boat="null"></div>
-					<div class="board-position row-H col-2" id="H,2" boat="null"></div>
-					<div class="board-position row-H col-3" id="H,3" boat="null"></div>
-					<div class="board-position row-H col-4" id="H,4" boat="null"></div>
-					<div class="board-position row-H col-5" id="H,5" boat="null"></div>
-					<div class="board-position row-H col-6" id="H,6" boat="null"></div>
-					<div class="board-position row-H col-7" id="H,7" boat="null"></div>
-					<div class="board-position row-H col-8" id="H,8" boat="null"></div>
-					<div class="board-position row-H col-9" id="H,9" boat="null"></div>
-					<div class="board-position row-H col-10" id="H,10" boat="null"></div>
+					<div
+						class="board-position row-H col-1"
+						id="h-1"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-H col-2"
+						id="h-2"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-H col-3"
+						id="h-3"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-H col-4"
+						id="h-4"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-H col-5"
+						id="h-5"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-H col-6"
+						id="h-6"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-H col-7"
+						id="h-7"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-H col-8"
+						id="h-8"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-H col-9"
+						id="h-9"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-H col-10"
+						id="h-10"
+						boat="null"
+					></div>
 
 					<div class="board-header-horizontal board-header-letter">I</div>
-					<div class="board-position row-I col-1" id="I,1" boat="null"></div>
-					<div class="board-position row-I col-2" id="I,2" boat="null"></div>
-					<div class="board-position row-I col-3" id="I,3" boat="null"></div>
-					<div class="board-position row-I col-4" id="I,4" boat="null"></div>
-					<div class="board-position row-I col-5" id="I,5" boat="null"></div>
-					<div class="board-position row-I col-6" id="I,6" boat="null"></div>
-					<div class="board-position row-I col-7" id="I,7" boat="null"></div>
-					<div class="board-position row-I col-8" id="I,8" boat="null"></div>
-					<div class="board-position row-I col-9" id="I,9" boat="null"></div>
-					<div class="board-position row-I col-10" id="I,10" boat="null"></div>
+					<div
+						class="board-position row-I col-1"
+						id="i-1"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-I col-2"
+						id="i-2"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-I col-3"
+						id="i-3"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-I col-4"
+						id="i-4"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-I col-5"
+						id="i-5"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-I col-6"
+						id="i-6"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-I col-7"
+						id="i-7"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-I col-8"
+						id="i-8"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-I col-9"
+						id="i-9"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-I col-10"
+						id="i-10"
+						boat="null"
+					></div>
 
 					<div class="board-header-horizontal board-header-letter">J</div>
-					<div class="board-position row-J col-1" id="J,1" boat="null"></div>
-					<div class="board-position row-J col-2" id="J,2" boat="null"></div>
-					<div class="board-position row-J col-3" id="J,3" boat="null"></div>
-					<div class="board-position row-J col-4" id="J,4" boat="null"></div>
-					<div class="board-position row-J col-5" id="J,5" boat="null"></div>
-					<div class="board-position row-J col-6" id="J,6" boat="null"></div>
-					<div class="board-position row-J col-7" id="J,7" boat="null"></div>
-					<div class="board-position row-J col-8" id="J,8" boat="null"></div>
-					<div class="board-position row-J col-9" id="J,9" boat="null"></div>
-					<div class="board-position row-J col-10" id="J,10" boat="null"></div>
+					<div
+						class="board-position row-J col-1"
+						id="j-1"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-J col-2"
+						id="j-2"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-J col-3"
+						id="j-3"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-J col-4"
+						id="j-4"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-J col-5"
+						id="j-5"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-J col-6"
+						id="j-6"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-J col-7"
+						id="j-7"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-J col-8"
+						id="j-8"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-J col-9"
+						id="j-9"
+						boat="null"
+					></div>
+					<div
+						class="board-position row-J col-10"
+						id="j-10"
+						boat="null"
+					></div>
 				</div>
 
 				<div class="boats-select">
@@ -165,17 +570,16 @@
 							value="Rotate"
 							class="rotate-button boat-grid-item"
 							id="rotate-button"
-						/>
+						>
 						<div class="boat-grid-item">
 							<img
 								src="../images/destroyer.png"
 								alt="Battleship Title"
 								width="50px"
-								class="source"
+								class="boat-grid-item source"
 								id="destroyer"
 								draggable="true"
-								class="boat-grid-item"
-							/>
+							>
 						</div>
 						<div class="boat-grid-item">
 							<img
@@ -185,10 +589,13 @@
 								class="source boat-grid-item"
 								id="submarine"
 								draggable="true"
-								class="boat-grid-item"
-							/>
+							>
 						</div>
-						<button id="ready-button" class="ready-button" href="game.html">
+						<button
+							id="ready-button"
+							class="ready-button"
+							href="game.html"
+						>
 							Ready
 						</button>
 
@@ -197,11 +604,10 @@
 								src="../images/cruise.png"
 								alt="Battleship Title"
 								width="100px"
-								class="source"
+								class="source boat-grid-item"
 								id="cruise"
 								draggable="true"
-								class="boat-grid-item"
-							/>
+							>
 						</div>
 						<div class="boat-grid-item">
 							<img
@@ -211,8 +617,7 @@
 								class="source boat-grid-item"
 								id="battleship"
 								draggable="true"
-								class="boat-grid-item"
-							/>
+							>
 						</div>
 						<div class="boat-grid-item">
 							<img
@@ -222,9 +627,13 @@
 								class="source boat-grid-item"
 								id="aircraft"
 								draggable="true"
-							/>
+							>
 						</div>
-						<button id="leave-button" class="leave-button" href="../index.html">
+						<button
+							id="leave-button"
+							class="leave-button"
+							href="../index.html"
+						>
 							Leave
 						</button>
 					</div>

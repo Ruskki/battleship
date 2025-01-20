@@ -1,4 +1,4 @@
-const headRows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+const headRows = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
 const headCols = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
 const $logMessagesEl = document.getElementById('log-messages');
@@ -80,11 +80,11 @@ document.body.addEventListener('mouseup', () => {
 	if (draggedElement) destroyDraggedElement();
 });
 
- /**
-  * @param {HTMLElement} from
-  * @returns {void}
-  */
-function createDraggedElement (from)  {
+/**
+ * @param {HTMLElement} from
+ * @returns {void}
+ */
+function createDraggedElement(from) {
 	if (draggedElement) return;
 
 	const clone = from.cloneNode(true);
@@ -95,17 +95,17 @@ function createDraggedElement (from)  {
 	draggedElement = clone;
 };
 
- /**
-  * @param {MouseEvent} e
-  * @returns {void}
-  */
- function moveDraggableElement  (e)  {
+/**
+ * @param {MouseEvent} e
+ * @returns {void}
+ */
+function moveDraggableElement(e) {
 	draggedElement.style.left = e.clientX + 'px';
 	draggedElement.style.top = e.clientY + 'px';
 };
 
 /** @returns {void} */
-function destroyDraggedElement ()  {
+function destroyDraggedElement() {
 	draggedElement.remove();
 	draggedElement = undefined;
 	document.body.style.cursor = 'default';
@@ -116,7 +116,7 @@ let isRotated = false;
 let savedShipId = undefined;
 
 /** @returns {void} */
-function rotateShips ()  {
+function rotateShips() {
 	for (const ship of ships)
 		ship.style.transform = isRotated ? 'rotate(0deg)' : 'rotate(90deg)';
 	isRotated = !isRotated;
@@ -127,14 +127,14 @@ function rotateShips ()  {
  * @param {HTMLElement} $ship
  * @returns {void}
  */
-function handleDragStartShip (shipId, $ship)  {
+function handleDragStartShip(shipId, $ship) {
 	if (isPlayerReady) return;
 	savedShipId = shipId;
 	createDraggedElement($ship);
 };
 
 /** @returns {void} */
-function addDragListenerToShips ()  {
+function addDragListenerToShips() {
 	for (const ship of ships) {
 		ship.addEventListener('dragstart', (e) =>
 			handleDragStartShip(e.target.id, ship),
@@ -164,7 +164,7 @@ gridPositions.forEach((position) => {
 function handleDrop(_, pos) {
 	if (!savedShipId) return;
 
-	const [row, col] = pos.id.split(',');
+	const [row, col] = pos.id.split('-');
 	const shipId = savedShipId;
 	const ship = Boats[shipId];
 
@@ -215,7 +215,7 @@ function handleDrop(_, pos) {
  * @param {boolean} vertical
  * @returns {void}
  */
-function getCosecutivePositions (row, col, size, vertical)  {
+function getCosecutivePositions(row, col, size, vertical) {
 	const rows = headRows.slice(
 		headRows.indexOf(row),
 		headRows.indexOf(row) + size,
@@ -226,12 +226,11 @@ function getCosecutivePositions (row, col, size, vertical)  {
 	);
 
 	const res = [];
-	for (let i = 0; i < size; i++)
+	for (let i = 0; i < size; i++) 
 		res.push(
-			document.getElementById(
-				`${vertical ? rows[i] : rows[0]},${vertical ? cols[0] : cols[i]}`,
-			),
+			document.getElementById(`${vertical ? rows[i] : rows[0]}-${vertical ? cols[0] : cols[i]}`,),
 		);
+	
 	return res.filter((x) => x);
 };
 
@@ -251,7 +250,7 @@ document.getElementById('room-id').innerText = gameId;
  * @param {WebSocket} ws
  * @returns {void}
  */
-function websocketOnOpen (ws)  {
+function websocketOnOpen(ws) {
 	const joinMsg = JSON.stringify({
 		type: 'instruction',
 		instruction: 'joinGame',
@@ -297,12 +296,12 @@ function websocketOnMessage(event) {
 		if (ev.instruction === 'getHost') handleGetHost(ev.hostId);
 
 		if (ev.instruction === 'startGame') handleGameStart();
-		if (ev.instruction === 'placeBoat') handlePlaceBoat(ev.boatName.name, ev.row, ev.col, ev.vertical);
+		if (ev.instruction === 'placeBoat') handlePlaceBoat(ev.boatName, ev.row, ev.col, ev.vertical);
 	}
 };
 
 /** @returns {void} */
-function websocketOnClose () {
+function websocketOnClose() {
 	showError('You\'ve been disconnected from the match! Check your internet connection');
 }
 
@@ -317,7 +316,7 @@ const players = [];
  * @param {string} id
  * @returns {void}
  */
-function isPlayerHere (id) {
+function isPlayerHere(id) {
 	players.some((p) => p.id === id);
 }
 
@@ -459,11 +458,11 @@ function handleGameStart() {
 function handlePlaceBoat(boatName, row, col, vertical) {
 	savedShipId = boatName;
 	isRotated = vertical;
-	handleDrop(undefined, document.getElementById(`${row},${col}`));
+	handleDrop(undefined, document.getElementById(`${row.toLowerCase()}-${col}`));
 };
 
 /** @returns {void} */
-function startGameListener ()  {
+function startGameListener() {
 	const startMsg = JSON.stringify({
 		type: 'lobbyInstruction',
 		instruction: 'startGame',
@@ -474,7 +473,7 @@ function startGameListener ()  {
 };
 
 /** @returns {void} */
-function readyUpListener () {
+function readyUpListener() {
 	if (isPlayerReady) {
 		const msg = JSON.stringify({
 			type: 'lobbyInstruction',
@@ -489,13 +488,13 @@ function readyUpListener () {
 		return showError('All the boats need to be placed!');
 
 	for (const shipId of Object.keys(Boats)) {
-		const [row, col] = Boats[shipId].positions[0].split(',');
+		const [row, col] = Boats[shipId].positions[0].split('-');
 		const msg = JSON.stringify({
 			type: 'lobbyInstruction',
 			instruction: 'placeBoat',
 			playerId,
 			boatName: shipId,
-			row,
+			row: row.toUpperCase(),
 			col,
 			vertical: Boats[shipId].vertical,
 		});
@@ -511,7 +510,7 @@ function readyUpListener () {
 };
 
 /** @returns {void} */
-function readyButtonOriginalState  ()  {
+function readyButtonOriginalState() {
 	$readyButton.className = 'ready-button';
 	$readyButton.innerText = isPlayerReady ? 'Unready' : 'Ready';
 
@@ -520,7 +519,7 @@ function readyButtonOriginalState  ()  {
 };
 
 /** @returns {void} */
-function readyButtonToPlayButton ()  {
+function readyButtonToPlayButton() {
 	console.log($readyButton);
 	$readyButton.className = 'play-button';
 	$readyButton.innerText = 'Start Game';
